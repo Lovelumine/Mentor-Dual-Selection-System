@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/Mentor-Dual-Selection-System.iml" filepath="$PROJECT_DIR$/.idea/Mentor-Dual-Selection-System.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Mentor-Dual-Selection-System/Mentor-Dual-Selection-System.iml" filepath="$PROJECT_DIR$/Mentor-Dual-Selection-System/Mentor-Dual-Selection-System.iml" />
     </modules>
   </component>
 </project>
