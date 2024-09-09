@@ -23,7 +23,7 @@ public class WebSecurityConfig {
                         .requestMatchers("/hello").permitAll()  // 允许匿名访问 /hello
                         .requestMatchers(
                                 "/swagger-ui/**",   // 允许匿名访问 Swagger UI
-                                "/v3/api-docs/**",  // 允许匿名访问 OpenAPI 文档
+                                "/api-docs/**",  // 允许匿名访问 OpenAPI 文档
                                 "/swagger-ui.html"  // 允许匿名访问 Swagger UI 页面
                         ).permitAll()
                         .anyRequest().authenticated()          // 其他请求需要身份验证
