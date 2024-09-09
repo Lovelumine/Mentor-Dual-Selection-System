@@ -9,12 +9,15 @@ onMounted(() => {
   iconProperty.value.size = 24;
 })
 
+function logoClicked() {
+  window.location.href = "https://www.sysu.edu.cn/";
+}
 </script>
 
 <template>
   <Header class="header_box">
     <div class="logo_box">
-      <img class="logo" :src="zhuzhanLogo" alt="logo"/>
+      <img class="logo" :src="zhuzhanLogo" alt="logo" title="学校主页" @click="logoClicked"/>
       <span class="logo_title">师生双选系统</span>
     </div>
 
@@ -54,6 +57,8 @@ onMounted(() => {
     .logo
       height: 80%
       margin-left: 20px
+    .logo:hover
+      cursor: pointer
     .logo_title
       font-size: 25px
       color: white
