@@ -28,10 +28,6 @@ function singinClicked(){
         <el-icon size="25" color="#005826"><Menu /></el-icon>
         <input placeholder="密码" type="password" required v-model="signinForm.password" />
       </div>
-      <div>
-        <input type="radio" name="select_role" value="teacher" v-model="signinForm.role">教师
-        <input type="radio" name="select_role" value="student" v-model="signinForm.role">学生
-      </div>
       <button type="submit" class="login_button">登录</button>
     </form>
   </div>

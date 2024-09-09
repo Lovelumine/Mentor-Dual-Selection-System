@@ -18,7 +18,7 @@ function logoClicked() {
   <Header class="header_box">
     <div class="logo_box">
       <img class="logo" :src="zhuzhanLogo" alt="logo" title="学校主页" @click="logoClicked"/>
-      <span class="logo_title">师生双选系统</span>
+      <span class="logo_title">农业与生物技术学院 - 师生双选系统</span>
     </div>
 
     <div class="user_bar">

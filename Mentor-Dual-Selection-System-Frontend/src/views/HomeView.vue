@@ -9,10 +9,10 @@ const isSignin = ref(false);
 <template>
   <div class="container" v-if="!isSignin">
     <h1>
-      您好！正在访问中山大学师生双选系统！
+      您好！请先登录
     </h1>
     <h2>
-      生命科学学院
+      农业与生物技术学院
     </h2>
     <SigninComp/>
   </div>
