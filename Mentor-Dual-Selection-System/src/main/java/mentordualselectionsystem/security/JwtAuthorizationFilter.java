@@ -48,7 +48,7 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
 
             // 创建一个基于 UserDetails 的认证对象
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    userDetails, null, userDetails.getAuthorities()
+                    userDetails, token, userDetails.getAuthorities()
             );
 
             // 将认证信息存储在 SecurityContext 中
