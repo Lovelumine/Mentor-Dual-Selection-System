@@ -2,7 +2,7 @@
 
 import SigninComp from "@/components/SigninComp.vue";
 import {ref} from "vue";
-import SideHeaderComp from "@/components/HeaderAndFooter/SideHeaderComp.vue";
+import SideMenuComp from "@/components/HeaderAndFooter/SideMenuComp.vue";
 
 const isSignin = ref(true);
 </script>
@@ -18,8 +18,10 @@ const isSignin = ref(true);
     <SigninComp/>
   </div>
   <div class="container_login" v-if="isSignin">
-    <SideHeaderComp/>
-    <router-view/>
+    <SideMenuComp/>
+    <div class="router_container">
+      <router-view class="router_container"/>
+    </div>
   </div>
 </template>
 
@@ -34,5 +36,7 @@ const isSignin = ref(true);
     letter-spacing: 2px
 .container_login
   display: flex
+  .router_container
+    flex-grow: 1
 
 </style>

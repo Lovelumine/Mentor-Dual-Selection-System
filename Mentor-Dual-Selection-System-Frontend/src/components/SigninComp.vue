@@ -1,15 +1,34 @@
 <script setup lang="ts">
 import {Avatar, Menu} from "@element-plus/icons-vue";
 import {ref} from "vue";
+import {http} from "@/utils/http";
 
 const signinForm = ref({
-  account: '',
-  password: '',
-  role: 'teacher'
+  username: '',
+  password: ''
 });
 
 function singinClicked(){
   console.log(signinForm.value);
+  http({
+    url: 'api/auth/login',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': '*/**',
+    },
+    data: signinForm.value
+  }).then(res => {
+    console.log(res);
+    if (res.data.code === 0){
+      localStorage.setItem('token', res.data.data.token);
+    } else {
+      localStorage.removeItem('token');
+      alert(res.data.msg);
+    }
+  }).catch((err) => {
+    console.error(err);
+  })
 }
 
 </script>
@@ -22,7 +41,7 @@ function singinClicked(){
     <form @submit.prevent="singinClicked">
       <div class="input_box">
         <el-icon size="25" color="#005826"><Avatar /></el-icon>
-        <input placeholder="工号 / 学号" type="text" required v-model="signinForm.account" />
+        <input placeholder="工号 / 学号" type="text" required v-model="signinForm.username" />
       </div>
       <div class="input_box">
         <el-icon size="25" color="#005826"><Menu /></el-icon>
