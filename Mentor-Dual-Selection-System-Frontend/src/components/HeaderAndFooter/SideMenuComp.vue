@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import {Document, Location, Setting,} from "@element-plus/icons-vue";
+import {Avatar, BellFilled, UserFilled,} from "@element-plus/icons-vue";
 import {ref} from "vue";
 import {useRouter} from "vue-router";
 const router = useRouter();
@@ -15,13 +15,13 @@ function sidemenuClicked(target: number, subTarget: string = null){
     case 1: {
       console.log('第一菜单');
       switch (subTarget) {
-        case '1-1': console.log('第一按钮'); break;
+        case '1-1': router.push('/student_list'); break;
         case '1-2': console.log('第二按钮'); break;
         case '1-3': console.log('第三按钮'); break;
         case '1-4': console.log('第四按钮'); break;
       }
       break;
-    } case 2: router.push('/teachers'); break;
+    } case 2: router.push('/teacher_list'); break;
     case 3: {
       console.log('第三菜单');
       switch (subTarget) {
@@ -51,12 +51,11 @@ function sidemenuClicked(target: number, subTarget: string = null){
             :active-text-color="sidemenuDet.atcolor"
             :background-color="sidemenuDet.bacc"
             class="el-menu-vertical-demo"
-            default-active="4"
             text-color="#fff"
         >
           <el-sub-menu index="1">
             <template #title>
-              <el-icon><location /></el-icon>
+              <el-icon><UserFilled /></el-icon>
               <span>学生列表</span>
             </template>
             <el-menu-item-group title="学年" class="sub_menu">
@@ -67,12 +66,12 @@ function sidemenuClicked(target: number, subTarget: string = null){
             </el-menu-item-group>
           </el-sub-menu>
           <el-menu-item index="2" @click="sidemenuClicked(2)">
-              <el-icon><Menu /></el-icon>
-              <span>导师列表</span>
+            <el-icon><Avatar /></el-icon>
+            <span>导师列表</span>
           </el-menu-item>
           <el-sub-menu index="3">
             <template #title>
-              <el-icon><Document /></el-icon>
+              <el-icon><Menu /></el-icon>
               <span>状态管理</span>
             </template>
             <el-menu-item-group title="学年" class="sub_menu">
@@ -83,7 +82,7 @@ function sidemenuClicked(target: number, subTarget: string = null){
             </el-menu-item-group>
           </el-sub-menu>
           <el-menu-item index="4" @click="sidemenuClicked(4)">
-            <el-icon><setting /></el-icon>
+            <el-icon><BellFilled /></el-icon>
             <span>通知公告</span>
           </el-menu-item>
         </el-menu>
