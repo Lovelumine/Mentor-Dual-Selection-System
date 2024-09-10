@@ -1,51 +1,61 @@
 package mentordualselectionsystem.config;
 
+import mentordualselectionsystem.security.JwtAuthenticationFilter;
+import mentordualselectionsystem.security.JwtAuthorizationFilter;
+import mentordualselectionsystem.services.UserService;
+import mentordualselectionsystem.security.JwtUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 @EnableWebSecurity
 @Configuration
 public class WebSecurityConfig {
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .authorizeHttpRequests((authorizeRequests) -> authorizeRequests
-                        .requestMatchers("/hello").permitAll()  // 允许匿名访问 /hello
-                        .requestMatchers(
-                                "/swagger-ui/**",   // 允许匿名访问 Swagger UI
-                                "/api-docs/**",  // 允许匿名访问 OpenAPI 文档
-                                "/swagger-ui.html"  // 允许匿名访问 Swagger UI 页面
-                        ).permitAll()
-                        .anyRequest().authenticated()          // 其他请求需要身份验证
-                )
-                .formLogin(Customizer.withDefaults())      // 启用默认登录页面
-                .logout(Customizer.withDefaults());        // 启用默认登出页面
-        return http.build();
+    private final UserService userService;
+    private final JwtUtils jwtUtils;
+
+    public WebSecurityConfig(UserService userService, JwtUtils jwtUtils) {
+        this.userService = userService;
+        this.jwtUtils = jwtUtils;
     }
 
     @Bean
-    public UserDetailsService userDetailsService() {
-        return new InMemoryUserDetailsManager(
-                User.builder()
-                        .username("user")
-                        .password(passwordEncoder().encode("password"))
-                        .roles("USER")
-                        .build()
-        );
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
+        http
+                .csrf(AbstractHttpConfigurer::disable)  // 禁用 CSRF
+                .authorizeHttpRequests(authorizeRequests -> authorizeRequests
+                        // 允许这些端点公开访问
+                        .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/hello").permitAll()
+                        // 其他任何请求都需要认证
+                        .anyRequest().authenticated()
+                )
+                // 将自定义的 JWT 过滤器添加到过滤器链中
+                .addFilter(new JwtAuthenticationFilter(authenticationManager, jwtUtils))
+                .addFilter(new JwtAuthorizationFilter(authenticationManager, jwtUtils, userService))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)); // 使用无状态会话
+
+        return http.build();
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    // 提供 AuthenticationManager Bean
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
     }
 }
