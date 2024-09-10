@@ -1,5 +1,6 @@
 package mentordualselectionsystem.config;
 
+import mentordualselectionsystem.security.CustomAuthenticationProvider;
 import mentordualselectionsystem.security.JwtAuthenticationFilter;
 import mentordualselectionsystem.security.JwtAuthorizationFilter;
 import mentordualselectionsystem.services.UserService;
@@ -22,10 +23,12 @@ public class WebSecurityConfig {
 
     private final UserService userService;
     private final JwtUtils jwtUtils;
+    private final CustomAuthenticationProvider customAuthenticationProvider;
 
-    public WebSecurityConfig(UserService userService, JwtUtils jwtUtils) {
+    public WebSecurityConfig(UserService userService, JwtUtils jwtUtils, CustomAuthenticationProvider customAuthenticationProvider) {
         this.userService = userService;
         this.jwtUtils = jwtUtils;
+        this.customAuthenticationProvider = customAuthenticationProvider;
     }
 
     @Bean
@@ -57,5 +60,9 @@ public class WebSecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
+    }
+
+    public CustomAuthenticationProvider getCustomAuthenticationProvider() {
+        return customAuthenticationProvider;
     }
 }

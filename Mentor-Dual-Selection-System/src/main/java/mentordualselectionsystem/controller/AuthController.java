@@ -19,6 +19,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -48,7 +51,13 @@ public class AuthController {
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String token = jwtUtils.generateToken(authentication.getName());
-        return ResponseEntity.ok(new JwtResponse(token));
+
+        // 将返回值改为 {code: "", token: ""}
+        Map<String, String> response = new HashMap<>();
+        response.put("code", "200");  // 状态码
+        response.put("token", token); // 返回 JWT Token
+
+        return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "用户注册", description = "注册新用户。")
@@ -63,6 +72,12 @@ public class AuthController {
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         user.setEmail(registerRequest.getEmail());
         userService.saveUser(user);
-        return ResponseEntity.ok("用户注册成功");
+
+        // 将返回值改为 {code: "", message: ""}
+        Map<String, String> response = new HashMap<>();
+        response.put("code", "200");  // 状态码
+        response.put("message", "用户注册成功");
+
+        return ResponseEntity.ok(response);
     }
 }
