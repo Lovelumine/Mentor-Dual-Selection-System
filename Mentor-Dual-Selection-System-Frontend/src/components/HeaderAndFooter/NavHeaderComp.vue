@@ -4,6 +4,7 @@ import {User, Operation, ChatDotSquare} from "@element-plus/icons-vue";
 import {onMounted, ref} from "vue";
 
 const iconProperty = ref({color: '', size: 0});
+const isLogin = ref(true);
 onMounted(() => {
   iconProperty.value.color = '#fff';
   iconProperty.value.size = 24;
@@ -21,8 +22,8 @@ function logoClicked() {
       <span class="logo_title">农业与生物技术学院 - 师生双选系统</span>
     </div>
 
-    <div class="user_bar">
-      <a href="/personal" title="工作通讯">
+    <div class="user_bar" v-if="isLogin">
+      <a href="/communicate" title="工作通讯">
         <div class="user_icon_box">
           <el-icon class="user_icon" :size="iconProperty.size" :color="iconProperty.color"><ChatDotSquare /></el-icon>
         </div>
@@ -32,7 +33,7 @@ function logoClicked() {
           <el-icon class="user_icon" :size="iconProperty.size" :color="iconProperty.color"><Operation /></el-icon>
         </div>
       </a>
-      <a href="/personal" title="个人中心">
+      <a href="/personal/" title="个人中心">
         <div class="user_icon_box">
           <el-icon class="user_icon" :size="iconProperty.size" :color="iconProperty.color"><User /></el-icon>
         </div>

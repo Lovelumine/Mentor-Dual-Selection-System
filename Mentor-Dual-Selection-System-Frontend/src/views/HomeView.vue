@@ -2,8 +2,9 @@
 
 import SigninComp from "@/components/SigninComp.vue";
 import {ref} from "vue";
+import SideHeaderComp from "@/components/HeaderAndFooter/SideHeaderComp.vue";
 
-const isSignin = ref(false);
+const isSignin = ref(true);
 </script>
 
 <template>
@@ -16,6 +17,10 @@ const isSignin = ref(false);
     </h2>
     <SigninComp/>
   </div>
+  <div class="container_login" v-if="isSignin">
+    <SideHeaderComp/>
+    <router-view/>
+  </div>
 </template>
 
 <style scoped lang="sass">
@@ -27,5 +32,7 @@ const isSignin = ref(false);
     margin-top: 30px
   h2
     letter-spacing: 2px
+.container_login
+  display: flex
 
 </style>
