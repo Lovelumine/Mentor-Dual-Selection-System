@@ -15,7 +15,7 @@ function sidemenuClicked(target: number, subTarget: string = null){
     case 1: {
       console.log('第一菜单');
       switch (subTarget) {
-        case '1-1': console.log('第一按钮'); break;
+        case '1-1': router.push('/student_list'); break;
         case '1-2': console.log('第二按钮'); break;
         case '1-3': console.log('第三按钮'); break;
         case '1-4': console.log('第四按钮'); break;

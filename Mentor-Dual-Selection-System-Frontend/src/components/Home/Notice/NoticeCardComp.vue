@@ -14,11 +14,16 @@ import {Paperclip} from "@element-plus/icons-vue";
       </span>
     </div>
     <hr/>
-    <span>
+    <div class="notice_content">
       本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。
-    </span>
-    <button class="button" @click="handleEdit(scope.$index, scope.row)">修改</button>
-    <button class="button" @click="handleDelete(scope.$index, scope.row)">删除</button>
+    </div>
+    <div class="annex">
+      <a href="#"><el-icon size="20"><Paperclip /></el-icon>下载文件.docx</a>
+      <div class="button_box">
+        <button class="button" @click="handleEdit(scope.$index, scope.row)">修改</button>
+        <button class="button" @click="handleDelete(scope.$index, scope.row)">删除</button>
+      </div>
+    </div>
   </div>
   <div class="card_box">
     <div class="notice_title_box">
@@ -30,11 +35,21 @@ import {Paperclip} from "@element-plus/icons-vue";
       </span>
     </div>
     <hr/>
-    <span>
+    <div class="notice_content">
       本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。
-    </span>
+    本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。
+    本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。
+    本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。
+    本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。
+    本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。
+    本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。
+    本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。
+      本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。
+      本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。
+
+    </div>
     <div class="annex">
-      <a href="#"><el-icon><Paperclip /></el-icon>下载文件.docx</a>
+      <a href="#"><el-icon size="20"><Paperclip /></el-icon>下载文件.docx</a>
       <div class="button_box">
         <button class="button" @click="handleEdit(scope.$index, scope.row)">修改</button>
         <button class="button" @click="handleDelete(scope.$index, scope.row)">删除</button>
@@ -60,8 +75,21 @@ import {Paperclip} from "@element-plus/icons-vue";
       margin: auto 0 0 auto
   hr
     margin: 10px auto
+  .notice_content
+    height: 100px
+    margin-bottom: 20px
+    display: -webkit-box
+    -webkit-line-clamp: 4
+    -webkit-box-orient: vertical
+    overflow: hidden
+    text-overflow: ellipsis
   .annex
     display: flex
+    a
+      text-decoration: none
+      display: inline-flex
+      align-items: center
+
     .button_box
       margin: 0 0 0 auto
       .button

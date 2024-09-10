@@ -14,6 +14,11 @@ export default {
             path: 'notice',
             name: 'notice',
             component: () => import('@/components/Home/Notice/NoticeComp.vue')
+        },
+        {
+            path: 'student_list',
+            name: 'studentList',
+            component: () => import('@/components/Home/StudentList/StudentListComp.vue')
         }
     ]
 }
