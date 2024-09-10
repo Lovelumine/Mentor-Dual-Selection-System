@@ -14,7 +14,7 @@ public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long uid;
 
     private String username;
 
@@ -22,17 +22,23 @@ public class User implements UserDetails {
 
     private String email;
 
-    @ManyToOne(fetch = FetchType.EAGER) // 多对一
-    @JoinColumn(name = "role_id")  //  users 表中 role_id 外键列
+    @Column(name = "full_name", nullable = false) // 用户全名字段
+    private String fullName;
+
+    @Column(name = "avatar_url") // 头像 URL 地址字段
+    private String avatarUrl;
+
+    @ManyToOne(fetch = FetchType.EAGER) // 多对一，用户和角色之间的关系
+    @JoinColumn(name = "role_id")  // users 表中 role_id 外键列，指向 roles 表
     private Role role;
 
     // Getters and Setters
     public Long getId() {
-        return id;
+        return uid;
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.uid = id;
     }
 
     @Override
@@ -61,6 +67,22 @@ public class User implements UserDetails {
         this.email = email;
     }
 
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
+
     public Role getRole() {
         return role;
     }
@@ -71,7 +93,7 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // 用户只有一个角色，不再使用流，而是直接返回角色的权限
+        // 用户只有一个角色，直接返回对应角色的权限
         return Collections.singleton(new SimpleGrantedAuthority(role.getRoleName()));
     }
 
