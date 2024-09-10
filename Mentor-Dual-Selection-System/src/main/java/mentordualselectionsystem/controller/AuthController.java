@@ -14,8 +14,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -50,7 +52,8 @@ public class AuthController {
                 new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        String token = jwtUtils.generateToken(authentication.getName());
+        User user = (User) authentication.getPrincipal(); // 获取用户信息
+        String token = jwtUtils.generateToken(Long.valueOf(user.getId().toString()));  // 使用用户的 uid 生成 token
 
         // 将返回值改为 {code: "", token: ""}
         Map<String, String> response = new HashMap<>();
@@ -79,5 +82,36 @@ public class AuthController {
         response.put("message", "用户注册成功");
 
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "获取用户信息", description = "根据 JWT 令牌获取用户的详细信息。")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "成功获取用户信息"),
+            @ApiResponse(responseCode = "401", description = "未授权")
+    })
+    @GetMapping("/me")
+    public ResponseEntity<?> getUserInfo(@RequestHeader("Authorization") String token) {
+        // 提取 token 并验证
+        String jwtToken = token.replace("Bearer ", "");
+        Long uid = Long.valueOf(jwtUtils.validateToken(jwtToken));  // 使用 uid 获取用户信息
+
+        // 根据 uid 获取用户信息
+        User user = userService.getUserByUid(uid);
+
+        // 构建返回的 JSON 格式，包含用户信息
+        Map<String, Object> responseBody = new HashMap<>();
+        responseBody.put("code", 200);  // 状态码
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("uid", user.getId());
+        data.put("username", user.getUsername());
+        data.put("email", user.getEmail());
+        data.put("fullName", user.getFullName());
+        data.put("avatarUrl", user.getAvatarUrl());
+        data.put("role", user.getRole().getRoleName());
+
+        responseBody.put("data", data);
+
+        return ResponseEntity.ok(responseBody);
     }
 }

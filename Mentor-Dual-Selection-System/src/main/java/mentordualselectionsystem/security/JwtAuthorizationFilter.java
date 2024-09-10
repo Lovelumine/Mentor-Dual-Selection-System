@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import mentordualselectionsystem.mysql.User;
 import mentordualselectionsystem.services.UserService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -34,16 +35,23 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
         }
 
         String token = header.replace("Bearer ", "");
-        String username = jwtUtils.validateToken(token);
 
-        if (username != null) {
-            // 从 UserService 中通过用户名获取 UserDetails
-            UserDetails userDetails = userService.loadUserByUsername(username);
+        // 使用 JwtUtils 从 token 中解析出 uid 而不是 username
+        Long uid = jwtUtils.validateTokenAndGetUid(token);
 
-            // 使用 UserDetails 而不是自定义 User 对象
+        if (uid != null) {
+            // 从 UserService 中通过 uid 获取自定义的 User 实体
+            User user = userService.getUserByUid(uid);
+
+            // 使用 UserDetails 进行授权
+            UserDetails userDetails = userService.loadUserByUsername(user.getUsername());
+
+            // 创建一个基于 UserDetails 的认证对象
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                     userDetails, null, userDetails.getAuthorities()
             );
+
+            // 将认证信息存储在 SecurityContext 中
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 

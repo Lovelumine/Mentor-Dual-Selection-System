@@ -23,12 +23,24 @@ public class UserService implements UserDetailsService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        // 用户只有一个角色，直接使用 user.getRole() 获取角色名称
+        // 返回 UserDetails 对象
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getUsername())
                 .password(user.getPassword())  // 数据库中的加密密码
                 .roles(user.getRole().getRoleName())  // 使用单个角色
                 .build();
+    }
+
+    // 通过用户名获取自定义 User 实体类
+    public User getUserByUsername(String username) throws UsernameNotFoundException {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    }
+
+    // 新增方法：通过 uid 查找用户
+    public User getUserByUid(Long uid) throws UsernameNotFoundException {
+        return userRepository.findById(uid)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with uid: " + uid));
     }
 
     public void saveUser(User user) {

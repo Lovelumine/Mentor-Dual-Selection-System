@@ -6,11 +6,14 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import mentordualselectionsystem.controller.LoginRequest;
+import mentordualselectionsystem.mysql.User;
+import mentordualselectionsystem.services.UserService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.io.IOException;
@@ -22,10 +25,12 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
+    private final UserService userService;
 
-    public JwtAuthenticationFilter(AuthenticationManager authenticationManager, JwtUtils jwtUtils) {
+    public JwtAuthenticationFilter(AuthenticationManager authenticationManager, JwtUtils jwtUtils, UserService userService) {
         this.authenticationManager = authenticationManager;
         this.jwtUtils = jwtUtils;
+        this.userService = userService;
         setFilterProcessesUrl("/api/auth/login");  // 设置登录端点
     }
 
@@ -50,17 +55,20 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
-        Object principal = authResult.getPrincipal();
         String username;
 
-        if (principal instanceof org.springframework.security.core.userdetails.User) {
-            username = ((org.springframework.security.core.userdetails.User) principal).getUsername();
+        if (authResult.getPrincipal() instanceof UserDetails) {
+            // 从认证结果中获取用户名
+            username = ((UserDetails) authResult.getPrincipal()).getUsername();
         } else {
-            // 处理 principal 作为 String 的情况（即用户名）
-            username = principal.toString();
+            username = authResult.getName();
         }
 
-        String token = jwtUtils.generateToken(username);  // 使用 JWT 工具类生成 token
+        // 通过 UserService 获取数据库中的用户详细信息
+        User user = userService.getUserByUsername(username);
+
+        // 使用用户的 uid 生成 JWT token
+        String token = jwtUtils.generateToken(Long.valueOf(user.getId().toString()));
 
         // 设置响应头和类型
         response.addHeader("Authorization", "Bearer " + token);
@@ -69,8 +77,11 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         // 构建返回的 JSON 格式，包含 code 和 data
         Map<String, Object> responseBody = new HashMap<>();
         responseBody.put("code", 200);  // 状态码
-        Map<String, String> data = new HashMap<>();
+
+        // 构建用户数据返回
+        Map<String, Object> data = new HashMap<>();
         data.put("token", token);  // 返回生成的 JWT 令牌
+        data.put("uid", user.getId());
         responseBody.put("data", data);
 
         // 输出 JSON 响应

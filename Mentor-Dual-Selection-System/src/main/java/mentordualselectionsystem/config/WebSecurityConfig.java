@@ -44,7 +44,7 @@ public class WebSecurityConfig {
                         .anyRequest().authenticated()
                 )
                 // 将自定义的 JWT 过滤器添加到过滤器链中
-                .addFilter(new JwtAuthenticationFilter(authenticationManager, jwtUtils))
+                .addFilter(new JwtAuthenticationFilter(authenticationManager, jwtUtils, userService))
                 .addFilter(new JwtAuthorizationFilter(authenticationManager, jwtUtils, userService))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)); // 使用无状态会话
 
