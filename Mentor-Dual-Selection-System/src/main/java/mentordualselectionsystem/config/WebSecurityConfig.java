@@ -16,6 +16,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @EnableWebSecurity
 @Configuration
@@ -65,5 +67,23 @@ public class WebSecurityConfig {
 
     public CustomAuthenticationProvider getCustomAuthenticationProvider() {
         return customAuthenticationProvider;
+    }
+
+    @Configuration
+    public static class WebConfig {
+
+        @Bean
+        public WebMvcConfigurer corsConfigurer() {
+            return new WebMvcConfigurer() {
+                @Override
+                public void addCorsMappings(CorsRegistry registry) {
+                    registry.addMapping("/**") // 允许所有路径
+                            .allowedOriginPatterns ("*") // 允许所有源
+                            .allowedMethods("*") // 允许的方法
+                            .allowedHeaders("*") // 允许的头
+                            .allowCredentials(true); // 允许发送Cookie
+                }
+            };
+        }
     }
 }
