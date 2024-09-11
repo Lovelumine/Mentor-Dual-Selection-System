@@ -1,68 +1,71 @@
 <script setup lang="ts">
-import {Avatar, Menu} from "@element-plus/icons-vue";
+
+import {Lock, Message, User} from "@element-plus/icons-vue";
 import {ref} from "vue";
 import {http} from "@/utils/http";
 
-const signinForm = ref({
+const registerForm = ref({
   username: '',
-  password: ''
+  password: '',
+  email: ''
 });
 
-function singinClicked(){
+function signupClicked(){
   console.log(signinForm.value);
   http({
-    url: '/auth/login',
+    url: '/auth/register',
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Accept': '*/*',
     },
-    data: signinForm.value
+    data: registerForm.value
   }).then(res => {
     console.log(res.status);
     if (res.status === 200){
-      localStorage.setItem('token', res.data.data.token);
-      window.location.reload();
-    } else if (res.status === 401) {
-      localStorage.removeItem('token');
-      alert('账号或密码错误');
+
     } else {
-      localStorage.removeItem('token');
-      alert('登录失败');
+      alert('注册失败');
     }
   }).catch((err) => {
     console.error(err);
-    alert('登录失败');
+    alert('注册失败');
   })
 }
-
 </script>
 
 <template>
   <div class="container">
     <h3>
-      账号登录
+      账号注册
     </h3>
-    <form @submit.prevent="singinClicked">
+    <form @submit.prevent="signupClicked">
       <div class="input_box">
-        <el-icon size="25" color="#005826"><Avatar /></el-icon>
-        <input placeholder="工号 / 学号" type="text" required v-model="signinForm.username" />
+        <el-icon size="25" color="#005826"><User /></el-icon>
+        <input placeholder="工号 / 学号" type="text" required v-model="registerForm.username" />
       </div>
       <div class="input_box">
-        <el-icon size="25" color="#005826"><Menu /></el-icon>
-        <input placeholder="密码" type="password" required v-model="signinForm.password" />
+        <el-icon size="25" color="#005826"><Message /></el-icon>
+        <input placeholder="电子邮箱" type="text" required v-model="registerForm.email" />
       </div>
-      <button type="submit" class="register_button">登录</button>
+      <div class="input_box">
+        <el-icon size="25" color="#005826"><Lock /></el-icon>
+        <input placeholder="密码" type="password" required v-model="registerForm.password" />
+      </div>
+      <button type="submit" class="register_button">注册</button>
     </form>
   </div>
 </template>
 
 <style scoped lang="sass">
 .container
-  width: 400px
+  width: 500px
   height: 300px
   position: relative
-  margin: 15vh auto 0 auto
+  margin: 30px auto 0 0
+  box-shadow: #005826 0 0 5px
+  padding: 20px
+  border-radius: 10px
   h3
     color: #005826
     text-align: center
@@ -92,7 +95,7 @@ function singinClicked(){
     font-size: 16px
     font-weight: bold
     letter-spacing: 5px
-    margin-top: 20px
+    margin: 0 auto
     position: absolute
     left: 50%
     transform: translate(-50%)

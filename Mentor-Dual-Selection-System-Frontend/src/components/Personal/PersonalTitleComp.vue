@@ -16,7 +16,7 @@ function backClicked(){
         <el-icon class="user_icon" size="24" color="#005826"><Back/></el-icon>
       </div>
     </a>
-    <h3>个人资料</h3>
+    <h3>个人中心</h3>
   </div>
 </template>
 
