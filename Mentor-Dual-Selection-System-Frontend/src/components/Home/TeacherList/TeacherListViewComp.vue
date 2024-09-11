@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import {onMounted, ref, watch} from "vue";
+import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
+const userStore = useUserInfoStore();
+
+const userPermi = ref(null);
 const tableData = [
   {
     name: '测试一',
@@ -36,6 +41,15 @@ const handleEdit = (index: number, row: User) => {
 const handleDelete = (index: number, row: User) => {
   console.log(index, row)
 }
+onMounted(() => {
+  if (userStore.userInfo){
+    userPermi.value = userStore.userInfo.role;
+  }
+})
+
+watch(() => userStore.userInfo, (newValue) => {
+  userPermi.value = newValue.role;
+})
 </script>
 
 <template>
@@ -48,7 +62,7 @@ const handleDelete = (index: number, row: User) => {
     <el-table-column prop="email" label="邮箱"  />
     <el-table-column prop="research_direction" label="研究方向" show-overflow-tooltip />
     <el-table-column prop="link" label="主页链接"  />
-    <el-table-column label="操作">
+    <el-table-column label="操作" v-if="userPermi === 'ADMIN'">
       <template #default="scope">
         <button class="button" @click="handleEdit(scope.$index, scope.row)">修改</button>
         <button class="button" @click="handleDelete(scope.$index, scope.row)">删除</button>

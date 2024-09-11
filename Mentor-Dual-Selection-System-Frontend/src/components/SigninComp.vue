@@ -11,18 +11,19 @@ const signinForm = ref({
 function singinClicked(){
   console.log(signinForm.value);
   http({
-    url: 'api/auth/login',
+    url: '/auth/login',
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Accept': '*/**',
+      'Accept': '*/*',
     },
     data: signinForm.value
   }).then(res => {
-    console.log(res);
-    if (res.data.code === 200){
+    console.log(res.status);
+    if (res.status === 200){
       localStorage.setItem('token', res.data.data.token);
-    } else if (res.data.code === 401) {
+      window.location.reload();
+    } else if (res.status === 401) {
       localStorage.removeItem('token');
       alert('账号或密码错误');
     } else {
@@ -31,6 +32,7 @@ function singinClicked(){
     }
   }).catch((err) => {
     console.error(err);
+    alert('登录失败');
   })
 }
 
