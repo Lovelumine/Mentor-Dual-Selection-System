@@ -1,10 +1,16 @@
 <script setup lang="ts">
 
 import SigninComp from "@/components/SigninComp.vue";
-import {ref} from "vue";
+import {onMounted, ref} from "vue";
 import SideMenuComp from "@/components/HeaderAndFooter/SideMenuComp.vue";
 
-const isSignin = ref(true);
+const isSignin = ref(false);
+
+onMounted(() => {
+  if (localStorage.getItem("token")) {
+    isSignin.value = true;
+  }
+})
 </script>
 
 <template>

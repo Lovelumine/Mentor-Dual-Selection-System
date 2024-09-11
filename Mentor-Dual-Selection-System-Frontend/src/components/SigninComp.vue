@@ -20,11 +20,14 @@ function singinClicked(){
     data: signinForm.value
   }).then(res => {
     console.log(res);
-    if (res.data.code === 0){
+    if (res.data.code === 200){
       localStorage.setItem('token', res.data.data.token);
+    } else if (res.data.code === 401) {
+      localStorage.removeItem('token');
+      alert('账号或密码错误');
     } else {
       localStorage.removeItem('token');
-      alert(res.data.msg);
+      alert('登录失败');
     }
   }).catch((err) => {
     console.error(err);
