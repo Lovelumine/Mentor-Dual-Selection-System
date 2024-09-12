@@ -1,13 +1,31 @@
 <script setup lang="ts">
 
 import {Paperclip} from "@element-plus/icons-vue";
+import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
+import {onMounted, ref, watch} from "vue";
+const userStore = useUserInfoStore();
+
+const userPermi = ref('');
+
+function changePermi(target: any) {
+  userPermi.value = target.role;
+}
+onMounted(() => {
+  if (userStore.userInfo){
+    userPermi.value = userStore.userInfo.role;
+  }
+})
+
+watch(() => userStore.userInfo, (newValue, oldValue) => {
+  changePermi(newValue);
+})
 </script>
 
 <template>
   <div class="card_box">
     <div class="notice_title_box">
       <h3 class="notice_title">
-        关于个性化培养方案的说明
+        关于个性化培养方案的说明{{userPermi}}
       </h3>
       <span class="release_date">
         发布时间：2024年9月10日
@@ -19,7 +37,7 @@ import {Paperclip} from "@element-plus/icons-vue";
     </div>
     <div class="annex">
       <a href="#"><el-icon size="20"><Paperclip /></el-icon>下载文件.docx</a>
-      <div class="button_box">
+      <div class="button_box" v-if="userPermi === 'ADMIN'">
         <button class="button" @click="handleEdit(scope.$index, scope.row)">修改</button>
         <button class="button" @click="handleDelete(scope.$index, scope.row)">删除</button>
       </div>
@@ -50,7 +68,7 @@ import {Paperclip} from "@element-plus/icons-vue";
     </div>
     <div class="annex">
       <a href="#"><el-icon size="20"><Paperclip /></el-icon>下载文件.docx</a>
-      <div class="button_box">
+      <div class="button_box" v-if="userPermi === 'ADMIN'">
         <button class="button" @click="handleEdit(scope.$index, scope.row)">修改</button>
         <button class="button" @click="handleDelete(scope.$index, scope.row)">删除</button>
       </div>

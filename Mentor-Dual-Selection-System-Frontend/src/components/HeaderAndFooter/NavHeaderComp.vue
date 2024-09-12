@@ -1,17 +1,24 @@
 <script setup lang="ts">
 import zhuzhanLogo from "@/assets/zhuzhanLOGO.png";
-import {User, Operation, ChatDotSquare} from "@element-plus/icons-vue";
+import {User, Operation, ChatDotSquare, CircleClose} from "@element-plus/icons-vue";
 import {onMounted, ref} from "vue";
 
 const iconProperty = ref({color: '', size: 0});
-const isLogin = ref(true);
+const isLogin = ref(false);
 onMounted(() => {
+  if (localStorage.getItem("token")) {
+    isLogin.value = true;
+  }
   iconProperty.value.color = '#fff';
   iconProperty.value.size = 24;
 })
 
 function logoClicked() {
   window.location.href = "https://www.sysu.edu.cn/";
+}
+function SignoutClicked() {
+  localStorage.removeItem("token");
+  window.location.reload();
 }
 </script>
 
@@ -36,6 +43,11 @@ function logoClicked() {
       <a href="/personal/" title="个人中心">
         <div class="user_icon_box">
           <el-icon class="user_icon" :size="iconProperty.size" :color="iconProperty.color"><User /></el-icon>
+        </div>
+      </a>
+      <a title="退出登录" @click="SignoutClicked">
+        <div class="user_icon_box">
+          <el-icon class="user_icon" :size="iconProperty.size" :color="iconProperty.color"><CircleClose /></el-icon>/
         </div>
       </a>
     </div>
