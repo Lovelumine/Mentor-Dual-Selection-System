@@ -16,6 +16,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -35,24 +36,32 @@ public class WebSecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
+        // JwtAuthenticationFilter 处理登录并生成 JWT
+        JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(authenticationManager, jwtUtils, userService);
+        jwtAuthenticationFilter.setFilterProcessesUrl("/api/auth/login");  // 配置登录路径
+
+        // JwtAuthorizationFilter 验证所有请求中的 JWT
+        JwtAuthorizationFilter jwtAuthorizationFilter = new JwtAuthorizationFilter(authenticationManager, jwtUtils, userService);  // 添加 AuthenticationManager 参数
+
         http
                 .csrf(AbstractHttpConfigurer::disable)  // 禁用 CSRF
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
                         // 允许这些端点公开访问
                         .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
-                        .requestMatchers("/api/user/me").permitAll()
+                        .requestMatchers("/api/user/me","/api/user/all").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/hello").permitAll()
                         // 其他任何请求都需要认证
                         .anyRequest().authenticated()
                 )
                 // 将自定义的 JWT 过滤器添加到过滤器链中
-                .addFilter(new JwtAuthenticationFilter(authenticationManager, jwtUtils, userService))
-                .addFilter(new JwtAuthorizationFilter(authenticationManager, jwtUtils, userService))
+                .addFilterBefore(jwtAuthorizationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)); // 使用无状态会话
 
         return http.build();
     }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -78,10 +87,10 @@ public class WebSecurityConfig {
                 @Override
                 public void addCorsMappings(CorsRegistry registry) {
                     registry.addMapping("/**") // 允许所有路径
-                            .allowedOriginPatterns ("*") // 允许所有源
+                            .allowedOriginPatterns("*") // 允许所有源
                             .allowedMethods("*") // 允许的方法
                             .allowedHeaders("*") // 允许的头
-                            .allowCredentials(true); // 允许发送Cookie
+                            .allowCredentials(true); // 允许发送 Cookie
                 }
             };
         }

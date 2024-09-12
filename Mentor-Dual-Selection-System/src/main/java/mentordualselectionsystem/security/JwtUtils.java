@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
@@ -20,16 +21,23 @@ public class JwtUtils {
         this.secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
     }
 
-    // JwtUtils.java
+    // 验证并解析 JWT token，返回 uid，如果签名无效或过期则抛出 SignatureException
     public Long validateTokenAndGetUid(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(secretKey)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-        return Long.parseLong(claims.getSubject());  // 解析并返回 uid
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(secretKey)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            return Long.parseLong(claims.getSubject());  // 解析并返回 uid
+        } catch (SignatureException e) {
+            // 捕获签名不匹配的异常并重新抛出以便过滤器或控制器捕获
+            throw new SignatureException("JWT签名不匹配或无效", e);
+        } catch (Exception e) {
+            // 捕获其他异常
+            throw new RuntimeException("JWT解析失败: " + e.getMessage(), e);
+        }
     }
-
 
     // 生成 JWT token，传入用户的 uid
     public String generateToken(Long uid) {

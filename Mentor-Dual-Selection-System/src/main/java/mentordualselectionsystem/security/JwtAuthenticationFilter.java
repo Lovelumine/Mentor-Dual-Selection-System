@@ -5,6 +5,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import io.jsonwebtoken.security.SignatureException;
 import mentordualselectionsystem.controller.LoginRequest;
 import mentordualselectionsystem.mysql.User;
 import mentordualselectionsystem.services.UserService;
@@ -55,41 +56,49 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
-        String username;
+        try {
+            String username;
 
-        if (authResult.getPrincipal() instanceof UserDetails) {
-            // 从认证结果中获取用户名
-            username = ((UserDetails) authResult.getPrincipal()).getUsername();
-        } else {
-            username = authResult.getName();
+            if (authResult.getPrincipal() instanceof UserDetails) {
+                // 从认证结果中获取用户名
+                username = ((UserDetails) authResult.getPrincipal()).getUsername();
+            } else {
+                username = authResult.getName();
+            }
+
+            // 通过 UserService 获取数据库中的用户详细信息
+            User user = userService.getUserByUsername(username);
+
+            // 使用用户的 uid 生成 JWT token
+            String token = jwtUtils.generateToken(Long.valueOf(user.getId().toString()));
+
+            // 设置响应头和类型
+            response.addHeader("Authorization", "Bearer " + token);
+            response.setContentType("application/json;charset=UTF-8");
+
+            // 构建返回的 JSON 格式，包含 code 和 data
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("code", 200);  // 状态码
+
+            // 构建用户数据返回
+            Map<String, Object> data = new HashMap<>();
+            data.put("token", token);  // 返回生成的 JWT 令牌
+            data.put("uid", user.getId());
+            responseBody.put("data", data);
+
+            // 输出 JSON 响应
+            ObjectMapper objectMapper = new ObjectMapper();
+            response.getWriter().write(objectMapper.writeValueAsString(responseBody));
+
+            // 输出 token 以便调试
+            System.out.println("生成的令牌: " + token);
+        } catch (SignatureException e) {
+            // 捕获 JWT 签名异常并返回 401 错误响应
+            buildErrorResponse(response, 401, "token无效或已过期");
+        } catch (Exception e) {
+            // 捕获其他可能的异常，返回通用错误信息
+            buildErrorResponse(response, 500, "生成 JWT 过程中出现错误");
         }
-
-        // 通过 UserService 获取数据库中的用户详细信息
-        User user = userService.getUserByUsername(username);
-
-        // 使用用户的 uid 生成 JWT token
-        String token = jwtUtils.generateToken(Long.valueOf(user.getId().toString()));
-
-        // 设置响应头和类型
-        response.addHeader("Authorization", "Bearer " + token);
-        response.setContentType("application/json;charset=UTF-8");
-
-        // 构建返回的 JSON 格式，包含 code 和 data
-        Map<String, Object> responseBody = new HashMap<>();
-        responseBody.put("code", 200);  // 状态码
-
-        // 构建用户数据返回
-        Map<String, Object> data = new HashMap<>();
-        data.put("token", token);  // 返回生成的 JWT 令牌
-        data.put("uid", user.getId());
-        responseBody.put("data", data);
-
-        // 输出 JSON 响应
-        ObjectMapper objectMapper = new ObjectMapper();
-        response.getWriter().write(objectMapper.writeValueAsString(responseBody));
-
-        // 输出 token 以便调试
-        System.out.println("生成的令牌: " + token);
     }
 
     @Override

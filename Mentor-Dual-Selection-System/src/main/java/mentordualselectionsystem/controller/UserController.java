@@ -3,34 +3,37 @@ package mentordualselectionsystem.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import mentordualselectionsystem.mysql.User;
+import mentordualselectionsystem.repositories.UserRepository;
 import mentordualselectionsystem.security.JwtUtils;
 import mentordualselectionsystem.services.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.security.SignatureException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/user")
-@SecurityRequirement(name = "bearerAuth")  // 全局使用 bearerAuth 安全配置
 public class UserController {
 
     private final UserService userService;
     private final JwtUtils jwtUtils;
+    private final UserRepository userRepository;
 
-    public UserController(UserService userService, JwtUtils jwtUtils) {
+    @Autowired
+    public UserController(UserService userService, JwtUtils jwtUtils, UserRepository userRepository) {
         this.userService = userService;
         this.jwtUtils = jwtUtils;
+        this.userRepository = userRepository;
     }
 
-    @Operation(summary = "获取用户信息", description = "根据 JWT 令牌获取用户的详细信息。")
+    @Operation(summary = "获取当前用户信息", description = "根据 JWT 令牌获取当前用户的详细信息。")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "成功获取用户信息"),
             @ApiResponse(responseCode = "401", description = "未授权"),
@@ -77,6 +80,65 @@ public class UserController {
 
         } catch (Exception e) {
             System.err.println("Error while retrieving user info: " + e.getMessage());
+            return buildErrorResponse(401, "token无效或已过期");
+        }
+    }
+
+    @Operation(
+            summary = "获取所有用户信息",
+            description = "验证用户并返回数据库中的所有用户信息"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "成功返回所有用户信息"),
+            @ApiResponse(responseCode = "401", description = "未授权，token 无效或缺失"),
+            @ApiResponse(responseCode = "403", description = "Forbidden")
+    })
+    @PostMapping("/all")
+    public ResponseEntity<?> getAllUsers() {
+        try {
+            // 从上下文中获取当前用户的认证信息
+            String token = SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
+
+            // 提取 token 并验证
+            String jwtToken = token.replace("Bearer ", "");
+            System.out.println("Received token: " + jwtToken);  // 控制台输出接收到的 token
+
+            // 验证 token 并获取用户 ID
+            Long userId = jwtUtils.validateTokenAndGetUid(jwtToken);
+            System.out.println("Validated token, extracted uid: " + userId);
+
+            // 检查用户是否存在
+            User authenticatedUser = userService.getUserByUid(userId);
+
+            // 获取所有用户
+            List<User> users = userRepository.findAll();
+
+            // 构建返回的 JSON 格式，包含用户信息
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("code", 200);  // 状态码
+
+            // 将用户列表转换为返回格式
+            List<Map<String, Object>> userList = users.stream().map(user -> {
+                Map<String, Object> userMap = new HashMap<>();
+                userMap.put("uid", user.getId());
+                userMap.put("username", user.getUsername());
+                userMap.put("email", user.getEmail());
+                userMap.put("fullName", user.getFullName());
+                userMap.put("avatarUrl", user.getAvatarUrl());
+                userMap.put("role", user.getRole().getRoleName());
+                return userMap;
+            }).toList();
+
+            responseBody.put("data", userList);
+
+            return ResponseEntity.ok(responseBody);
+
+        } catch (NumberFormatException e) {
+            System.err.println("Invalid token format, unable to extract uid: " + e.getMessage());
+            return buildErrorResponse(401, "token无效或已过期");
+
+        } catch (Exception e) {
+            System.err.println("Error while retrieving users: " + e.getMessage());
             return buildErrorResponse(401, "token无效或已过期");
         }
     }
