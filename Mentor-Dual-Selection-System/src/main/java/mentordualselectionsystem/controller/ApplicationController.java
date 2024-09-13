@@ -1,6 +1,7 @@
 package mentordualselectionsystem.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import mentordualselectionsystem.mysql.Application;
@@ -33,7 +34,14 @@ public class ApplicationController {
         this.jwtUtils = jwtUtils;
     }
 
-    @Operation(summary = "提交学生申请", description = "学生通过 token 提交申请，申请理由必须提供。")
+    @Operation(
+            summary = "提交学生申请",
+            description = "学生通过 token 提交申请，提供申请理由以及导师 ID。该接口仅供学生用户使用，系统会通过 JWT Token 确认用户身份。",
+            parameters = {
+                    @Parameter(name = "mentorId", description = "导师的ID", required = true),
+                    @Parameter(name = "reason", description = "申请理由", required = true)
+            }
+    )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "成功提交申请"),
             @ApiResponse(responseCode = "400", description = "参数无效或缺失"),
@@ -44,19 +52,17 @@ public class ApplicationController {
     public ResponseEntity<Map<String, Object>> submitApplication(@RequestParam Long mentorId,
                                                                  @RequestParam String reason) {
         try {
-            // 从上下文中获取当前用户的认证信息
+            // 获取当前用户 token
             String token = SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
-
-            // 提取 token 并验证
             String jwtToken = token.replace("Bearer ", "");
 
-            // 从token中解析出学生ID
+            // 通过 token 获取学生ID
             Long studentId = jwtUtils.validateTokenAndGetUid(jwtToken);
 
             // 提交申请
             Application application = applicationService.submitApplication(studentId, mentorId, reason);
 
-            // 构建标准化返回
+            // 构建返回结果
             return buildSuccessResponse(200, application);
 
         } catch (NumberFormatException e) {
@@ -66,7 +72,15 @@ public class ApplicationController {
         }
     }
 
-    @Operation(summary = "导师审批学生申请", description = "导师可以通过或拒绝学生的申请，拒绝时可以选择填写拒绝理由。")
+    @Operation(
+            summary = "导师审批学生申请",
+            description = "导师通过或拒绝学生的申请，导师可以选择是否填写拒绝理由。",
+            parameters = {
+                    @Parameter(name = "applicationId", description = "申请的ID", required = true),
+                    @Parameter(name = "approved", description = "是否同意", required = true),
+                    @Parameter(name = "rejectionReason", description = "拒绝理由，仅在拒绝时提供", required = false)
+            }
+    )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "成功审批申请"),
             @ApiResponse(responseCode = "400", description = "申请不存在或审批无效"),
@@ -78,18 +92,17 @@ public class ApplicationController {
                                                                   @RequestParam boolean approved,
                                                                   @RequestParam(required = false) String rejectionReason) {
         try {
-            // 从上下文中获取当前用户的认证信息
+            // 获取当前用户 token
             String token = SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
-
-            // 提取 token 并验证
             String jwtToken = token.replace("Bearer ", "");
 
-            jwtUtils.validateTokenAndGetUid(jwtToken); // 验证token
+            // 验证 token
+            jwtUtils.validateTokenAndGetUid(jwtToken);
 
             // 审批申请
             Application application = applicationService.approveApplication(applicationId, approved, rejectionReason);
 
-            // 构建标准化返回
+            // 构建返回结果
             return buildSuccessResponse(200, application);
 
         } catch (NumberFormatException e) {
@@ -99,7 +112,13 @@ public class ApplicationController {
         }
     }
 
-    @Operation(summary = "获取导师待审批申请或管理员获取所有申请", description = "根据角色获取相关的申请信息。")
+    @Operation(
+            summary = "获取申请信息",
+            description = "根据当前用户的角色获取相关的申请信息。管理员可以获取所有申请信息，导师可以获取与自己相关的申请，学生可以获取自己提交的申请。",
+            parameters = {
+                    @Parameter(name = "Authorization", description = "JWT Token，Bearer token", required = true)
+            }
+    )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "成功获取申请列表"),
             @ApiResponse(responseCode = "401", description = "token无效或已过期"),
@@ -108,36 +127,27 @@ public class ApplicationController {
     @GetMapping("/pending")
     public ResponseEntity<Map<String, Object>> getPendingApplications() {
         try {
-            // 从上下文中获取当前用户的认证信息
+            // 获取当前用户 token
             String token = SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
-
-            // 提取 token 并验证
             String jwtToken = token.replace("Bearer ", "");
             Long userId = jwtUtils.validateTokenAndGetUid(jwtToken);  // 验证token并获取用户ID
 
             User currentUser = userService.getUserByUid(userId);  // 获取当前用户
             List<Application> applications;
-            System.out.println("当前用户"+currentUser);
 
             // 判断角色类型：管理员、导师或学生
             String roleName = currentUser.getRole().getRoleName();
             if ("ADMIN".equals(roleName)) {
-                // 管理员获取所有申请
-                System.out.println("管理员获取所有申请");
                 applications = applicationService.getAllApplications();
             } else if ("TEACHER".equals(roleName)) {
-                // 导师获取与自己相关的所有申请
-                System.out.println("导师获取与自己相关的所有申请");
                 applications = applicationService.getApplicationsByMentorId(currentUser.getId());
             } else if ("STUDENT".equals(roleName)) {
-                // 学生获取自己提交的所有申请
-                System.out.println("学生获取与自己相关的所有申请");
                 applications = applicationService.getApplicationsByStudentId(currentUser.getId());
             } else {
                 return buildErrorResponse(403, "无权访问申请信息");
             }
 
-            // 构建标准化返回
+            // 构建返回结果
             return buildSuccessResponse(200, applications);
 
         } catch (NumberFormatException e) {
@@ -147,12 +157,10 @@ public class ApplicationController {
         }
     }
 
-
     // 自定义错误响应格式
     private ResponseEntity<Map<String, Object>> buildErrorResponse(int code, String message) {
         Map<String, Object> responseBody = new HashMap<>();
         responseBody.put("code", code);  // 状态码
-
         Map<String, String> errorData = new HashMap<>();
         errorData.put("error", message);
         responseBody.put("data", errorData);
