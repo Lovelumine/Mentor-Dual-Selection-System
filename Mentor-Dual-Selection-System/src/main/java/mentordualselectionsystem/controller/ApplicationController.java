@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import mentordualselectionsystem.mysql.Application;
+import mentordualselectionsystem.mysql.User;
 import mentordualselectionsystem.services.ApplicationService;
 import mentordualselectionsystem.services.UserService;
 import mentordualselectionsystem.security.JwtUtils;
@@ -40,9 +41,8 @@ public class ApplicationController {
             @ApiResponse(responseCode = "500", description = "服务器内部错误")
     })
     @PostMapping("/submit")
-    public ResponseEntity<?> submitApplication(
-                                               @RequestParam Long mentorId,
-                                               @RequestParam String reason) {
+    public ResponseEntity<Map<String, Object>> submitApplication(@RequestParam Long mentorId,
+                                                                 @RequestParam String reason) {
         try {
             // 从上下文中获取当前用户的认证信息
             String token = SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
@@ -55,7 +55,9 @@ public class ApplicationController {
 
             // 提交申请
             Application application = applicationService.submitApplication(studentId, mentorId, reason);
-            return ResponseEntity.ok(application);
+
+            // 构建标准化返回
+            return buildSuccessResponse(200, application);
 
         } catch (NumberFormatException e) {
             return buildErrorResponse(401, "token无效或已过期");
@@ -72,9 +74,9 @@ public class ApplicationController {
             @ApiResponse(responseCode = "500", description = "服务器内部错误")
     })
     @PostMapping("/approve")
-    public ResponseEntity<?> approveApplication(@RequestParam Long applicationId,
-                                                @RequestParam boolean approved,
-                                                @RequestParam(required = false) String rejectionReason) {
+    public ResponseEntity<Map<String, Object>> approveApplication(@RequestParam Long applicationId,
+                                                                  @RequestParam boolean approved,
+                                                                  @RequestParam(required = false) String rejectionReason) {
         try {
             // 从上下文中获取当前用户的认证信息
             String token = SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
@@ -86,7 +88,9 @@ public class ApplicationController {
 
             // 审批申请
             Application application = applicationService.approveApplication(applicationId, approved, rejectionReason);
-            return ResponseEntity.ok(application);
+
+            // 构建标准化返回
+            return buildSuccessResponse(200, application);
 
         } catch (NumberFormatException e) {
             return buildErrorResponse(401, "token无效或已过期");
@@ -95,22 +99,46 @@ public class ApplicationController {
         }
     }
 
-    @Operation(summary = "获取导师待审批申请", description = "获取某个导师所有状态为待审批的学生申请。")
+    @Operation(summary = "获取导师待审批申请或管理员获取所有申请", description = "根据角色获取相关的申请信息。")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "成功获取申请列表"),
-            @ApiResponse(responseCode = "404", description = "导师不存在"),
+            @ApiResponse(responseCode = "401", description = "token无效或已过期"),
             @ApiResponse(responseCode = "500", description = "服务器内部错误")
     })
-    @GetMapping("/mentor/{mentorId}/pending")
-    public ResponseEntity<?> getPendingApplications(@RequestHeader("Authorization") String token,
-                                                    @PathVariable Long mentorId) {
+    @GetMapping("/pending")
+    public ResponseEntity<Map<String, Object>> getPendingApplications() {
         try {
-            // 验证token
-            String jwtToken = token.replace("Bearer ", "");
-            jwtUtils.validateTokenAndGetUid(jwtToken); // 验证token
+            // 从上下文中获取当前用户的认证信息
+            String token = SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
 
-            List<Application> applications = applicationService.getPendingApplicationsForMentor(mentorId);
-            return ResponseEntity.ok(applications);
+            // 提取 token 并验证
+            String jwtToken = token.replace("Bearer ", "");
+            Long userId = jwtUtils.validateTokenAndGetUid(jwtToken);  // 验证token并获取用户ID
+
+            User currentUser = userService.getUserByUid(userId);  // 获取当前用户
+            List<Application> applications;
+            System.out.println("当前用户"+currentUser);
+
+            // 判断角色类型：管理员、导师或学生
+            String roleName = currentUser.getRole().getRoleName();
+            if ("ADMIN".equals(roleName)) {
+                // 管理员获取所有申请
+                System.out.println("管理员获取所有申请");
+                applications = applicationService.getAllApplications();
+            } else if ("TEACHER".equals(roleName)) {
+                // 导师获取与自己相关的所有申请
+                System.out.println("导师获取与自己相关的所有申请");
+                applications = applicationService.getApplicationsByMentorId(currentUser.getId());
+            } else if ("STUDENT".equals(roleName)) {
+                // 学生获取自己提交的所有申请
+                System.out.println("学生获取与自己相关的所有申请");
+                applications = applicationService.getApplicationsByStudentId(currentUser.getId());
+            } else {
+                return buildErrorResponse(403, "无权访问申请信息");
+            }
+
+            // 构建标准化返回
+            return buildSuccessResponse(200, applications);
 
         } catch (NumberFormatException e) {
             return buildErrorResponse(401, "token无效或已过期");
@@ -118,11 +146,12 @@ public class ApplicationController {
             return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
         }
     }
+
 
     // 自定义错误响应格式
     private ResponseEntity<Map<String, Object>> buildErrorResponse(int code, String message) {
         Map<String, Object> responseBody = new HashMap<>();
-        responseBody.put("code", code);  // 错误状态码
+        responseBody.put("code", code);  // 状态码
 
         Map<String, String> errorData = new HashMap<>();
         errorData.put("error", message);
@@ -130,5 +159,14 @@ public class ApplicationController {
 
         return ResponseEntity.status(code == 401 ? HttpStatus.UNAUTHORIZED : HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(responseBody);
+    }
+
+    // 自定义成功响应格式
+    private <T> ResponseEntity<Map<String, Object>> buildSuccessResponse(int code, T data) {
+        Map<String, Object> responseBody = new HashMap<>();
+        responseBody.put("code", code);  // 状态码
+        responseBody.put("data", data);  // 返回的数据
+
+        return ResponseEntity.status(HttpStatus.OK).body(responseBody);
     }
 }

@@ -14,4 +14,9 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     List<Application> findByStudentIdAndStatus(Long studentId, String status);
 
 
+    // 根据导师ID查询所有申请（不管状态）
+    List<Application> findByMentorId(Long mentorId);
+
+    // 根据学生ID查询所有申请（不管状态）
+    List<Application> findByStudentId(Long studentId);
 }

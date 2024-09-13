@@ -110,11 +110,20 @@ public class ApplicationService {
         return applicationRepository.save(application);
     }
 
-    // 获取导师的待审批申请
-    public List<Application> getPendingApplicationsForMentor(Long mentorId) {
-        return applicationRepository.findByMentorIdAndStatus(mentorId, "PENDING");
+    // 管理员获取所有申请
+    public List<Application> getAllApplications() {
+        return applicationRepository.findAll();
     }
 
+    // 导师获取与自己相关的所有申请（不管状态）
+    public List<Application> getApplicationsByMentorId(Long mentorId) {
+        return applicationRepository.findByMentorId(mentorId);
+    }
+
+    // 学生获取自己提交的所有申请（不管状态）
+    public List<Application> getApplicationsByStudentId(Long studentId) {
+        return applicationRepository.findByStudentId(studentId);
+    }
     // 获取导师已接受的学生数量
     private int getAcceptedStudentCount(Long mentorId) {
         List<User> students = userRepository.findByMentorId(mentorId);
