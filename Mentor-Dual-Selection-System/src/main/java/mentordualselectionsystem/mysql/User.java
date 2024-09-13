@@ -1,6 +1,7 @@
 package mentordualselectionsystem.mysql;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.ColumnDefault;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -31,6 +32,29 @@ public class User implements UserDetails {
     @ManyToOne(fetch = FetchType.EAGER) // 多对一，用户和角色之间的关系
     @JoinColumn(name = "role_id")  // users 表中 role_id 外键列，指向 roles 表
     private Role role;
+
+    @ColumnDefault("0")
+    @Column(name = "accepted_students")
+    private Integer acceptedStudents;
+
+    @Column(name = "mentor_id")
+    private Long mentorId;
+
+    public Long getMentorId() {
+        return mentorId;
+    }
+
+    public void setMentorId(Long mentorId) {
+        this.mentorId = mentorId;
+    }
+
+    public Integer getAcceptedStudents() {
+        return acceptedStudents;
+    }
+
+    public void setAcceptedStudents(Integer acceptedStudents) {
+        this.acceptedStudents = acceptedStudents;
+    }
 
     // Getters and Setters
     public Long getId() {
