@@ -12,4 +12,6 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
 
     // 根据学生ID和申请状态查询
     List<Application> findByStudentIdAndStatus(Long studentId, String status);
+
+
 }

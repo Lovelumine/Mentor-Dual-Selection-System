@@ -24,19 +24,38 @@ public class ApplicationService {
 
     // 学生提交申请
     public Application submitApplication(Long studentId, Long mentorId, String reason) {
+        // 检查学生是否存在
         User student = userRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("学生不存在"));
+
+        // 检查用户身份是否为学生
+        if (!"STUDENT".equals(student.getRole().getRoleName())) {
+            throw new RuntimeException("只有学生可以提交导师申请");
+        }
+
+        // 检查是否存在待审批的申请
+        List<Application> pendingApplications = applicationRepository.findByStudentIdAndStatus(studentId, "PENDING");
+        if (!pendingApplications.isEmpty()) {
+            throw new RuntimeException("你已经有一个等待审批的申请，请等待导师处理后再提交新的申请");
+        }
+
+        // 检查导师是否存在
         User mentor = userRepository.findById(mentorId)
                 .orElseThrow(() -> new RuntimeException("导师不存在"));
 
+        // 检查申请对象是否为导师
+        if (!"TEACHER".equals(mentor.getRole().getRoleName())) {
+            throw new RuntimeException("只有导师才可以接受申请");
+        }
+
         // 检查导师是否已经有 3 名学生
         if (getAcceptedStudentCount(mentor.getId()) >= 3) {
-            throw new RuntimeException("导师已经有3名学生");
+            throw new RuntimeException("导师已经有3名学生，无法接受更多学生");
         }
 
         // 检查学生是否已经有导师
         if (student.getMentorId() != null) {
-            throw new RuntimeException("学生已经选择了导师，无法再次申请");
+            throw new RuntimeException("你已经选择了导师，无法再次申请");
         }
 
         // 创建申请
@@ -61,7 +80,7 @@ public class ApplicationService {
                 .orElseThrow(() -> new RuntimeException("学生不存在"));
 
         if (approved) {
-            // 检查导师是否有超过 3 名学生
+            // 检查导师是否已经有 3 名学生
             if (getAcceptedStudentCount(mentor.getId()) >= 3) {
                 throw new RuntimeException("导师已经有3名学生");
             }
