@@ -4,7 +4,6 @@ import {onMounted, ref, watch} from "vue";
 const userStore = useUserInfoStore();
 import {useRouter} from "vue-router";
 import PersonalTitleComp from "@/components/Personal/PersonalTitleComp.vue";
-import SignupComp from "@/components/SignupComp.vue";
 const router = useRouter();
 
 const userInfoComp = ref({

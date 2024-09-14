@@ -4,9 +4,9 @@
 
 <template>
   <div class="search_box">
-    <span class="search_item">学生姓名：<input type="text" placeholder="请输入"/></span>
-    <span class="search_item">学号：<input type="text" placeholder="请输入"/></span>
-    <span class="search_item">
+    <span class="input_item">学生姓名：<input type="text" placeholder="请输入"/></span>
+    <span class="input_item">学号：<input type="text" placeholder="请输入"/></span>
+    <span class="input_item">
       <label for="is_select_teacher">选择导师状态：</label>
       <select id="is_select_teacher">
         <option value="all">全部</option>
@@ -15,7 +15,7 @@
         <option value="passed">已通过</option>
       </select>
     </span>
-    <span class="search_item">
+    <span class="input_item">
       <label for="is_teacher_score">导师评分状态：</label>
       <select id="is_teacher_score">
         <option value="all">全部</option>
@@ -31,7 +31,7 @@
 <style scoped lang="sass">
 .search_box
   margin: 20px auto
-.search_item
+.input_item
   font-size: 16px
   margin-left: 20px
   input

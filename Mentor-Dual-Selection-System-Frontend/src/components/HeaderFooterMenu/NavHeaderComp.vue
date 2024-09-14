@@ -1,16 +1,24 @@
 <script setup lang="ts">
 import zhuzhanLogo from "@/assets/zhuzhanLOGO.png";
-import {User, Operation, ChatDotSquare, CircleClose} from "@element-plus/icons-vue";
-import {onMounted, ref} from "vue";
+import {User, Operation, ChatDotSquare, CircleClose, Finished, Place} from "@element-plus/icons-vue";
+import {onMounted, ref, watch} from "vue";
+import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
+const userStore = useUserInfoStore();
 
 const iconProperty = ref({color: '', size: 0});
 const isLogin = ref(false);
+const userRole = ref('');
 onMounted(() => {
   if (localStorage.getItem("token")) {
     isLogin.value = true;
   }
   iconProperty.value.color = '#fff';
   iconProperty.value.size = 24;
+})
+
+watch(() => userStore.userInfo, (newValue) => {
+  userRole.value = newValue.role;
+  console.log(userRole.value);
 })
 
 function logoClicked() {
@@ -35,9 +43,19 @@ function SignoutClicked() {
           <el-icon class="user_icon" :size="iconProperty.size" :color="iconProperty.color"><ChatDotSquare /></el-icon>
         </div>
       </a>
-      <a href="/rights_management" title="权限管理">
+      <a href="/rights_management" title="权限管理" v-if="userRole === 'ADMIN'">
         <div class="user_icon_box">
           <el-icon class="user_icon" :size="iconProperty.size" :color="iconProperty.color"><Operation /></el-icon>
+        </div>
+      </a>
+      <a href="/select_teacher" title="选择导师" v-if="userRole === 'STUDENT'">
+        <div class="user_icon_box">
+          <el-icon class="user_icon" :size="iconProperty.size" :color="iconProperty.color"><Finished /></el-icon>
+        </div>
+      </a>
+      <a href="/select_student" title="选择学生" v-if="userRole === 'TEACHER' || userRole === 'ADMIN'" >
+        <div class="user_icon_box">
+          <el-icon class="user_icon" :size="iconProperty.size" :color="iconProperty.color"><Place /></el-icon>
         </div>
       </a>
       <a href="/personal/" title="个人中心">

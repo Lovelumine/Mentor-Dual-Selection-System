@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
-import NavHeader from "@/components/HeaderAndFooter/NavHeaderComp.vue";
-import Footer from "@/components/HeaderAndFooter/FooterComp.vue";
+import NavHeader from "@/components/HeaderFooterMenu/NavHeaderComp.vue";
+import Footer from "@/components/HeaderFooterMenu/FooterComp.vue";
 </script>
 
 <template>
