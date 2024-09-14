@@ -61,12 +61,7 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "用户注册", description = "注册新用户。")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "注册成功"),
-            @ApiResponse(responseCode = "400", description = "输入数据无效")
-    })
-    @PostMapping("/register")
+
     public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
         User user = new User();
         user.setUsername(registerRequest.getUsername());

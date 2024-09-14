@@ -1,6 +1,8 @@
 package mentordualselectionsystem.mysql;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import mentordualselectionsystem.mysql.Role;
 import org.hibernate.annotations.ColumnDefault;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -116,8 +118,8 @@ public class User implements UserDetails {
     }
 
     @Override
+    @JsonIgnore  // 忽略 authorities 字段
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // 用户只有一个角色，直接返回对应角色的权限
         return Collections.singleton(new SimpleGrantedAuthority(role.getRoleName()));
     }
 
