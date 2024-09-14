@@ -2,7 +2,7 @@
 
 import SigninComp from "@/components/SigninComp.vue";
 import {onMounted, ref} from "vue";
-import SideMenuComp from "@/components/HeaderAndFooter/SideMenuComp.vue";
+import SideMenuComp from "@/components/HeaderFooterMenu/SideMenuComp.vue";
 import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
 const userStore = useUserInfoStore();
 
