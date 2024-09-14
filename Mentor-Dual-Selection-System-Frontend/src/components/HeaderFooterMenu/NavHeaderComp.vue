@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import zhuzhanLogo from "@/assets/zhuzhanLOGO.png";
-import {User, Operation, ChatDotSquare, CircleClose, Finished, Place} from "@element-plus/icons-vue";
+import {User, Operation, ChatDotSquare, CircleClose, Finished, Place, Connection} from "@element-plus/icons-vue";
 import {onMounted, ref, watch} from "vue";
 import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
 const userStore = useUserInfoStore();
@@ -51,6 +51,11 @@ function SignoutClicked() {
       <a href="/select_teacher" title="选择导师" v-if="userRole === 'STUDENT'">
         <div class="user_icon_box">
           <el-icon class="user_icon" :size="iconProperty.size" :color="iconProperty.color"><Finished /></el-icon>
+        </div>
+      </a>
+      <a href="/relations" title="师生关系">
+        <div class="user_icon_box">
+          <el-icon class="user_icon" :size="iconProperty.size" :color="iconProperty.color"><Connection /></el-icon>
         </div>
       </a>
       <a href="/select_student" title="选择学生" v-if="userRole === 'TEACHER' || userRole === 'ADMIN'" >
