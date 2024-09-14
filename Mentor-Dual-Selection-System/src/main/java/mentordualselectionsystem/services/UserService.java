@@ -1,6 +1,8 @@
 package mentordualselectionsystem.services;
 
+import mentordualselectionsystem.mysql.Role;
 import mentordualselectionsystem.mysql.User;
+import mentordualselectionsystem.repositories.RoleRepository;
 import mentordualselectionsystem.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,6 +17,9 @@ public class UserService implements UserDetailsService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private RoleRepository roleRepository;
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -37,15 +42,24 @@ public class UserService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
-    // 新增方法：通过 uid 查找用户
+    // 通过 uid 查找用户
     public User getUserByUid(Long uid) throws UsernameNotFoundException {
         return userRepository.findById(uid)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with uid: " + uid));
     }
 
+    // 保存用户信息（包括加密密码）
     public void saveUser(User user) {
-        // 在保存用户时，先对密码进行加密
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        // 对密码进行加密，如果是新用户或密码被修改
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+        }
         userRepository.save(user);
+    }
+
+    // 新增方法：根据角色名称获取 Role 实体
+    public Role getRoleByName(String roleName) {
+        return roleRepository.findByRoleName(roleName)
+                .orElseThrow(() -> new IllegalArgumentException("角色未找到: " + roleName));
     }
 }

@@ -48,7 +48,7 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
                         // 允许这些端点公开访问
                         .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
-                        .requestMatchers("/api/user/me","/api/user/all","/api/application/**").permitAll()
+                        .requestMatchers("/api/user/me","/api/user/all","/api/user/update","/api/application/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html","/doc.html").permitAll()
                         .requestMatchers("/hello").permitAll()
                         // 其他任何请求都需要认证
