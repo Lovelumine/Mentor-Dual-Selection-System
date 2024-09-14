@@ -19,6 +19,16 @@ export default {
             path: 'student_list',
             name: 'studentList',
             component: () => import('@/components/Home/StudentList/StudentListComp.vue')
+        },
+        {
+            path: 'select_teacher',
+            name: 'selectTeacher',
+            component: () => import('@/components/Home/SelectTeacher.vue')
+        },
+        {
+            path: 'select_student',
+            name: 'selectStudent',
+            component: () => import('@/components/Home/SelectStudent.vue')
         }
     ]
 }
