@@ -155,6 +155,12 @@ public class UserController {
                 // 更新现有用户
                 User existingUser = userRepository.findById(uid)
                         .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
+
+                // 如果用户名已更改，检查新用户名是否已存在
+                if (!existingUser.getUsername().equals(username) && userRepository.findByUsername(username).isPresent()) {
+                    return buildErrorResponse(400, "用户名已存在");
+                }
+
                 existingUser.setUsername(username);
                 existingUser.setFullName(fullName);
                 existingUser.setEmail(email);
