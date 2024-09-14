@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/application")
@@ -107,6 +108,63 @@ public class ApplicationController {
 
         } catch (NumberFormatException e) {
             return buildErrorResponse(401, "token无效或已过期");
+        } catch (Exception e) {
+            return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
+        }
+    }
+    @Operation(
+            summary = "获取所有已存在的导师与学生关系",
+            description = "根据当前用户的角色，获取导师与学生之间的关系，学生获取自己的导师，导师获取自己的学生列表，管理员获取所有关系。"
+    )
+    @GetMapping("/mentor-student-relations")
+    public ResponseEntity<Map<String, Object>> getMentorStudentRelationships() {
+        try {
+            // 获取当前用户的 token
+            String token = SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
+            String jwtToken = token.replace("Bearer ", "");
+            Long userId = jwtUtils.validateTokenAndGetUid(jwtToken);  // 验证token并获取用户ID
+
+            User currentUser = userService.getUserByUid(userId);  // 获取当前用户
+            String roleName = currentUser.getRole().getRoleName();
+
+            List<Map<String, Object>> mentorStudentRelationships;
+
+            if ("STUDENT".equals(roleName)) {
+                // 学生获取自己的导师
+                User mentor = userService.getUserByUid(currentUser.getMentorId());
+                mentorStudentRelationships = List.of(Map.of(
+                        "mentor", Map.of(
+                                "uid", mentor.getId(),
+                                "fullName", mentor.getFullName(),
+                                "email", mentor.getEmail()
+                        )
+                ));
+            } else if ("TEACHER".equals(roleName)) {
+                // 导师获取自己的学生列表
+                List<User> students = userService.getStudentsByMentorId(currentUser.getId());
+                mentorStudentRelationships = List.of(Map.of(
+                        "mentor", Map.of(
+                                "uid", currentUser.getId(),
+                                "fullName", currentUser.getFullName(),
+                                "email", currentUser.getEmail()
+                        ),
+                        "students", students.stream().map(student -> Map.of(
+                                "uid", student.getId(),
+                                "fullName", student.getFullName(),
+                                "email", student.getEmail(),
+                                "username", student.getUsername()
+                        )).collect(Collectors.toList())
+                ));
+            } else if ("ADMIN".equals(roleName)) {
+                // 管理员获取所有导师和学生的关系
+                mentorStudentRelationships = userService.getAllMentorStudentRelationships();
+            } else {
+                return buildErrorResponse(403, "无权访问该信息");
+            }
+
+            // 返回结果
+            return buildSuccessResponse(200, mentorStudentRelationships);
+
         } catch (Exception e) {
             return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
         }

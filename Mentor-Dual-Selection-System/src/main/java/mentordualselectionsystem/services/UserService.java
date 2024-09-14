@@ -12,6 +12,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @Service
 public class UserService implements UserDetailsService {
 
@@ -61,5 +65,28 @@ public class UserService implements UserDetailsService {
     public Role getRoleByName(String roleName) {
         return roleRepository.findByRoleName(roleName)
                 .orElseThrow(() -> new IllegalArgumentException("角色未找到: " + roleName));
+    }
+
+    // 新增方法：根据导师 ID 获取该导师的学生列表
+    public List<User> getStudentsByMentorId(Long mentorId) {
+        return userRepository.findByMentorId(mentorId);
+    }
+
+    // 新增方法：获取所有导师和学生的关系
+    public List<Map<String, Object>> getAllMentorStudentRelationships() {
+        List<User> mentors = userRepository.findAllByRole_RoleName("TEACHER"); // 假设角色名为 'TEACHER'
+        return mentors.stream().map(mentor -> Map.of(
+                "mentor", Map.of(
+                        "uid", mentor.getId(),
+                        "fullName", mentor.getFullName(),
+                        "email", mentor.getEmail()
+                ),
+                "students", userRepository.findByMentorId(mentor.getId()).stream().map(student -> Map.of(
+                        "uid", student.getId(),
+                        "fullName", student.getFullName(),
+                        "email", student.getEmail(),
+                        "username", student.getUsername()
+                )).collect(Collectors.toList())
+        )).collect(Collectors.toList());
     }
 }

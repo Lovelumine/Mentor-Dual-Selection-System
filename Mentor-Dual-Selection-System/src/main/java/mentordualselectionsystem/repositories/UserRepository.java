@@ -11,4 +11,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // 根据 mentorId 查询已选择该导师的所有学生
     List<User> findByMentorId(Long mentorId);
+
+    // 根据角色名称查询所有用户
+    List<User> findAllByRole_RoleName(String roleName);
 }
