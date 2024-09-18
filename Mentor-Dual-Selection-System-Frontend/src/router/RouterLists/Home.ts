@@ -28,7 +28,7 @@ export default {
         {
             path: 'select_student',
             name: 'selectStudent',
-            component: () => import('@/components/Home/SelectStudentComp.vue')
+            component: () => import('@/components/Home/SelectStudent/SelectStudentComp.vue')
         },
         {
             path: 'relations',

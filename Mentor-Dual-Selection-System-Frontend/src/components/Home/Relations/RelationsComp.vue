@@ -3,8 +3,11 @@
 import {ref, watch} from "vue";
 import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
 const userStore = useUserInfoStore();
-import AllApplicationListViewByStudentComp from "@/components/Home/Relations/AllApplicationListViewByStudentComp.vue";
-import StudentToTeacherComp from "@/components/Home/Relations/StudentToTeacherComp.vue";
+import AllApplicationListViewByStudentComp from "@/components/Home/Relations/Student/AllApplicationListViewByStudentComp.vue";
+import StudentToTeacherComp from "@/components/Home/Relations/Student/StudentToTeacherComp.vue";
+import TeacherToStudentComp from "@/components/Home/Relations/Teacher/TeacherToStudentComp.vue";
+import AllApplicationListViewByTeacherComp from "@/components/Home/Relations/Teacher/AllApplicationListViewByTeacherComp.vue";
+import AllPendingViewComp from "@/components/Home/Relations/Admin/AllPendingViewComp.vue";
 
 const pageRole = ref({
   en: '',
@@ -37,6 +40,13 @@ watch(() => userStore.userInfo, (newValue) => {
   <div class="container" v-if="pageRole.en === 'student'">
     <StudentToTeacherComp/>
     <AllApplicationListViewByStudentComp/>
+  </div>
+  <div class="container" v-if="pageRole.en === 'teacher'">
+    <TeacherToStudentComp/>
+    <AllApplicationListViewByTeacherComp/>
+  </div>
+  <div class="container" v-if="pageRole.en === 'admin'">
+    <AllPendingViewComp/>
   </div>
 </template>
 
