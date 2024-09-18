@@ -60,20 +60,19 @@ onMounted(() => {
             }
           }
         } else{
-          alert('获取学生列表失败，若您有学生申请，请联系管理员修复系统！');
+          alert(res.data.data.error);
         }
       }).catch(err => {
         console.error(err);
-        alert('出现错误，或请重新登录！');
+        alert(JSON.parse(err.request.responseText));
       })
     }else{
-      alert('身份验证出错！请重新登入');
+      alert(res.data.data.error);
       localStorage.removeItem('token');
       window.location.reload();
     }
   }).catch(err => {
-    console.error(err);
-    alert('请求信息出错！');
+    alert(JSON.parse(err.request.responseText));
     router.back();
   })
 })

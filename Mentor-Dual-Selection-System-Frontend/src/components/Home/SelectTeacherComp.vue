@@ -36,8 +36,7 @@ function submitApplication(){
         alert('提交申请成功，请等待导师处理。');
       }
     }).catch((err) => {
-      alert('提交申请失败，若已提交申请请不要重复提交。');
-      console.log(err);
+      alert(JSON.parse(err.request.responseText));
     })
   }
 }
