@@ -97,11 +97,29 @@ public class ApplicationController {
             String token = SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
             String jwtToken = token.replace("Bearer ", "");
 
-            // 验证 token
-            jwtUtils.validateTokenAndGetUid(jwtToken);
+            // 验证 token 并获取用户 ID
+            Long mentorId = jwtUtils.validateTokenAndGetUid(jwtToken);
+
+            // 获取申请
+            Application application = applicationService.getApplicationById(applicationId);
+
+            // 检查申请是否存在
+            if (application == null) {
+                return buildErrorResponse(400, "申请不存在");
+            }
+
+            // 检查申请状态是否为 PENDING
+            if (!"PENDING".equalsIgnoreCase(application.getStatus())) {
+                return buildErrorResponse(400, "申请已经终结，无法再次修改，需要学生重新提交申请");
+            }
+
+            // 检查当前导师是否有权限审批该申请
+            if (!application.getMentorId().equals(mentorId)) {
+                return buildErrorResponse(403, "无权审批该申请");
+            }
 
             // 审批申请
-            Application application = applicationService.approveApplication(applicationId, approved, rejectionReason);
+            application = applicationService.approveApplication(applicationId, approved, rejectionReason);
 
             // 构建返回结果
             return buildSuccessResponse(200, application);
@@ -112,6 +130,7 @@ public class ApplicationController {
             return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
         }
     }
+
     @Operation(
             summary = "获取所有已存在的导师与学生关系",
             description = "根据当前用户的角色，获取导师与学生之间的关系，学生获取自己的导师，导师获取自己的学生列表，管理员获取所有关系。"
@@ -172,11 +191,7 @@ public class ApplicationController {
 
     @Operation(
             summary = "获取申请信息",
-            description = "根据当前用户的角色获取相关的申请信息。管理员可以获取所有申请信息，导师可以获取与自己相关的申请，学生可以获取自己提交的申请。",
-            parameters = {
-                    @Parameter(name = "Authorization", description = "JWT Token，Bearer token", required = true)
-            }
-    )
+            description = "根据当前用户的角色获取相关的申请信息。管理员可以获取所有申请信息，导师可以获取与自己相关的申请，学生可以获取自己提交的申请。")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "成功获取申请列表"),
             @ApiResponse(responseCode = "401", description = "token无效或已过期"),
@@ -223,8 +238,22 @@ public class ApplicationController {
         errorData.put("error", message);
         responseBody.put("data", errorData);
 
-        return ResponseEntity.status(code == 401 ? HttpStatus.UNAUTHORIZED : HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(responseBody);
+        HttpStatus status;
+        switch (code) {
+            case 400:
+                status = HttpStatus.BAD_REQUEST;
+                break;
+            case 401:
+                status = HttpStatus.UNAUTHORIZED;
+                break;
+            case 403:
+                status = HttpStatus.FORBIDDEN;
+                break;
+            default:
+                status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+
+        return ResponseEntity.status(status).body(responseBody);
     }
 
     // 自定义成功响应格式

@@ -22,6 +22,11 @@ public class ApplicationService {
         this.userRepository = userRepository;
     }
 
+    // 添加 getApplicationById 方法
+    public Application getApplicationById(Long applicationId) {
+        return applicationRepository.findById(applicationId).orElse(null);
+    }
+
     // 学生提交申请
     public Application submitApplication(Long studentId, Long mentorId, String reason) {
         // 检查学生是否存在
@@ -124,6 +129,7 @@ public class ApplicationService {
     public List<Application> getApplicationsByStudentId(Long studentId) {
         return applicationRepository.findByStudentId(studentId);
     }
+
     // 获取导师已接受的学生数量
     private int getAcceptedStudentCount(Long mentorId) {
         List<User> students = userRepository.findByMentorId(mentorId);
