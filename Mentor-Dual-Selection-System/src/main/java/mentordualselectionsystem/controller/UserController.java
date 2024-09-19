@@ -1,6 +1,7 @@
 package mentordualselectionsystem.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -181,6 +182,66 @@ public class UserController {
         }
     }
 
+    // 新增方法：根据 UID 获取指定用户的账号信息
+    @Operation(
+            summary = "获取指定用户的账号信息",
+            description = "根据用户的 UID 获取账号信息，仅管理员或导师可用。",
+            parameters = {
+                    @Parameter(name = "uid", description = "用户的 UID", required = true)
+            }
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "成功获取用户信息"),
+            @ApiResponse(responseCode = "400", description = "无效的 UID"),
+            @ApiResponse(responseCode = "401", description = "未授权"),
+            @ApiResponse(responseCode = "403", description = "无权限访问该信息"),
+            @ApiResponse(responseCode = "404", description = "用户不存在"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    @GetMapping("/get")
+    public ResponseEntity<?> getUserByUid(@RequestParam Long uid) {
+        try {
+            // 获取当前用户的认证信息
+            String token = SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
+            String jwtToken = token.replace("Bearer ", "");
+            Long currentUid = jwtUtils.validateTokenAndGetUid(jwtToken);
+
+            // 获取当前用户信息
+            User currentUser = userService.getUserByUid(currentUid);
+            String roleName = currentUser.getRole().getRoleName();
+
+            // 仅管理员或导师可访问
+            if (!"ADMIN".equals(roleName) && !"TEACHER".equals(roleName)) {
+                return buildErrorResponse(403, "无权限访问该信息");
+            }
+
+            // 获取指定 UID 的用户信息
+            User user = userService.getUserByUid(uid);
+            if (user == null) {
+                return buildErrorResponse(404, "用户不存在");
+            }
+
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("code", 200);
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("uid", user.getId());
+            data.put("username", user.getUsername());
+            data.put("email", user.getEmail());
+            data.put("fullName", user.getFullName());
+            data.put("avatarUrl", user.getAvatarUrl());
+            data.put("role", user.getRole().getRoleName());
+
+            responseBody.put("data", data);
+            return ResponseEntity.ok(responseBody);
+
+        } catch (NumberFormatException e) {
+            return buildErrorResponse(400, "无效的 UID");
+        } catch (Exception e) {
+            return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
+        }
+    }
+
     // 自定义错误响应格式
     private ResponseEntity<Map<String, Object>> buildErrorResponse(int code, String message) {
         Map<String, Object> responseBody = new HashMap<>();
@@ -188,6 +249,25 @@ public class UserController {
         Map<String, String> errorData = new HashMap<>();
         errorData.put("error", message);
         responseBody.put("data", errorData);
-        return ResponseEntity.status(HttpStatus.valueOf(code)).body(responseBody);
+
+        HttpStatus status;
+        switch (code) {
+            case 400:
+                status = HttpStatus.BAD_REQUEST;
+                break;
+            case 401:
+                status = HttpStatus.UNAUTHORIZED;
+                break;
+            case 403:
+                status = HttpStatus.FORBIDDEN;
+                break;
+            case 404:
+                status = HttpStatus.NOT_FOUND;
+                break;
+            default:
+                status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+
+        return ResponseEntity.status(status).body(responseBody);
     }
 }
