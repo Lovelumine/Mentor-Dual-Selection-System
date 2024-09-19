@@ -64,7 +64,7 @@ onMounted(() => {
         }
       }).catch(err => {
         console.error(err);
-        alert(JSON.parse(err.request.responseText));
+        alert(JSON.parse(err.request.responseText).data.error);
       })
     }else{
       alert(res.data.data.error);
@@ -72,7 +72,7 @@ onMounted(() => {
       window.location.reload();
     }
   }).catch(err => {
-    alert(JSON.parse(err.request.responseText));
+    alert(JSON.parse(err.request.responseText).data.error);
     router.back();
   })
 })

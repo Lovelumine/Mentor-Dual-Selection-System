@@ -36,7 +36,7 @@ onMounted(() => {
       alert('获取关键信息失败，请检查网络和登录状态！');
     }
   }).catch(err => {
-    alert(JSON.parse(err.request.responseText));
+    alert(JSON.parse(err.request.responseText).data.error);
     router.push('/');
   })
 })

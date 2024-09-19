@@ -25,7 +25,7 @@ function singinClicked(){
       window.location.reload();
     }
   }).catch((err) => {
-    alert(JSON.parse(err.request.responseText));
+    alert(JSON.parse(err.request.responseText).data.error);
   })
 }
 
