@@ -1,0 +1,62 @@
+spring:
+  application:
+    name: Mentor-Dual-Selection-System
+
+  # Configure MySQL data source
+  datasource:
+    url: jdbc:mysql://223.82.75.77:3308/teacherselectionsystem?useSSL=false&serverTimezone=UTC
+    username: root
+    password: CL9zbYfqH1ZYShPO
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # Auto-create and update tables
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+    database-platform: org.hibernate.dialect.MySQLDialect
+
+  # Exclude specific autoconfiguration
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration
+  mvc:
+    cors:
+          allowed-origins: "*"  # ?????
+          allowed-methods: GET,POST,PUT,DELETE,OPTIONS  # ?????
+          allowed-headers: "*"  # ????
+          allow-credentials: true  # ???? Cookie
+
+# Application port
+server:
+  port: 50000
+
+# Knife4j configuration
+
+# springdoc-openapi????
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 'default'
+      paths-to-match: '/**'
+      packages-to-scan: mentordualselectionsystem.controller
+# knife4j?????
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+    #?????
+    enable-footer: false
+    enable-footer-custom: true
+    footer-custom-content: Copyright  2024-?????????????
+
+
+

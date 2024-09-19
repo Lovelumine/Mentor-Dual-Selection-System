@@ -49,8 +49,8 @@ public class WebSecurityConfig {
                         // 允许这些端点公开访问
                         .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
                         .requestMatchers("/api/user/me","/api/user/all","/api/user/update","/api/application/**").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html","/doc.html").permitAll()
-                        .requestMatchers("/hello").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/webjars/**","/api-docs/**","v3/api-docs/**","/v3/api-docs", "/v3/api-docs/swagger-config","/swagger-ui.html","/doc.html").permitAll()
+                        .requestMatchers("/hello","/favicon.ico","docs.html","/api-docs/","**").permitAll()
                         // 其他任何请求都需要认证
                         .anyRequest().authenticated()
                 )
