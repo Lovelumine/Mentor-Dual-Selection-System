@@ -6,6 +6,7 @@ import {useRouter} from "vue-router";
 const router = useRouter();
 import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
 const userStore = useUserInfoStore();
+import { ElMessageBox } from 'element-plus'
 
 
 const allUser = ref([]);
@@ -20,7 +21,7 @@ const pendingUtilForm = ref({
 const dialogVisible = ref(false)
 
 const handleClose = (done: () => void) => {
-  ElMessageBox.confirm('Are you sure to close this dialog?')
+  ElMessageBox.confirm('您输入的信息将会保留，直到您下次点开该弹窗！')
       .then(() => {
         done()
       })
