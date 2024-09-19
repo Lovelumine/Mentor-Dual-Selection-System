@@ -36,8 +36,7 @@ function submitApplication(){
         alert('提交申请成功，请等待导师处理。');
       }
     }).catch((err) => {
-      alert('提交申请失败，若已提交申请请不要重复提交。');
-      console.log(err);
+      alert(JSON.parse(err.request.responseText));
     })
   }
 }
@@ -84,8 +83,8 @@ watch(() => userStore.userInfo, (newValue) => {
     <span>选择导师</span>
   </div>
   <div class="container">
-    <div class="teacher_item_box">
-      <div v-for="(item) in allTeacher" :key="item.uid" class="teacher_item" @click="toggleSelect(item.uid)">
+    <div class="item_box">
+      <div v-for="(item) in allTeacher" :key="item.uid" class="item" @click="toggleSelect(item.uid)">
         <div v-if="selectedTeacher === item.uid" class="select_bar">选择该导师</div>
         <img class="avatar" :src="item.avatarUrl" alt="avatar">
         <div>导师姓名：{{item.fullName}}</div>
@@ -109,10 +108,10 @@ watch(() => userStore.userInfo, (newValue) => {
   padding-left: 20px
   font-size: 20px
 .container
-  .teacher_item_box
+  .item_box
     margin: 20px auto 20px 20px
     display: flex
-    .teacher_item
+    .item
       margin-right: 20px
       width: 320px
       height: 140px
@@ -135,7 +134,7 @@ watch(() => userStore.userInfo, (newValue) => {
         line-height: 30px
         padding-left: 10px
         letter-spacing: 2px
-    .teacher_item:hover
+    .item:hover
       cursor: pointer
 
   .input_item

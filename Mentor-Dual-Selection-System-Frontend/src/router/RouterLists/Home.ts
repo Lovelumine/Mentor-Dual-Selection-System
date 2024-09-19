@@ -23,12 +23,17 @@ export default {
         {
             path: 'select_teacher',
             name: 'selectTeacher',
-            component: () => import('@/components/Home/SelectTeacher.vue')
+            component: () => import('@/components/Home/SelectTeacherComp.vue')
         },
         {
             path: 'select_student',
             name: 'selectStudent',
-            component: () => import('@/components/Home/SelectStudent.vue')
+            component: () => import('@/components/Home/SelectStudent/SelectStudentComp.vue')
+        },
+        {
+            path: 'relations',
+            name: 'relations',
+            component: () => import('@/components/Home/Relations/RelationsComp.vue')
         }
     ]
 }

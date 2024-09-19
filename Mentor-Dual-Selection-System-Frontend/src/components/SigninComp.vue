@@ -20,19 +20,12 @@ function singinClicked(){
     data: signinForm.value
   }).then(res => {
     console.log(res.status);
-    if (res.status === 200){
+    if (res.status === 200) {
       localStorage.setItem('token', res.data.data.token);
       window.location.reload();
-    } else if (res.status === 401) {
-      localStorage.removeItem('token');
-      alert('账号或密码错误');
-    } else {
-      localStorage.removeItem('token');
-      alert('登录失败');
     }
   }).catch((err) => {
-    console.error(err);
-    alert('登录失败');
+    alert(JSON.parse(err.request.responseText).data.error);
   })
 }
 
