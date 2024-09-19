@@ -59,6 +59,10 @@ function handleReject(index: number, row){
 function checkReject(){
   dialogVisible.value = false;
   console.log(pendingUtilForm.value);
+  if (pendingUtilForm.value.rejectionReason === null || pendingUtilForm.value.rejectionReason === '') {
+    alert('您需要填写拒绝理由。');
+    return;
+  }
   http({
     url: '/application/approve',
     method: 'POST',
