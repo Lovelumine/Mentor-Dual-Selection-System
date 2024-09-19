@@ -58,6 +58,23 @@ function handleReject(index: number, row){
 function checkReject(){
   dialogVisible.value = false;
   console.log(pendingUtilForm.value);
+  http({
+    url: '/application/approve',
+    method: 'POST',
+    headers: {
+      'Accept': '*/*',
+      'Authorization': `Bearer ${localStorage.getItem("token")}`
+    },
+    params: pendingUtilForm.value,
+  }).then(res => {
+    if (res.status === 200) {
+      alert('该申请处理完成！');
+    } else {
+      alert(res.data.error);
+    }
+  }).catch((err) => {
+    alert(JSON.parse(err.request.responseText).data.error);
+  })
 }
 
 onMounted(() => {
