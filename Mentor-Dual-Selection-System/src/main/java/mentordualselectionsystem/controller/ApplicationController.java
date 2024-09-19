@@ -15,9 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -150,30 +148,43 @@ public class ApplicationController {
 
             if ("STUDENT".equals(roleName)) {
                 // 学生获取自己的导师
+                if (currentUser.getMentorId() == null) {
+                    return buildErrorResponse(404, "你还没有导师");
+                }
                 User mentor = userService.getUserByUid(currentUser.getMentorId());
-                mentorStudentRelationships = List.of(Map.of(
-                        "mentor", Map.of(
-                                "uid", mentor.getId(),
-                                "fullName", mentor.getFullName(),
-                                "email", mentor.getEmail()
-                        )
-                ));
+
+                Map<String, Object> mentorMap = new HashMap<>();
+                mentorMap.put("uid", mentor.getId());
+                mentorMap.put("fullName", mentor.getFullName());
+                mentorMap.put("email", mentor.getEmail());
+
+                Map<String, Object> responseMap = new HashMap<>();
+                responseMap.put("mentor", mentorMap);
+
+                mentorStudentRelationships = Collections.singletonList(responseMap);
             } else if ("TEACHER".equals(roleName)) {
                 // 导师获取自己的学生列表
                 List<User> students = userService.getStudentsByMentorId(currentUser.getId());
-                mentorStudentRelationships = List.of(Map.of(
-                        "mentor", Map.of(
-                                "uid", currentUser.getId(),
-                                "fullName", currentUser.getFullName(),
-                                "email", currentUser.getEmail()
-                        ),
-                        "students", students.stream().map(student -> Map.of(
-                                "uid", student.getId(),
-                                "fullName", student.getFullName(),
-                                "email", student.getEmail(),
-                                "username", student.getUsername()
-                        )).collect(Collectors.toList())
-                ));
+
+                Map<String, Object> mentorMap = new HashMap<>();
+                mentorMap.put("uid", currentUser.getId());
+                mentorMap.put("fullName", currentUser.getFullName());
+                mentorMap.put("email", currentUser.getEmail());
+
+                List<Map<String, Object>> studentList = students.stream().map(student -> {
+                    Map<String, Object> studentMap = new HashMap<>();
+                    studentMap.put("uid", student.getId());
+                    studentMap.put("fullName", student.getFullName());
+                    studentMap.put("email", student.getEmail());
+                    studentMap.put("username", student.getUsername());
+                    return studentMap;
+                }).collect(Collectors.toList());
+
+                Map<String, Object> responseMap = new HashMap<>();
+                responseMap.put("mentor", mentorMap);
+                responseMap.put("students", studentList);
+
+                mentorStudentRelationships = Collections.singletonList(responseMap);
             } else if ("ADMIN".equals(roleName)) {
                 // 管理员获取所有导师和学生的关系
                 mentorStudentRelationships = userService.getAllMentorStudentRelationships();
@@ -248,6 +259,9 @@ public class ApplicationController {
                 break;
             case 403:
                 status = HttpStatus.FORBIDDEN;
+                break;
+            case 404:
+                status = HttpStatus.NOT_FOUND;
                 break;
             default:
                 status = HttpStatus.INTERNAL_SERVER_ERROR;

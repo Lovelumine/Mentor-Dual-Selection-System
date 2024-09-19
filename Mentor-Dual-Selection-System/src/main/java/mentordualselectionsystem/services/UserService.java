@@ -5,15 +5,12 @@ import mentordualselectionsystem.mysql.User;
 import mentordualselectionsystem.repositories.RoleRepository;
 import mentordualselectionsystem.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.userdetails.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -72,21 +69,34 @@ public class UserService implements UserDetailsService {
         return userRepository.findByMentorId(mentorId);
     }
 
-    // 新增方法：获取所有导师和学生的关系
+    // 修改后的方法：获取所有导师和学生的关系
     public List<Map<String, Object>> getAllMentorStudentRelationships() {
         List<User> mentors = userRepository.findAllByRole_RoleName("TEACHER"); // 假设角色名为 'TEACHER'
-        return mentors.stream().map(mentor -> Map.of(
-                "mentor", Map.of(
-                        "uid", mentor.getId(),
-                        "fullName", mentor.getFullName(),
-                        "email", mentor.getEmail()
-                ),
-                "students", userRepository.findByMentorId(mentor.getId()).stream().map(student -> Map.of(
-                        "uid", student.getId(),
-                        "fullName", student.getFullName(),
-                        "email", student.getEmail(),
-                        "username", student.getUsername()
-                )).collect(Collectors.toList())
-        )).collect(Collectors.toList());
+        List<Map<String, Object>> mentorStudentRelationships = new ArrayList<>();
+
+        for (User mentor : mentors) {
+            Map<String, Object> mentorMap = new HashMap<>();
+            mentorMap.put("uid", mentor.getId());
+            mentorMap.put("fullName", mentor.getFullName());
+            mentorMap.put("email", mentor.getEmail());
+
+            List<User> students = userRepository.findByMentorId(mentor.getId());
+            List<Map<String, Object>> studentList = students.stream().map(student -> {
+                Map<String, Object> studentMap = new HashMap<>();
+                studentMap.put("uid", student.getId());
+                studentMap.put("fullName", student.getFullName());
+                studentMap.put("email", student.getEmail());
+                studentMap.put("username", student.getUsername());
+                return studentMap;
+            }).collect(Collectors.toList());
+
+            Map<String, Object> responseMap = new HashMap<>();
+            responseMap.put("mentor", mentorMap);
+            responseMap.put("students", studentList);
+
+            mentorStudentRelationships.add(responseMap);
+        }
+
+        return mentorStudentRelationships;
     }
 }
