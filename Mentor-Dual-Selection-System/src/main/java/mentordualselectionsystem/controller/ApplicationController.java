@@ -2,6 +2,7 @@ package mentordualselectionsystem.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import mentordualselectionsystem.mysql.Application;
@@ -73,11 +74,16 @@ public class ApplicationController {
 
     @Operation(
             summary = "导师审批学生申请",
-            description = "导师通过或拒绝学生的申请，导师拒绝时必须填写拒绝理由，同意时可选择是否填写。",
+            description = "导师通过或拒绝学生的申请。**注意：导师拒绝申请时，必须填写拒绝理由；同意申请时，拒绝理由可选。**",
             parameters = {
                     @Parameter(name = "applicationId", description = "申请的ID", required = true),
                     @Parameter(name = "approved", description = "是否同意", required = true),
-                    @Parameter(name = "rejectionReason", description = "拒绝理由，仅在拒绝时提供", required = false)
+                    @Parameter(
+                            name = "rejectionReason",
+                            description = "拒绝理由，**拒绝申请时必填，同意时可选**",
+                            required = false,
+                            schema = @Schema(type = "string")
+                    )
             }
     )
     @ApiResponses(value = {
