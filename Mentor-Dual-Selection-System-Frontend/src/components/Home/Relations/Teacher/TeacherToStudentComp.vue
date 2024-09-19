@@ -25,8 +25,7 @@ onMounted(() => {
         alert(res.data.data.error);
       }
     }).catch(err => {
-      console.error(err);
-      alert('获取信息出错');
+      alert(JSON.parse(err.requests.responseText).data.error);
       router.push('/');
     });
   }
@@ -52,7 +51,7 @@ onMounted(() => {
   align-items: center
   justify-content: center
   margin: 50px auto 20px auto
-  width: 50%
+  width: 100%
   h3
     position: absolute
     top: -40px
