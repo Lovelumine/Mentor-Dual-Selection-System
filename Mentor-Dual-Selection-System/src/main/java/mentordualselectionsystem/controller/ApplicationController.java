@@ -73,7 +73,7 @@ public class ApplicationController {
 
     @Operation(
             summary = "导师审批学生申请",
-            description = "导师通过或拒绝学生的申请，导师可以选择是否填写拒绝理由。",
+            description = "导师通过或拒绝学生的申请，导师拒绝时必须填写拒绝理由，同意时可选择是否填写。",
             parameters = {
                     @Parameter(name = "applicationId", description = "申请的ID", required = true),
                     @Parameter(name = "approved", description = "是否同意", required = true),
@@ -114,6 +114,11 @@ public class ApplicationController {
             // 检查当前导师是否有权限审批该申请
             if (!application.getMentorId().equals(mentorId)) {
                 return buildErrorResponse(403, "无权审批该申请");
+            }
+
+            // **新增检查：拒绝申请时必须填写拒绝理由**
+            if (!approved && (rejectionReason == null || rejectionReason.trim().isEmpty())) {
+                return buildErrorResponse(400, "拒绝申请时必须填写拒绝理由");
             }
 
             // 审批申请
