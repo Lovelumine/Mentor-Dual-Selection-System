@@ -3,7 +3,6 @@
 import {onMounted, ref, watch} from "vue";
 import {http} from "@/utils/http";
 import {useRouter} from "vue-router";
-import UtilPendingComp from "@/components/Home/SelectStudent/UtilPendingComp.vue";
 const router = useRouter();
 import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
 import {ElMessageBox} from "element-plus";
@@ -12,6 +11,7 @@ const userStore = useUserInfoStore();
 const pendingList = ref([]);
 const allUser = ref([]);
 const allStudent = ref([]);
+const allTeacher = ref([]);
 const userRole = ref();
 const dialogVisible = ref(false)
 const pendingUtilForm = ref({
@@ -97,6 +97,8 @@ onMounted(() => {
       for (let i = 0; i < allUser.value.length; i++){
         if (allUser.value[i].role == 'STUDENT'){
           allStudent.value.push(allUser.value[i]);
+        } else if (allUser.value[i].role == 'TEACHER'){
+          allTeacher.value.push(allUser.value[i]);
         }
       }
       http({
@@ -110,9 +112,6 @@ onMounted(() => {
           Authorization: localStorage.getItem('token'),
         }
       }).then(res => {
-        console.log('allstu', allStudent.value);
-        console.log('allu', allUser.value);
-
         if (res.data.code === 200){
           pendingList.value = res.data.data;
           console.log('pend', pendingList.value);
@@ -126,6 +125,11 @@ onMounted(() => {
             for (let j = 0; j < allStudent.value.length; j++){
               if (pendingList.value[i].studentId === allStudent.value[j].uid){
                 pendingList.value[i].studentName = allStudent.value[j].fullName;
+              }
+            }
+            for (let k = 0; k < allTeacher.value.length; k++){
+              if (pendingList.value[i].mentorId === allTeacher.value[k].uid){
+                pendingList.value[i].teacherName = allTeacher.value[k].fullName;
               }
             }
           }
@@ -179,6 +183,7 @@ watch(() => userStore.userInfo, (newValue) => {
     <el-table :data="pendingList" stripe class="table">
       <el-table-column prop="id" label="申请编号"/>
       <el-table-column prop="studentName" label="学生姓名"/>
+      <el-table-column prop="teacherName" label="导师姓名" v-if="userRole === 'ADMIN'"/>
       <el-table-column prop="applicationReason" label="申请理由"/>
       <el-table-column prop="statusCN" label="当前状态"/>
       <el-table-column v-if="userRole === 'TEACHER' || userRole === 'ADMIN'" label="处理">

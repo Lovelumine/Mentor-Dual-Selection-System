@@ -1,97 +1,39 @@
 <script setup lang="ts">
 import {onMounted, ref} from "vue";
 import {http} from "@/utils/http";
-import {useRouter} from "vue-router";
-const router = useRouter();
 
-const allTeacher = ref([]);
-const allStudent = ref([]);
-const allPending = ref([]);
+const allRelations = ref([]);
 
 onMounted(() => {
   http({
-    url: '/user/all',
-    method: 'POST',
+    url: '/application/mentor-student-relations',
+    method: 'GET',
     headers: {
       'Accept': '*/*',
       'Authorization': 'Bearer ' + localStorage.getItem('token')
     }
   }).then(res => {
-    if (res.data.code === 200) {
-      for (let i = 0; i < res.data.data.length; i++) {
-        if (res.data.data[i].role === 'TEACHER'){
-          allTeacher.value.push(res.data.data[i]);
-        } else if (res.data.data[i].role === 'STUDENT'){
-          allStudent.value.push(res.data.data[i]);
-        }
-      }
-      console.log('allTeacher', allTeacher.value);
-      http({
-        url: '/application/pending',
-        method: 'GET',
-        headers: {
-          'Accept': '*/*',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        params: {
-          'Authorization': localStorage.getItem('token'),
-        }
-      }).then(res => {
-        if (res.data.code === 200) {
-          allPending.value = res.data.data;
-          for (let i = 0; i < allPending.value.length; i++) {
-            switch (allPending.value[i].status) {
-              case 'REJECTED':
-                allPending.value[i].statusCN = '已拒绝';
-                break;
-              case 'PENDING':
-                allPending.value[i].statusCN = '待审核';
-                break;
-              case 'ACCEPTED':
-                allPending.value[i].statusCN = '已通过';
-                break;
-              default:
-                break;
-            }
-          }
-          for (let i = 0; i < allPending.value.length; i++){
-            for (let j = 0; j < allStudent.value.length; j++){
-              if (allPending.value[i].studentId === allStudent.value[j].uid){
-                allPending.value[i].studentName = allStudent.value[j].fullName;
-                break;
-              }
-            }
-          }
-        } else{
-          alert('获取申请列表失败，请联系管理员修复系统！');
-        }
-      }).catch(err => {
-        console.error(err);
-        alert('出现错误，或请重新登录！');
-      })
-    } else{
-      alert('身份验证出错！请重新登入');
-      localStorage.removeItem('token');
-      window.location.reload();
+    if (res.data.code === 200){
+      allRelations.value = res.data.data;
+    } else {
+      alert(res.data.data.error);
     }
   }).catch(err => {
-    console.error(err);
-    alert('请求信息出错！');
-    router.back();
+    alert(JSON.parse(err.requests.responseText).data.error);
   })
 })
 </script>
 
 <template>
   <div class="all_pending_box">
-    <h3>所有处理过的师生关系</h3>
-    <div v-for="(tItem, tIndex) in allTeacher" :key="tIndex" class="for_teacher_box">
+    <h3>所有师生选择的学生</h3>
+    <div v-for="(item, index) in allRelations" :key="index" class="for_teacher_box">
       <div class="teacher_item">
-        导师姓名：{{tItem.fullName}}
+        导师姓名：{{item.mentor.fullName}}
       </div>
-      <div v-for="(sItem, sIndex) in allPending" :key="sIndex" class="for_student_box">
-        <div  v-if="sItem.mentorId === tItem.uid" class="student_item">
-          学生姓名：{{sItem.studentName}}（{{sItem.statusCN}}）
+      <div v-for="(sItem, sIndex) in item.students" :key="sIndex" class="for_student_box">
+        <div class="student_item">
+          学生姓名：{{sItem.fullName}}
         </div>
       </div>
     </div>
