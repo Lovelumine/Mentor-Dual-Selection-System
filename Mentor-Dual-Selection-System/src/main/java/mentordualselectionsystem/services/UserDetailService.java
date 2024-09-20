@@ -1,5 +1,6 @@
 package mentordualselectionsystem.services;
 
+import mentordualselectionsystem.mysql.User;
 import mentordualselectionsystem.mysql.UserDetail;
 import mentordualselectionsystem.repositories.UserDetailRepository;
 import mentordualselectionsystem.repositories.UserRepository;
@@ -7,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,5 +42,10 @@ public class UserDetailService {
                 .stream()
                 .filter(detail -> "STUDENT".equals(userRepository.findById(detail.getUid()).get().getRole().getRoleName()))
                 .collect(Collectors.toList());
+    }
+
+    // 根据用户名查找用户详细信息
+    public Optional<User> getUserByUsername(String username) {
+        return userRepository.findByUsername(username);
     }
 }
