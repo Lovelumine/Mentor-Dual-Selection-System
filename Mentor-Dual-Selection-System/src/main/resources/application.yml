@@ -57,6 +57,4 @@ knife4j:
     enable-footer: false
     enable-footer-custom: true
     footer-custom-content: Copyright  2024-?????????????
-
-
-
+debug: true

@@ -34,11 +34,7 @@ public class StudentController {
         this.userService = userService;
     }
 
-    /**
-     * 获取所有教师的详细信息
-     *
-     * @return ResponseEntity<Map<String, Object>> 教师详细信息列表
-     */
+
     @Operation(summary = "获取所有教师详细信息", description = "返回所有教师的详细信息列表。")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "获取成功"),
@@ -49,12 +45,7 @@ public class StudentController {
         return ResponseEntity.ok(formatResponse(200, teacherDetails));
     }
 
-    /**
-     * 获取学生自己的详细信息
-     *
-     * @param authentication 当前用户的认证信息
-     * @return ResponseEntity<Map<String, Object>> 学生的详细信息
-     */
+
     @Operation(summary = "获取学生个人详细信息", description = "验证身份并返回学生的详细信息。")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "获取成功"),
@@ -85,13 +76,7 @@ public class StudentController {
         return ResponseEntity.ok(formatResponse(200, userDetail));
     }
 
-    /**
-     * 更新学生个人详细信息
-     *
-     * @param authentication 当前用户的认证信息
-     * @param userDetail     要更新的学生详细信息
-     * @return ResponseEntity<Map<String, Object>> 更新结果
-     */
+
     @Operation(summary = "更新学生个人详细信息", description = "验证身份并更新学生的详细信息。")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "更新成功"),
