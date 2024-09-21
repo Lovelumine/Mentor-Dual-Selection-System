@@ -6,15 +6,14 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import io.jsonwebtoken.security.SignatureException;
+import lombok.SneakyThrows;
 import mentordualselectionsystem.controller.LoginRequest;
 import mentordualselectionsystem.mysql.User;
 import mentordualselectionsystem.services.UserService;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.io.IOException;
@@ -28,87 +27,105 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     private final JwtUtils jwtUtils;
     private final UserService userService;
 
+    private final Map<String, Integer> failedLoginAttempts = new HashMap<>();
+    private final Map<String, Long> lockedUsers = new HashMap<>();
+    private static final int MAX_ATTEMPTS = 5;
+    private static final long LOCK_TIME = 5 * 60 * 1000; // 5分钟
+
     public JwtAuthenticationFilter(AuthenticationManager authenticationManager, JwtUtils jwtUtils, UserService userService) {
         this.authenticationManager = authenticationManager;
         this.jwtUtils = jwtUtils;
         this.userService = userService;
-        setFilterProcessesUrl("/api/auth/login");  // 设置登录端点
+        setFilterProcessesUrl("/api/auth/login");
     }
 
+    @SneakyThrows
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
         try {
-            // 从请求体中解析用户名和密码
             LoginRequest loginRequest = new ObjectMapper().readValue(request.getInputStream(), LoginRequest.class);
+            String username = loginRequest.getUsername();
+
+            if (isUserLocked(username)) {
+                long remainingLockTime = (LOCK_TIME - (System.currentTimeMillis() - lockedUsers.get(username))) / 1000;
+                buildErrorResponse(response, 403, "账户被锁定，请在 " + remainingLockTime + " 秒后重试。");
+                return null;
+            }
+
             UsernamePasswordAuthenticationToken authenticationToken =
-                    new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword(), Collections.emptyList());
+                    new UsernamePasswordAuthenticationToken(username, loginRequest.getPassword(), Collections.emptyList());
             return authenticationManager.authenticate(authenticationToken);
         } catch (IOException e) {
-            // 返回 400 错误并带有统一格式的中文错误消息
-            try {
-                buildErrorResponse(response, 400, "无效的登录请求格式");
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
+            buildErrorResponse(response, 400, "无效的登录请求格式");
             return null;
         }
     }
 
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
+        String username = authResult.getName();
+        if (isUserLocked(username)) {
+            long remainingLockTime = (LOCK_TIME - (System.currentTimeMillis() - lockedUsers.get(username))) / 1000;
+            buildErrorResponse(response, 403, "账户被锁定，请在 " + remainingLockTime + " 秒后重试。");
+            return;
+        }
+
         try {
-            String username;
-
-            if (authResult.getPrincipal() instanceof UserDetails) {
-                // 从认证结果中获取用户名
-                username = ((UserDetails) authResult.getPrincipal()).getUsername();
-            } else {
-                username = authResult.getName();
-            }
-
-            // 通过 UserService 获取数据库中的用户详细信息
             User user = userService.getUserByUsername(username);
-
-            // 使用用户的 uid 生成 JWT token
             String token = jwtUtils.generateToken(Long.valueOf(user.getUid().toString()));
 
-            // 设置响应头和类型
             response.addHeader("Authorization", "Bearer " + token);
             response.setContentType("application/json;charset=UTF-8");
 
-            // 构建返回的 JSON 格式，包含 code 和 data
             Map<String, Object> responseBody = new HashMap<>();
-            responseBody.put("code", 200);  // 状态码
+            responseBody.put("code", 200);
 
-            // 构建用户数据返回
             Map<String, Object> data = new HashMap<>();
-            data.put("token", token);  // 返回生成的 JWT 令牌
+            data.put("token", token);
             data.put("uid", user.getUid());
             responseBody.put("data", data);
 
-            // 输出 JSON 响应
             ObjectMapper objectMapper = new ObjectMapper();
             response.getWriter().write(objectMapper.writeValueAsString(responseBody));
-
-            // 输出 token 以便调试
-            System.out.println("生成的令牌: " + token);
         } catch (SignatureException e) {
-            // 捕获 JWT 签名异常并返回 401 错误响应
             buildErrorResponse(response, 401, "token无效或已过期");
         } catch (Exception e) {
-            // 捕获其他可能的异常，返回通用错误信息
             buildErrorResponse(response, 500, "生成 JWT 过程中出现错误");
         }
     }
 
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
-        // 区分密码错误和其他错误，并使用统一格式返回错误
-        if (failed instanceof BadCredentialsException) {
-            buildErrorResponse(response, 401, "密码错误");
-        } else {
-            buildErrorResponse(response, 401, "认证失败");
+        String username = request.getParameter("username");
+        if (isUserLocked(username)) {
+            long remainingLockTime = (LOCK_TIME - (System.currentTimeMillis() - lockedUsers.get(username))) / 1000;
+            buildErrorResponse(response, 403, "账户被锁定，请在 " + remainingLockTime + " 秒后重试。");
+            return;
         }
+
+        int attempts = failedLoginAttempts.getOrDefault(username, 0) + 1;
+        failedLoginAttempts.put(username, attempts);
+
+        if (attempts >= MAX_ATTEMPTS) {
+            lockedUsers.put(username, System.currentTimeMillis());
+            buildErrorResponse(response, 403, "账户已被锁定，请在 " + (LOCK_TIME / 1000) + " 秒后重试。");
+        } else {
+            buildErrorResponse(response, 401, "密码错误");
+        }
+    }
+
+    private boolean isUserLocked(String username) {
+        Long lockTime = lockedUsers.get(username);
+        if (lockTime != null) {
+            long elapsedTime = System.currentTimeMillis() - lockTime;
+            if (elapsedTime < LOCK_TIME) {
+                return true; // 用户仍然被锁定
+            } else {
+                lockedUsers.remove(username); // 超过锁定时间，解除锁定
+                failedLoginAttempts.remove(username); // 重置失败尝试次数
+            }
+        }
+        return false;
     }
 
     private void buildErrorResponse(HttpServletResponse response, int code, String message) throws IOException {
@@ -116,9 +133,9 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         response.setContentType("application/json;charset=UTF-8");
 
         Map<String, Object> responseBody = new HashMap<>();
-        responseBody.put("code", code);  // 返回状态码
+        responseBody.put("code", code);
         Map<String, String> data = new HashMap<>();
-        data.put("error", message);  // 返回错误信息
+        data.put("error", message);
         responseBody.put("data", data);
 
         ObjectMapper objectMapper = new ObjectMapper();
