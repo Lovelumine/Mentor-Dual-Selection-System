@@ -54,7 +54,7 @@ public class ApplicationService {
         }
 
         // 检查导师是否已经有 3 名学生
-        if (getAcceptedStudentCount(mentor.getId()) >= 3) {
+        if (getAcceptedStudentCount(mentor.getUid()) >= 3) {
             throw new RuntimeException("导师已经有3名学生，无法接受更多学生");
         }
 
@@ -65,8 +65,8 @@ public class ApplicationService {
 
         // 创建申请
         Application application = new Application();
-        application.setStudentId(student.getId());
-        application.setMentorId(mentor.getId());
+        application.setStudentId(student.getUid());
+        application.setMentorId(mentor.getUid());
         application.setStatus("PENDING");
         application.setApplicationReason(reason);
         application.setApplicationDate(new Date().toInstant());
@@ -86,7 +86,7 @@ public class ApplicationService {
 
         if (approved) {
             // 检查导师是否已经有 3 名学生
-            if (getAcceptedStudentCount(mentor.getId()) >= 3) {
+            if (getAcceptedStudentCount(mentor.getUid()) >= 3) {
                 throw new RuntimeException("导师已经有3名学生");
             }
 
@@ -97,10 +97,10 @@ public class ApplicationService {
 
             // 接受申请，设置学生的 mentorId
             application.setStatus("ACCEPTED");
-            student.setMentorId(mentor.getId());
+            student.setMentorId(mentor.getUid());
 
             // 更新导师已接受学生数量
-            mentor.setAcceptedStudents(getAcceptedStudentCount(mentor.getId()) + 1);
+            mentor.setAcceptedStudents(getAcceptedStudentCount(mentor.getUid()) + 1);
 
             // 保存更新后的学生和导师
             userRepository.save(student);
@@ -135,4 +135,13 @@ public class ApplicationService {
         List<User> students = userRepository.findByMentorId(mentorId);
         return students.size();
     }
+
+    // 获取与导师相关的所有申请
+    public boolean hasPendingApplication(Long studentId, Long mentorId) {
+        List<Application> pendingApplications = applicationRepository.findByStudentIdAndStatus(studentId, "PENDING");
+        return !pendingApplications.isEmpty() || applicationRepository.findByMentorIdAndStatus(mentorId, "PENDING").stream()
+                .anyMatch(app -> app.getStudentId().equals(studentId));
+    }
+
+
 }

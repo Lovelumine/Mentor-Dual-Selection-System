@@ -78,7 +78,7 @@ public class StudentController {
         }
 
         // 获取学生详细信息
-        UserDetail userDetail = userDetailService.getUserDetailByUid(currentUser.getId());
+        UserDetail userDetail = userDetailService.getUserDetailByUid(currentUser.getUid());
         if (userDetail == null) {
             return ResponseEntity.ok(formatResponse(200, "当前还没有编辑个人信息"));
         }

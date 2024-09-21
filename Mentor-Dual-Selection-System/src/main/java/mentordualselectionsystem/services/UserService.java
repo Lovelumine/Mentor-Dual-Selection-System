@@ -76,14 +76,14 @@ public class UserService implements UserDetailsService {
 
         for (User mentor : mentors) {
             Map<String, Object> mentorMap = new HashMap<>();
-            mentorMap.put("uid", mentor.getId());
+            mentorMap.put("uid", mentor.getUid());
             mentorMap.put("fullName", mentor.getFullName());
             mentorMap.put("email", mentor.getEmail());
 
-            List<User> students = userRepository.findByMentorId(mentor.getId());
+            List<User> students = userRepository.findByMentorId(mentor.getUid());
             List<Map<String, Object>> studentList = students.stream().map(student -> {
                 Map<String, Object> studentMap = new HashMap<>();
-                studentMap.put("uid", student.getId());
+                studentMap.put("uid", student.getUid());
                 studentMap.put("fullName", student.getFullName());
                 studentMap.put("email", student.getEmail());
                 studentMap.put("username", student.getUsername());

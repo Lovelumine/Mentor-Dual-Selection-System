@@ -60,7 +60,7 @@ public class UserController {
             responseBody.put("code", 200);
 
             Map<String, Object> data = new HashMap<>();
-            data.put("uid", user.getId());
+            data.put("uid", user.getUid());
             data.put("username", user.getUsername());
             data.put("email", user.getEmail());
             data.put("fullName", user.getFullName());
@@ -90,7 +90,7 @@ public class UserController {
 
             List<Map<String, Object>> userList = users.stream().map(user -> {
                 Map<String, Object> userMap = new HashMap<>();
-                userMap.put("uid", user.getId());
+                userMap.put("uid", user.getUid());
                 userMap.put("username", user.getUsername());
                 userMap.put("email", user.getEmail());
                 userMap.put("fullName", user.getFullName());
@@ -227,7 +227,7 @@ public class UserController {
             responseBody.put("code", 200);
 
             Map<String, Object> data = new HashMap<>();
-            data.put("uid", user.getId());
+            data.put("uid", user.getUid());
             data.put("username", user.getUsername());
             data.put("email", user.getEmail());
             data.put("fullName", user.getFullName());

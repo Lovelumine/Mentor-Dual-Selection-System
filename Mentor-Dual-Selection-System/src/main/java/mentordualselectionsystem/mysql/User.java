@@ -59,12 +59,12 @@ public class User implements UserDetails {
     }
 
     // Getters and Setters
-    public Long getId() {
+    public Long getUid() {
         return uid;
     }
 
-    public void setId(Long id) {
-        this.uid = id;
+    public void setId(Long Uid) {
+        this.uid = uid;
     }
 
     @Override

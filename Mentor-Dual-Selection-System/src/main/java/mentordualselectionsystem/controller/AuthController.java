@@ -53,7 +53,7 @@ public class AuthController {
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
         User user = (User) authentication.getPrincipal(); // 获取用户信息
-        String token = jwtUtils.generateToken(Long.valueOf(user.getId().toString()));  // 使用用户的 uid 生成 token
+        String token = jwtUtils.generateToken(Long.valueOf(user.getUid().toString()));  // 使用用户的 uid 生成 token
 
         // 返回 {code: "", token: ""}
         Map<String, String> response = new HashMap<>();

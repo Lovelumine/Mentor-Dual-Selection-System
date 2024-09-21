@@ -70,7 +70,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             User user = userService.getUserByUsername(username);
 
             // 使用用户的 uid 生成 JWT token
-            String token = jwtUtils.generateToken(Long.valueOf(user.getId().toString()));
+            String token = jwtUtils.generateToken(Long.valueOf(user.getUid().toString()));
 
             // 设置响应头和类型
             response.addHeader("Authorization", "Bearer " + token);
@@ -83,7 +83,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             // 构建用户数据返回
             Map<String, Object> data = new HashMap<>();
             data.put("token", token);  // 返回生成的 JWT 令牌
-            data.put("uid", user.getId());
+            data.put("uid", user.getUid());
             responseBody.put("data", data);
 
             // 输出 JSON 响应

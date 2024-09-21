@@ -167,7 +167,7 @@ public class ApplicationController {
                 User mentor = userService.getUserByUid(currentUser.getMentorId());
 
                 Map<String, Object> mentorMap = new HashMap<>();
-                mentorMap.put("uid", mentor.getId());
+                mentorMap.put("uid", mentor.getUid());
                 mentorMap.put("fullName", mentor.getFullName());
                 mentorMap.put("email", mentor.getEmail());
 
@@ -177,16 +177,16 @@ public class ApplicationController {
                 mentorStudentRelationships = Collections.singletonList(responseMap);
             } else if ("TEACHER".equals(roleName)) {
                 // 导师获取自己的学生列表
-                List<User> students = userService.getStudentsByMentorId(currentUser.getId());
+                List<User> students = userService.getStudentsByMentorId(currentUser.getUid());
 
                 Map<String, Object> mentorMap = new HashMap<>();
-                mentorMap.put("uid", currentUser.getId());
+                mentorMap.put("uid", currentUser.getUid());
                 mentorMap.put("fullName", currentUser.getFullName());
                 mentorMap.put("email", currentUser.getEmail());
 
                 List<Map<String, Object>> studentList = students.stream().map(student -> {
                     Map<String, Object> studentMap = new HashMap<>();
-                    studentMap.put("uid", student.getId());
+                    studentMap.put("uid", student.getUid());
                     studentMap.put("fullName", student.getFullName());
                     studentMap.put("email", student.getEmail());
                     studentMap.put("username", student.getUsername());
@@ -237,9 +237,9 @@ public class ApplicationController {
             if ("ADMIN".equals(roleName)) {
                 applications = applicationService.getAllApplications();
             } else if ("TEACHER".equals(roleName)) {
-                applications = applicationService.getApplicationsByMentorId(currentUser.getId());
+                applications = applicationService.getApplicationsByMentorId(currentUser.getUid());
             } else if ("STUDENT".equals(roleName)) {
-                applications = applicationService.getApplicationsByStudentId(currentUser.getId());
+                applications = applicationService.getApplicationsByStudentId(currentUser.getUid());
             } else {
                 return buildErrorResponse(403, "无权访问申请信息");
             }
