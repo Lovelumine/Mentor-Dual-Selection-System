@@ -99,4 +99,17 @@ public class UserService implements UserDetailsService {
 
         return mentorStudentRelationships;
     }
+
+    // 新增方法：验证旧密码
+    public boolean checkPassword(String username, String oldPassword) {
+        User user = getUserByUsername(username);
+        return passwordEncoder.matches(oldPassword, user.getPassword());
+    }
+
+    // 新增方法：更新用户密码
+    public void updatePassword(Long uid, String newPassword) {
+        User user = getUserByUid(uid);
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
 }

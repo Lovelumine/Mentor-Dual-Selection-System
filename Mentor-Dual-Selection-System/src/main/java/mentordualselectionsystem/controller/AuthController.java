@@ -15,10 +15,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -63,18 +60,34 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "重置密码", description = "验证旧密码并更新为新密码。")
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest resetPasswordRequest) {
+        String username = resetPasswordRequest.getUsername();
+        String oldPassword = resetPasswordRequest.getOldPassword();
+        String newPassword = resetPasswordRequest.getNewPassword();
+        String confirmPassword = resetPasswordRequest.getConfirmPassword();
 
-    public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
-        User user = new User();
-        user.setUsername(registerRequest.getUsername());
-        user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-        user.setEmail(registerRequest.getEmail());
-        userService.saveUser(user);
+        // 检查新密码和确认密码是否匹配
+        if (!newPassword.equals(confirmPassword)) {
+            return ResponseEntity.badRequest().body("新密码和确认密码不匹配");
+        }
 
-        // 返回 {code: "", message: ""}
+        // 验证旧密码
+        if (!userService.checkPassword(username, oldPassword)) {
+            return ResponseEntity.badRequest().body("旧密码不正确");
+        }
+
+        // 更新密码
+        userService.updatePassword(userService.getUserByUsername(username).getUid(), newPassword);
+
+        // 生成新的 JWT Token
+        String token = jwtUtils.generateToken(userService.getUserByUsername(username).getUid());
+
+        // 返回 {code: "", token: ""}
         Map<String, String> response = new HashMap<>();
         response.put("code", "200");  // 状态码
-        response.put("message", "用户注册成功");
+        response.put("token", token); // 返回新的 JWT Token
 
         return ResponseEntity.ok(response);
     }
