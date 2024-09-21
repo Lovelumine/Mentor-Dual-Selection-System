@@ -3,6 +3,7 @@ package mentordualselectionsystem.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import mentordualselectionsystem.mysql.User;
 import mentordualselectionsystem.mysql.UserDetail;
 import mentordualselectionsystem.services.UserDetailService;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
+@Tag(name="学生信息管理接口")
 @RequestMapping("/student")
 public class StudentController {
 
@@ -74,7 +76,6 @@ public class StudentController {
         if (!"STUDENT".equals(roleName)) {
             return ResponseEntity.status(403).body(formatResponse(403, "当前用户不是学生，无法获取详细信息"));
         }
-
 
         // 获取学生详细信息
         UserDetail userDetail = userDetailService.getUserDetailByUid(currentUser.getId());

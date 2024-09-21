@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import mentordualselectionsystem.mysql.Application;
 import mentordualselectionsystem.mysql.User;
 import mentordualselectionsystem.services.ApplicationService;
@@ -20,6 +21,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
+@Tag(name = "申请相关接口")
 @RequestMapping("/api/application")
 public class ApplicationController {
 

@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import mentordualselectionsystem.mysql.User;
 import mentordualselectionsystem.security.JwtUtils;
 import mentordualselectionsystem.services.UserService;
@@ -23,6 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
+@Tag(name = "认证相关接口")
 @RequestMapping("/api/auth")
 public class AuthController {
 
