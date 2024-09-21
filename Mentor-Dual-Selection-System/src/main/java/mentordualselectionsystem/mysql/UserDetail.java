@@ -49,7 +49,7 @@ public class UserDetail {
         return uid;
     }
 
-    public void setId(Long uid) {
+    public void setUid(Long uid) {
         this.uid = uid;
     }
 

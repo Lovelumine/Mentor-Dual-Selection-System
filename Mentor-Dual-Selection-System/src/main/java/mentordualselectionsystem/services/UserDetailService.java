@@ -48,4 +48,31 @@ public class UserDetailService {
     public Optional<User> getUserByUsername(String username) {
         return userRepository.findByUsername(username);
     }
+
+    // 创建用户详细信息
+    public UserDetail createUserDetail(UserDetail userDetail) {
+        return userDetailRepository.save(userDetail);
+    }
+
+    // 修改已有用户的详细信息
+    public UserDetail updateUserDetail(Long uid, UserDetail userDetail) {
+        UserDetail existingDetail = userDetailRepository.findByUid(uid);
+        if (existingDetail != null) {
+            // 更新字段
+            existingDetail.setPhotoUrl(userDetail.getPhotoUrl());
+            existingDetail.setTeacherPosition(userDetail.getTeacherPosition());
+            existingDetail.setResearchDirection(userDetail.getResearchDirection());
+            existingDetail.setProfessionalDirection(userDetail.getProfessionalDirection());
+            existingDetail.setResume(userDetail.getResume());
+            existingDetail.setNetid(userDetail.getNetid());
+            existingDetail.setStudentClass(userDetail.getStudentClass());
+            existingDetail.setStudentGrade(userDetail.getStudentGrade());
+            existingDetail.setGrade(userDetail.getGrade());
+            return userDetailRepository.save(existingDetail);
+        } else {
+            // 如果不存在，则可以选择创建新用户详细信息
+            userDetail.setUid(uid);  // 确保UID正确
+            return userDetailRepository.save(userDetail);
+        }
+    }
 }

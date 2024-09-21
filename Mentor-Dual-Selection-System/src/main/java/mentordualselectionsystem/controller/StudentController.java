@@ -1,42 +1,98 @@
 package mentordualselectionsystem.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import mentordualselectionsystem.mysql.Application;
 import mentordualselectionsystem.mysql.User;
 import mentordualselectionsystem.mysql.UserDetail;
 import mentordualselectionsystem.services.UserDetailService;
+import mentordualselectionsystem.security.JwtUtils;
+import mentordualselectionsystem.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/student")
 public class StudentController {
 
     private final UserDetailService userDetailService;
+    private final JwtUtils jwtUtils;
+    private final UserService userService;
 
     @Autowired
-    public StudentController(UserDetailService userDetailService) {
+    public StudentController(UserDetailService userDetailService, JwtUtils jwtUtils, UserService userService) {
         this.userDetailService = userDetailService;
+        this.jwtUtils = jwtUtils;
+        this.userService = userService;
     }
 
-    // 获取所有教师的详细信息
+    /**
+     * 获取所有教师的详细信息
+     *
+     * @return ResponseEntity<Map<String, Object>> 教师详细信息列表
+     */
+    @Operation(summary = "获取所有教师详细信息", description = "返回所有教师的详细信息列表。")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "获取成功"),
+    })
     @GetMapping("/teachers")
-    public List<UserDetail> getAllTeacherDetails() {
-        return userDetailService.getAllTeacherDetails();
+    public ResponseEntity<Map<String, Object>> getAllTeacherDetails() {
+        List<UserDetail> teacherDetails = userDetailService.getAllTeacherDetails();
+        return ResponseEntity.ok(formatResponse(200, teacherDetails));
     }
 
-    // 获取学生自己的详细信息
+    /**
+     * 获取学生自己的详细信息
+     *
+     * @param authentication 当前用户的认证信息
+     * @return ResponseEntity<Map<String, Object>> 学生的详细信息
+     */
+    @Operation(summary = "获取学生个人详细信息", description = "验证身份并返回学生的详细信息。")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "获取成功"),
+            @ApiResponse(responseCode = "403", description = "当前用户不是学生"),
+            @ApiResponse(responseCode = "401", description = "未授权")
+    })
     @GetMapping("/my-detail")
-    public UserDetail getMyDetail(Authentication authentication) {
-        // 通过用户名获取当前用户
-        String username = authentication.getName();
-        Optional<User> optionalStudent = userDetailService.getUserByUsername(username);
-        if (optionalStudent.isPresent()) {
-            User student = optionalStudent.get();
-            return userDetailService.getUserDetailByUid(student.getId());
+    public ResponseEntity<Map<String, Object>> getMyDetail(Authentication authentication) {
+        if (authentication == null || authentication.getCredentials() == null) {
+            return ResponseEntity.status(401).body(formatResponse(401, "当前的token无效"));
         }
-        throw new RuntimeException("用户详细信息未找到");
+
+        String jwtToken = (String) authentication.getCredentials();
+        Long userId = jwtUtils.validateTokenAndGetUid(jwtToken);  // 验证token并获取用户ID
+        User currentUser = userService.getUserByUid(userId);  // 获取当前用户
+
+        // 判断角色类型
+        String roleName = currentUser.getRole().getRoleName();
+        if (!"STUDENT".equals(roleName)) {
+            return ResponseEntity.status(403).body(formatResponse(403, "当前用户不是学生，无法获取详细信息"));
+        }
+
+        // 获取学生详细信息
+        UserDetail userDetail = userDetailService.getUserDetailByUid(currentUser.getId());
+        return ResponseEntity.ok(formatResponse(200, userDetail));
+    }
+
+
+    /**
+     * 格式化返回的消息
+     *
+     * @param code 状态码
+     * @param data 返回的数据
+     * @return 格式化后的响应
+     */
+    private Map<String, Object> formatResponse(int code, Object data) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", code);
+        response.put("data", data);
+        return response;
     }
 }
