@@ -25,10 +25,10 @@ spring:
       - org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration
   mvc:
     cors:
-          allowed-origins: "*"  # ?????
-          allowed-methods: GET,POST,PUT,DELETE,OPTIONS  # ?????
-          allowed-headers: "*"  # ????
-          allow-credentials: true  # ???? Cookie
+          allowed-origins: "*"
+          allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+          allowed-headers: "*"
+          allow-credentials: true  # Cookie
 
 # Application port
 server:
@@ -36,7 +36,7 @@ server:
 
 # Knife4j configuration
 
-# springdoc-openapi????
+# springdoc-openapi
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
@@ -48,7 +48,7 @@ springdoc:
     - group: 'default'
       paths-to-match: '/**'
       packages-to-scan: mentordualselectionsystem.controller
-# knife4j?????
+# knife4j
 knife4j:
   enable: true
   setting:
@@ -56,5 +56,5 @@ knife4j:
     #?????
     enable-footer: false
     enable-footer-custom: true
-    footer-custom-content: Copyright  2024-?????????????
-debug: true
+    footer-custom-content: Copyright © 2023-2024 Yongxin County Lovelumine Technology Co., Ltd.
+
