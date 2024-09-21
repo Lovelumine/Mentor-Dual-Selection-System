@@ -3,7 +3,6 @@ package mentordualselectionsystem.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import mentordualselectionsystem.mysql.Application;
 import mentordualselectionsystem.mysql.User;
 import mentordualselectionsystem.mysql.UserDetail;
 import mentordualselectionsystem.services.UserDetailService;
@@ -76,11 +75,48 @@ public class StudentController {
             return ResponseEntity.status(403).body(formatResponse(403, "当前用户不是学生，无法获取详细信息"));
         }
 
+
         // 获取学生详细信息
         UserDetail userDetail = userDetailService.getUserDetailByUid(currentUser.getId());
+        if (userDetail == null) {
+            return ResponseEntity.ok(formatResponse(200, "当前还没有编辑个人信息"));
+        }
         return ResponseEntity.ok(formatResponse(200, userDetail));
     }
 
+    /**
+     * 更新学生个人详细信息
+     *
+     * @param authentication 当前用户的认证信息
+     * @param userDetail     要更新的学生详细信息
+     * @return ResponseEntity<Map<String, Object>> 更新结果
+     */
+    @Operation(summary = "更新学生个人详细信息", description = "验证身份并更新学生的详细信息。")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "更新成功"),
+            @ApiResponse(responseCode = "403", description = "当前用户不是学生"),
+            @ApiResponse(responseCode = "401", description = "未授权")
+    })
+    @PutMapping("/update")
+    public ResponseEntity<Map<String, Object>> updateMyDetail(Authentication authentication, @RequestBody UserDetail userDetail) {
+        if (authentication == null || authentication.getCredentials() == null) {
+            return ResponseEntity.status(401).body(formatResponse(401, "当前的token无效"));
+        }
+
+        String jwtToken = (String) authentication.getCredentials();
+        Long userId = jwtUtils.validateTokenAndGetUid(jwtToken);  // 验证token并获取用户ID
+        User currentUser = userService.getUserByUid(userId);  // 获取当前用户
+
+        // 判断角色类型
+        String roleName = currentUser.getRole().getRoleName();
+        if (!"STUDENT".equals(roleName)) {
+            return ResponseEntity.status(403).body(formatResponse(403, "当前用户不是学生，无法更新详细信息"));
+        }
+
+        // 更新学生详细信息
+        UserDetail updatedDetail = userDetailService.updateUserDetail(userId, userDetail);
+        return ResponseEntity.ok(formatResponse(200, updatedDetail));
+    }
 
     /**
      * 格式化返回的消息
