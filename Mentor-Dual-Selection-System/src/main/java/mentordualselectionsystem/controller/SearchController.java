@@ -73,11 +73,11 @@ public class SearchController {
         try {
             student = userService.getUserByUid(uid);
         } catch (Exception e) {
-            return buildErrorResponse(404, "学生不存在");
+            return buildErrorResponse(404, "uid不存在");
         }
 
         if (student == null || !"STUDENT".equals(student.getRole().getRoleName())) {
-            return buildErrorResponse(404, "学生不存在");
+            return buildErrorResponse(404, "此uid不是学生");
         }
 
 
@@ -105,57 +105,181 @@ public class SearchController {
     }
 
 
-    // 获取所有学生的详细信息
-    @Operation(summary = "获取所有学生的详细信息")
+    @Operation(summary = "获取所有学生的详细信息", description = "仅限管理员和导师。")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "成功返回所有学生的详细信息"),
+            @ApiResponse(responseCode = "401", description = "未授权，token 无效或缺失"),
+            @ApiResponse(responseCode = "403", description = "Forbidden")
+    })
     @GetMapping("/students")
-    public ResponseEntity<?> getAllStudents(Authentication authentication) {
-        try {
-            authenticate(authentication);
-            List<User> students = userService.getAllStudents();
-            List<Map<String, Object>> studentDataList = students.stream()
-                    .map(this::buildStudentData)
-                    .collect(Collectors.toList());
+    public ResponseEntity<?> getAllStudentsInfo(Authentication authentication) {
 
-            return ResponseEntity.ok(Map.of("code", 200, "data", studentDataList));
-        } catch (Exception e) {
-            return buildErrorResponse(401, "token无效或已过期");
+        if (authentication == null || authentication.getCredentials() == null) {
+            return ResponseEntity.status(401).body(formatResponse(401, "当前的token无效"));
         }
+
+        String jwtToken = (String) authentication.getCredentials();
+        Long currentUid = jwtUtils.validateTokenAndGetUid(jwtToken);
+
+        // 获取当前用户信息
+        User currentUser = userService.getUserByUid(currentUid);
+        String roleName = currentUser.getRole().getRoleName();
+
+        // 仅管理员或导师可访问
+        if (!"ADMIN".equals(roleName) && !"TEACHER".equals(roleName)) {
+            return buildErrorResponse(403, "无权限访问该信息");
+        }
+
+        // 获取所有学生信息
+        List<User> students = userService.getAllStudents();
+        List<Map<String, Object>> studentDataList = students.stream().map(student -> {
+            UserDetail userDetail = userDetailService.getUserDetailByUid(student.getUid());
+
+            Map<String, Object> studentData = new HashMap<>();
+            studentData.put("uid", student.getUid());
+            studentData.put("username", student.getUsername());
+            studentData.put("email", student.getEmail());
+            studentData.put("fullName", student.getFullName());
+            studentData.put("avatarUrl", student.getAvatarUrl());
+            if (userDetail != null) {
+                studentData.put("photourl", userDetail.getPhotoUrl());
+                studentData.put("grade", userDetail.getStudentGrade());
+                studentData.put("class", userDetail.getStudentClass());
+            } else {
+                studentData.put("photourl", null);
+                studentData.put("grade", null);
+                studentData.put("class", null);
+            }
+            return studentData;
+        }).collect(Collectors.toList());
+
+        Map<String, Object> responseBody = new HashMap<>();
+        responseBody.put("code", 200);
+        responseBody.put("data", studentDataList);
+
+        return ResponseEntity.ok(responseBody);
     }
 
-    // 根据名字模糊搜索学生
-    @Operation(summary = "根据名字模糊搜索学生")
+
+    @Operation(summary = "根据名字模糊搜索学生", description = "仅限管理员和导师。")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "成功返回匹配的学生信息"),
+            @ApiResponse(responseCode = "401", description = "未授权，token 无效或缺失"),
+            @ApiResponse(responseCode = "403", description = "Forbidden")
+    })
     @GetMapping("/students/search")
-    public ResponseEntity<?> searchStudentsByName(@RequestParam String fullName, Authentication authentication) {
-        try {
-            authenticate(authentication);
-            List<User> students = userService.searchStudentsByName(fullName);
-            List<Map<String, Object>> studentDataList = students.stream()
-                    .map(this::buildStudentData)
-                    .collect(Collectors.toList());
+    public ResponseEntity<?> searchStudentsByName(@RequestParam String name, Authentication authentication) {
 
-            return ResponseEntity.ok(Map.of("code", 200, "data", studentDataList));
-        } catch (Exception e) {
-            return buildErrorResponse(401, "token无效或已过期");
+        if (authentication == null || authentication.getCredentials() == null) {
+            return ResponseEntity.status(401).body(formatResponse(401, "当前的token无效"));
         }
+
+        String jwtToken = (String) authentication.getCredentials();
+        Long currentUid = jwtUtils.validateTokenAndGetUid(jwtToken);
+
+        // 获取当前用户信息
+        User currentUser = userService.getUserByUid(currentUid);
+        String roleName = currentUser.getRole().getRoleName();
+
+        // 仅管理员或导师可访问
+        if (!"ADMIN".equals(roleName) && !"TEACHER".equals(roleName)) {
+            return buildErrorResponse(403, "无权限访问该信息");
+        }
+
+        // 根据名字模糊搜索学生
+        List<User> students = userService.searchStudentsByName(name);
+        List<Map<String, Object>> studentDataList = students.stream().map(student -> {
+            UserDetail userDetail = userDetailService.getUserDetailByUid(student.getUid());
+
+            Map<String, Object> studentData = new HashMap<>();
+            studentData.put("uid", student.getUid());
+            studentData.put("username", student.getUsername());
+            studentData.put("email", student.getEmail());
+            studentData.put("fullName", student.getFullName());
+            studentData.put("avatarUrl", student.getAvatarUrl());
+            if (userDetail != null) {
+                studentData.put("photourl", userDetail.getPhotoUrl());
+                studentData.put("grade", userDetail.getStudentGrade());
+                studentData.put("class", userDetail.getStudentClass());
+            } else {
+                studentData.put("photourl", null);
+                studentData.put("grade", null);
+                studentData.put("class", null);
+            }
+            return studentData;
+        }).collect(Collectors.toList());
+
+        Map<String, Object> responseBody = new HashMap<>();
+        responseBody.put("code", 200);
+        responseBody.put("data", studentDataList);
+
+        return ResponseEntity.ok(responseBody);
     }
 
-    // 根据年级和班级筛选学生
-    @Operation(summary = "根据年级和班级筛选学生")
+
+    @Operation(summary = "根据年级和班级筛选学生", description = "仅限管理员和导师。")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "成功返回符合条件的学生信息"),
+            @ApiResponse(responseCode = "401", description = "未授权，token 无效或缺失"),
+            @ApiResponse(responseCode = "403", description = "Forbidden")
+    })
     @GetMapping("/students/filter")
-    public ResponseEntity<?> filterStudents(@RequestParam(required = false) List<String> grades,
-                                            @RequestParam(required = false) List<String> classes, Authentication authentication) {
-        try {
-            authenticate(authentication);
-            List<User> students = userService.filterStudents(grades, classes);
-            List<Map<String, Object>> studentDataList = students.stream()
-                    .map(this::buildStudentData)
-                    .collect(Collectors.toList());
+    public ResponseEntity<?> filterStudentsByGradeAndClass(@RequestParam Integer grade, @RequestParam Integer classNum, Authentication authentication) {
 
-            return ResponseEntity.ok(Map.of("code", 200, "data", studentDataList));
-        } catch (Exception e) {
-            return buildErrorResponse(401, "token无效或已过期");
+        if (authentication == null || authentication.getCredentials() == null) {
+            return ResponseEntity.status(401).body(formatResponse(401, "当前的token无效"));
         }
+
+        String jwtToken = (String) authentication.getCredentials();
+        Long currentUid = jwtUtils.validateTokenAndGetUid(jwtToken);
+
+        // 获取当前用户信息
+        User currentUser = userService.getUserByUid(currentUid);
+        String roleName = currentUser.getRole().getRoleName();
+
+        // 仅管理员或导师可访问
+        if (!"ADMIN".equals(roleName) && !"TEACHER".equals(roleName)) {
+            return buildErrorResponse(403, "无权限访问该信息");
+        }
+
+        // 获取所有学生
+        List<User> allStudents = userService.getAllStudents(); // 获取所有学生
+        List<Map<String, Object>> filteredStudents = allStudents.stream()
+                .filter(student -> {
+                    UserDetail userDetail = userDetailService.getUserDetailByUid(student.getUid());
+                    return userDetail != null
+                            && userDetail.getStudentGrade() != null
+                            && userDetail.getStudentClass() != null
+                            && userDetail.getStudentGrade().equals(grade)
+                            && userDetail.getStudentClass().equals(classNum);
+                })
+                .map(student -> {
+                    UserDetail userDetail = userDetailService.getUserDetailByUid(student.getUid());
+                    Map<String, Object> studentData = new HashMap<>();
+                    studentData.put("uid", student.getUid());
+                    studentData.put("username", student.getUsername());
+                    studentData.put("email", student.getEmail());
+                    studentData.put("fullName", student.getFullName());
+                    studentData.put("avatarUrl", student.getAvatarUrl());
+                    if (userDetail != null) {
+                        studentData.put("photourl", userDetail.getPhotoUrl());
+                        studentData.put("grade", userDetail.getStudentGrade());
+                        studentData.put("class", userDetail.getStudentClass());
+                    }
+                    return studentData;
+                })
+                .collect(Collectors.toList());
+
+
+
+        Map<String, Object> responseBody = new HashMap<>();
+        responseBody.put("code", 200);
+        responseBody.put("data", filteredStudents);
+
+        return ResponseEntity.ok(responseBody);
     }
+
+
 
     // 获取所有老师的详细信息
     @Operation(summary = "获取所有老师的详细信息")

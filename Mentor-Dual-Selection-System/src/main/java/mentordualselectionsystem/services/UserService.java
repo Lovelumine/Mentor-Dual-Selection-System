@@ -2,6 +2,7 @@ package mentordualselectionsystem.services;
 
 import mentordualselectionsystem.mysql.Role;
 import mentordualselectionsystem.mysql.User;
+import mentordualselectionsystem.mysql.UserDetail;
 import mentordualselectionsystem.repositories.RoleRepository;
 import mentordualselectionsystem.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -114,15 +115,6 @@ public class UserService implements UserDetailsService {
                 .filter(student -> student.getFullName().contains(fullName))
                 .collect(Collectors.toList());
     }
-
-    // 新增方法：根据年级和班级筛选学生
-    public List<User> filterStudents(List<String> grades, List<String> classes) {
-        return userRepository.findAll().stream()
-                .filter(student -> (grades == null || grades.isEmpty() || grades.contains(student.getUserDetail().getStudentGrade())) &&
-                        (classes == null || classes.isEmpty() || classes.contains(String.valueOf(student.getUserDetail().getStudentClass()))))
-                .collect(Collectors.toList());
-    }
-
     // 新增方法：获取所有老师
     public List<User> getAllTeachers() {
         return userRepository.findAllByRole_RoleName("TEACHER");
