@@ -1,140 +1,88 @@
 <script setup lang="ts">
-const tableData = [
-  {
-    name: '张三',
-    id: 100031,
-    grade: 2023,
-    class: '生命科学学院综合科学班',
-    phone: 10086100101,
-    email: 'test@test.com',
-    is_select_teacher: '已通过',
-    teacher_name: '教师一',
-    is_teacher_score: '未评分',
-    research_training_rating: 95,
-    labor_education_rating: 95,
-    rating_explanation: '',
-    notes: '班主任：教师三'
-  },{
-    name: '张三',
-    id: 100031,
-    grade: 2023,
-    class: '生命科学学院综合科学班',
-    phone: 10086100101,
-    email: 'test@test.com',
-    is_select_teacher: '已通过',
-    teacher_name: '教师一',
-    is_teacher_score: '未评分',
-    research_training_rating: 95,
-    labor_education_rating: 95,
-    rating_explanation: '',
-    notes: '班主任：教师三'
-  },{
-    name: '张三',
-    id: 100031,
-    grade: 2023,
-    class: '生命科学学院综合科学班',
-    phone: 10086100101,
-    email: 'test@test.com',
-    is_select_teacher: '已通过',
-    teacher_name: '教师一',
-    is_teacher_score: '未评分',
-    research_training_rating: 95,
-    labor_education_rating: 95,
-    rating_explanation: '',
-    notes: '班主任：教师三'
-  },{
-    name: '张三',
-    id: 100031,
-    grade: 2023,
-    class: '生命科学学院综合科学班',
-    phone: 10086100101,
-    email: 'test@test.com',
-    is_select_teacher: '已通过',
-    teacher_name: '教师一',
-    is_teacher_score: '未评分',
-    research_training_rating: 95,
-    labor_education_rating: 95,
-    rating_explanation: '',
-    notes: '班主任：教师三'
-  },{
-    name: '张三',
-    id: 100031,
-    grade: 2023,
-    class: '生命科学学院综合科学班',
-    phone: 10086100101,
-    email: 'test@test.com',
-    is_select_teacher: '已通过',
-    teacher_name: '教师一',
-    is_teacher_score: '未评分',
-    research_training_rating: 95,
-    labor_education_rating: 95,
-    rating_explanation: '',
-    notes: '班主任：教师三'
-  },{
-    name: '张三',
-    id: 100031,
-    grade: 2023,
-    class: '生命科学学院综合科学班',
-    phone: 10086100101,
-    email: 'test@test.com',
-    is_select_teacher: '已通过',
-    teacher_name: '教师一',
-    is_teacher_score: '未评分',
-    research_training_rating: 95,
-    labor_education_rating: 95,
-    rating_explanation: '',
-    notes: '班主任：教师三'
-  },{
-    name: '张三',
-    id: 100031,
-    grade: 2023,
-    class: '生命科学学院综合科学班',
-    phone: 10086100101,
-    email: 'test@test.com',
-    is_select_teacher: '已通过',
-    teacher_name: '教师一',
-    is_teacher_score: '未评分',
-    research_training_rating: 95,
-    labor_education_rating: 95,
-    rating_explanation: '',
-    notes: '班主任：教师三'
-  },{
-    name: '张三',
-    id: 100031,
-    grade: 2023,
-    class: '生命科学学院综合科学班',
-    phone: 10086100101,
-    email: 'test@test.com',
-    is_select_teacher: '已通过',
-    teacher_name: '教师一',
-    is_teacher_score: '未评分',
-    research_training_rating: 95,
-    labor_education_rating: 95,
-    rating_explanation: '',
-    notes: '班主任：教师三'
-  },{
-    name: '张三',
-    id: 100031,
-    grade: 2023,
-    class: '生命科学学院综合科学班',
-    phone: 10086100101,
-    email: 'test@test.com',
-    is_select_teacher: '已通过',
-    teacher_name: '教师一',
-    is_teacher_score: '未评分',
-    research_training_rating: 95,
-    labor_education_rating: 95,
-    rating_explanation: '',
-    notes: '班主任：教师三'
-  },
-]
+import {onMounted, ref, watch} from "vue";
+import {useStuListGrade} from "@/stores/StudentListGrade";
+const stuListGrade = useStuListGrade();
+import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
+import {httpAdmin, httpTeacher} from "@/utils/http";
+const userInfoStore = useUserInfoStore();
+
+const userRole = ref(null);
+const tableData = ref([]);
+const handledTableData = ref([]);
+const grade = ref(0);
+
+function fetchHttp (targetRole: string, ) {
+  let gradeN = grade.value
+  let gradeCN = null;
+  if (gradeN === 1) {
+    gradeCN = '大一';
+  }
+  else if (gradeN === 2) {
+    gradeCN = '大二';
+  }
+  else if (gradeN === 3) {
+    gradeCN = '大三';
+  }
+  else if (gradeN === 4) {
+    gradeCN = '大四';
+  }
+  console.log(gradeCN);
+  switch (targetRole) {
+    case 'TEACHER': {
+      httpTeacher({
+        url: '/students',
+        method: 'GET',
+        headers: {
+          Accept: '*/*',
+          Authorization: 'Bearer ' + localStorage.getItem('token'),
+        }
+      }).then(res => {
+        if (res.data.code === 200) {
+          tableData.value = res.data.data;
+        } else alert(res.data.data.error);
+      }).catch(err => {
+        alert(JSON.parse(err.requests.responseText).data.error);
+      }); break;
+    }
+    case 'ADMIN': {
+      httpAdmin({
+        url: '/students',
+        method: 'GET',
+        headers: {
+          Accept: '*/*',
+          Authorization: 'Bearer ' + localStorage.getItem('token'),
+        }
+      }).then(res => {
+        if (res.data.code === 200) {
+          tableData.value = res.data.data;
+        } else alert(res.data.data.error);
+      }).catch(err => {
+        alert(JSON.parse(err.requests.responseText).data.error);
+      }); break;
+    }
+    default: break;
+  }
+}
+onMounted(() => {
+})
+
+watch([
+  () => stuListGrade.gradeStatus,
+  () => userInfoStore.userInfo,
+], ([newGradeStatus, newUserInfo]) => {
+  grade.value = newGradeStatus;
+  userRole.value = newUserInfo.role;
+  fetchHttp(newUserInfo.role, newGradeStatus)
+  handledTableData.value = [];
+})
+
 </script>
 
 <template>
   <div class="title">
     <span>列表内容</span>
   </div>
-  <el-table :data="tableData" stripe class="table">
+  <el-table :data="handledTableData" stripe class="table">
     <el-table-column prop="name" label="姓名"  />
     <el-table-column prop="id" label="学号"  />
     <el-table-column prop="grade" label="年级"  />
