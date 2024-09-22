@@ -29,49 +29,41 @@ public class UserService implements UserDetailsService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        // 返回 UserDetails 对象
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getUsername())
-                .password(user.getPassword())  // 数据库中的加密密码
-                .roles(user.getRole().getRoleName())  // 使用单个角色
+                .password(user.getPassword())
+                .roles(user.getRole().getRoleName())
                 .build();
     }
 
-    // 通过用户名获取自定义 User 实体类
     public User getUserByUsername(String username) throws UsernameNotFoundException {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
-    // 通过 uid 查找用户
     public User getUserByUid(Long uid) throws UsernameNotFoundException {
         return userRepository.findById(uid)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with uid: " + uid));
     }
 
-    // 保存用户信息（包括加密密码）
     public void saveUser(User user) {
-        // 对密码进行加密，如果是新用户或密码被修改
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
         }
         userRepository.save(user);
     }
 
-    // 新增方法：根据角色名称获取 Role 实体
     public Role getRoleByName(String roleName) {
         return roleRepository.findByRoleName(roleName)
                 .orElseThrow(() -> new IllegalArgumentException("角色未找到: " + roleName));
     }
 
-    // 新增方法：根据导师 ID 获取该导师的学生列表
     public List<User> getStudentsByMentorId(Long mentorId) {
         return userRepository.findByMentorId(mentorId);
     }
 
-    // 修改后的方法：获取所有导师和学生的关系
     public List<Map<String, Object>> getAllMentorStudentRelationships() {
-        List<User> mentors = userRepository.findAllByRole_RoleName("TEACHER"); // 假设角色名为 'TEACHER'
+        List<User> mentors = userRepository.findAllByRole_RoleName("TEACHER");
         List<Map<String, Object>> mentorStudentRelationships = new ArrayList<>();
 
         for (User mentor : mentors) {
@@ -100,16 +92,53 @@ public class UserService implements UserDetailsService {
         return mentorStudentRelationships;
     }
 
-    // 新增方法：验证旧密码
     public boolean checkPassword(String username, String oldPassword) {
         User user = getUserByUsername(username);
         return passwordEncoder.matches(oldPassword, user.getPassword());
     }
 
-    // 新增方法：更新用户密码
     public void updatePassword(Long uid, String newPassword) {
         User user = getUserByUid(uid);
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+    }
+
+    // 新增方法：获取所有学生
+    public List<User> getAllStudents() {
+        return userRepository.findAllByRole_RoleName("STUDENT");
+    }
+
+    // 新增方法：根据名字模糊搜索学生
+    public List<User> searchStudentsByName(String fullName) {
+        return userRepository.findAll().stream()
+                .filter(student -> student.getFullName().contains(fullName))
+                .collect(Collectors.toList());
+    }
+
+    // 新增方法：根据年级和班级筛选学生
+    public List<User> filterStudents(List<String> grades, List<String> classes) {
+        return userRepository.findAll().stream()
+                .filter(student -> (grades == null || grades.isEmpty() || grades.contains(student.getUserDetail().getStudentGrade())) &&
+                        (classes == null || classes.isEmpty() || classes.contains(String.valueOf(student.getUserDetail().getStudentClass()))))
+                .collect(Collectors.toList());
+    }
+
+    // 新增方法：获取所有老师
+    public List<User> getAllTeachers() {
+        return userRepository.findAllByRole_RoleName("TEACHER");
+    }
+
+    // 新增方法：根据 uid 获取老师
+    public User getTeacherByUid(Long uid) {
+        return getUserByUid(uid);
+    }
+
+    // 新增方法：根据字段模糊搜索老师
+    public List<User> searchTeachers(String query) {
+        return userRepository.findAll().stream()
+                .filter(teacher -> teacher.getFullName().contains(query) ||
+                        teacher.getEmail().contains(query) ||
+                        teacher.getUsername().contains(query))
+                .collect(Collectors.toList());
     }
 }
