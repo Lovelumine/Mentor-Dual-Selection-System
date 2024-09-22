@@ -2,7 +2,6 @@ package mentordualselectionsystem.mysql;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import mentordualselectionsystem.mysql.Role;
 import org.hibernate.annotations.ColumnDefault;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -37,33 +36,20 @@ public class User implements UserDetails {
 
     @ColumnDefault("0")
     @Column(name = "accepted_students")
-    private Integer acceptedStudents;
+    private Integer acceptedStudents; // 接收学生数
 
     @Column(name = "mentor_id")
-    private Long mentorId;
+    private Long mentorId; // 导师 ID，学生与导师之间的关系
 
-    public Long getMentorId() {
-        return mentorId;
-    }
+    @Transient
+    private UserDetail userDetail; // 非数据库映射字段，用于在 User 中存储关联的 UserDetail 信息
 
-    public void setMentorId(Long mentorId) {
-        this.mentorId = mentorId;
-    }
-
-    public Integer getAcceptedStudents() {
-        return acceptedStudents;
-    }
-
-    public void setAcceptedStudents(Integer acceptedStudents) {
-        this.acceptedStudents = acceptedStudents;
-    }
-
-    // Getters and Setters
+    // Getter 和 Setter 方法
     public Long getUid() {
         return uid;
     }
 
-    public void setId(Long Uid) {
+    public void setUid(Long uid) {
         this.uid = uid;
     }
 
@@ -117,8 +103,32 @@ public class User implements UserDetails {
         this.role = role;
     }
 
+    public Integer getAcceptedStudents() {
+        return acceptedStudents;
+    }
+
+    public void setAcceptedStudents(Integer acceptedStudents) {
+        this.acceptedStudents = acceptedStudents;
+    }
+
+    public Long getMentorId() {
+        return mentorId;
+    }
+
+    public void setMentorId(Long mentorId) {
+        this.mentorId = mentorId;
+    }
+
+    public UserDetail getUserDetail() {
+        return userDetail;
+    }
+
+    public void setUserDetail(UserDetail userDetail) {
+        this.userDetail = userDetail;
+    }
+
     @Override
-    @JsonIgnore  // 忽略 authorities 字段
+    @JsonIgnore
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singleton(new SimpleGrantedAuthority(role.getRoleName()));
     }
