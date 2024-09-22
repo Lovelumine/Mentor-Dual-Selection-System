@@ -4,47 +4,49 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 
 @Entity
-@Table(name = "user_details", schema = "teacherselectionsystem")
+@Table(name = "user_details")
 public class UserDetail {
+
     @Id
     @Column(name = "uid", nullable = false)
     private Long uid;
 
     @Size(max = 255)
     @Column(name = "photo_url")
-    private String photoUrl;
+    private String photoUrl; // 头像 URL
 
     @Size(max = 255)
     @Column(name = "teacher_position")
-    private String teacherPosition;
+    private String teacherPosition; // 教师职位
 
     @Lob
     @Column(name = "research_direction")
-    private String researchDirection;
+    private String researchDirection; // 研究方向
 
     @Lob
     @Column(name = "professional_direction")
-    private String professionalDirection;
+    private String professionalDirection; // 专业方向
 
     @Lob
     @Column(name = "resume")
-    private String resume;
+    private String resume; // 个人简历
 
     @Size(max = 255)
     @Column(name = "netid")
-    private String netid;
+    private String netid; // 教师编号或网络 ID
 
     @Column(name = "student_class")
-    private Integer studentClass;
+    private Integer studentClass; // 学生班级
 
     @Size(max = 50)
     @Column(name = "student_grade", length = 50)
-    private String studentGrade;
+    private String studentGrade; // 学生年级
 
     @Size(max = 50)
     @Column(name = "grade", length = 50)
-    private String grade;
+    private String grade; // 学生成绩或学术等级
 
+    // Getter 和 Setter 方法
     public Long getUid() {
         return uid;
     }
@@ -124,5 +126,4 @@ public class UserDetail {
     public void setGrade(String grade) {
         this.grade = grade;
     }
-
 }

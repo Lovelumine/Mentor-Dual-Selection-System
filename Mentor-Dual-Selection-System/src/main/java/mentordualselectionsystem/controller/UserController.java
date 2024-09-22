@@ -75,7 +75,7 @@ public class UserController {
         }
     }
 
-    @Operation(summary = "获取所有用户信息", description = "验证用户并返回数据库中的所有用户信息")
+    @Operation(summary = "获取所有用户账号信息", description = "验证用户并返回数据库中的所有用户账号信息")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "成功返回所有用户信息"),
             @ApiResponse(responseCode = "401", description = "未授权，token 无效或缺失"),
@@ -107,6 +107,40 @@ public class UserController {
         }
     }
 
+    @Operation(summary = "获取所有老师的脱敏账号信息", description = "学生预览导师用，验证用户并返回数据库中的老师的脱敏账号信息")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "成功返回所有老师信息"),
+            @ApiResponse(responseCode = "401", description = "未授权，token 无效或缺失"),
+            @ApiResponse(responseCode = "403", description = "Forbidden")
+    })
+    @GetMapping("/allteacher")
+    public ResponseEntity<?> getAllTeachers() {
+        try {
+            // 从数据库中获取所有用户
+            List<User> users = userRepository.findAll();
+
+            // 筛选出角色为 "TEACHER" 的用户
+            List<Map<String, Object>> teacherList = users.stream()
+                    .filter(user -> "TEACHER".equals(user.getRole().getRoleName()))
+                    .map(user -> {
+                        Map<String, Object> userMap = new HashMap<>();
+                        userMap.put("uid", user.getUid());
+                        userMap.put("fullName", user.getFullName());
+                        userMap.put("avatarUrl", user.getAvatarUrl());
+                        return userMap;
+                    })
+                    .toList();
+
+            // 构建响应体
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("code", 200);
+            responseBody.put("data", teacherList);
+
+            return ResponseEntity.ok(responseBody);
+        } catch (Exception e) {
+            return buildErrorResponse(401, "token无效或已过期");
+        }
+    }
     /**
      * 新建或更新用户
      * 根据传入的 JSON 数据新建或更新用户信息
