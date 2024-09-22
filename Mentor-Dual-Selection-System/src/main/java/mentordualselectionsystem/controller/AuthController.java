@@ -14,6 +14,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -68,27 +69,50 @@ public class AuthController {
         String newPassword = resetPasswordRequest.getNewPassword();
         String confirmPassword = resetPasswordRequest.getConfirmPassword();
 
+
+        User user;
+        try {
+            // 尝试获取用户信息，如果用户不存在会抛出异常
+            user = userService.getUserByUsername(username);
+        } catch (UsernameNotFoundException e) {
+            // 捕获用户名不存在的异常并返回 404 错误信息
+            return buildErrorResponse(404, "用户不存在");
+        }
+
         // 检查新密码和确认密码是否匹配
         if (!newPassword.equals(confirmPassword)) {
-            return ResponseEntity.badRequest().body("新密码和确认密码不匹配");
+            // 返回错误信息，新密码和确认密码不匹配
+            return buildErrorResponse(400, "新密码和确认密码不匹配");
         }
 
         // 验证旧密码
         if (!userService.checkPassword(username, oldPassword)) {
-            return ResponseEntity.badRequest().body("旧密码不正确");
+            // 返回错误信息，旧密码不正确
+            return buildErrorResponse(401, "旧密码不正确");
         }
 
         // 更新密码
-        userService.updatePassword(userService.getUserByUsername(username).getUid(), newPassword);
+        userService.updatePassword(user.getUid(), newPassword);
 
         // 生成新的 JWT Token
-        String token = jwtUtils.generateToken(userService.getUserByUsername(username).getUid());
+        String token = jwtUtils.generateToken(user.getUid());
 
-        // 返回 {code: "", token: ""}
+        // 返回 {code: 200, token: ""} 格式的响应
         Map<String, String> response = new HashMap<>();
         response.put("code", "200");  // 状态码
         response.put("token", token); // 返回新的 JWT Token
 
         return ResponseEntity.ok(response);
+    }
+
+    // 构建错误响应的辅助方法
+    private ResponseEntity<Map<String, Object>> buildErrorResponse(int code, String errorMessage) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", code);  // 状态码
+        Map<String, String> data = new HashMap<>();
+        data.put("error", errorMessage);  // 错误信息
+        response.put("data", data);
+
+        return ResponseEntity.status(code).body(response);
     }
 }
