@@ -24,6 +24,14 @@
 	</properties>
 
 	<dependencies>
+
+		<dependency>
+			<groupId>io.minio</groupId>
+			<artifactId>minio</artifactId>
+			<version>8.2.2</version>
+		</dependency>
+
+
 		<!-- Spring Boot 相关依赖 -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -64,6 +72,8 @@
 			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-mysql</artifactId>
 		</dependency>
+
+
 
 		<!-- Spring AI -->
 		<dependency>

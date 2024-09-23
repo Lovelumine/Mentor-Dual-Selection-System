@@ -509,7 +509,7 @@ public class SearchController {
     }
 
     /**
-     * 根据名字模糊搜索老师，仅限管理员和导师。
+     * 根据名字模糊搜索老师。
      * @param name 老师名字（模糊查询）
      * @param authentication 当前用户的认证信息
      * @return 匹配的老师信息列表
