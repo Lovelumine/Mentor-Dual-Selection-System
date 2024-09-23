@@ -120,17 +120,11 @@ public class UserService implements UserDetailsService {
         return userRepository.findAllByRole_RoleName("TEACHER");
     }
 
-    // 新增方法：根据 uid 获取老师
-    public User getTeacherByUid(Long uid) {
-        return getUserByUid(uid);
-    }
 
-    // 新增方法：根据字段模糊搜索老师
-    public List<User> searchTeachers(String query) {
+    // 新增方法：根据名字模糊搜索学生
+    public List<User> searchTeachersByName(String fullName) {
         return userRepository.findAll().stream()
-                .filter(teacher -> teacher.getFullName().contains(query) ||
-                        teacher.getEmail().contains(query) ||
-                        teacher.getUsername().contains(query))
+                .filter(teacher -> teacher.getFullName().contains(fullName))
                 .collect(Collectors.toList());
     }
 }
