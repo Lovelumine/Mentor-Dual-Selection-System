@@ -61,7 +61,7 @@ debug: true
 
 # MinIO Configuration
 minio:
-  url: http://223.82.75.76:9000  # MinIO server URL
+  url: https://minio.lumoxuan.cn  # MinIO server URL
   access-key: 8PWAxMPsTcaTj2djWn9N  # MinIO access key
   secret-key: h14gC2QdvCTfQfw6lvIfhJnPc5p9li8w4GCTBMgF  # MinIO secret key
   bucket-name: mentor-dual-selection-system  # default bucket name, can be customized
