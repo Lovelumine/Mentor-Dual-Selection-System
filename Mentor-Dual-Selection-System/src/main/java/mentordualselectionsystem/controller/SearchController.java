@@ -217,14 +217,17 @@ public class SearchController {
     }
 
 
-    @Operation(summary = "根据年级和班级筛选学生", description = "仅限管理员和导师。")
+    @Operation(summary = "根据年级或班级筛选学生", description = "仅限管理员和导师。")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "成功返回符合条件的学生信息"),
             @ApiResponse(responseCode = "401", description = "未授权，token 无效或缺失"),
-            @ApiResponse(responseCode = "403", description = "Forbidden")
+            @ApiResponse(responseCode = "403", description = "无权限访问该信息")
     })
     @GetMapping("/students/filter")
-    public ResponseEntity<?> filterStudentsByGradeAndClass(@RequestParam Integer grade, @RequestParam Integer classNum, Authentication authentication) {
+    public ResponseEntity<?> filterStudentsByGradeOrClass(
+            @RequestParam(required = false) String grade,
+            @RequestParam(required = false) String studentClass,
+            Authentication authentication) {
 
         if (authentication == null || authentication.getCredentials() == null) {
             return ResponseEntity.status(401).body(formatResponse(401, "当前的token无效"));
@@ -242,19 +245,21 @@ public class SearchController {
             return buildErrorResponse(403, "无权限访问该信息");
         }
 
-        // 获取所有学生
-        List<User> allStudents = userService.getAllStudents(); // 获取所有学生
-        List<Map<String, Object>> filteredStudents = allStudents.stream()
+        // 获取所有学生信息
+        List<User> students = userService.getAllStudents();
+        int totalStudents = students.size(); // 获取学生总数
+
+        List<Map<String, Object>> filteredStudents = students.stream()
                 .filter(student -> {
                     UserDetail userDetail = userDetailService.getUserDetailByUid(student.getUid());
-                    return userDetail != null
-                            && userDetail.getStudentGrade() != null
-                            && userDetail.getStudentClass() != null
-                            && userDetail.getStudentGrade().equals(grade)
-                            && userDetail.getStudentClass().equals(classNum);
+                    // 筛选逻辑：只要年级或班级有一个匹配即可
+                    boolean matchGrade = (grade != null && userDetail != null && grade.equals(userDetail.getStudentGrade()));
+                    boolean matchClass = (studentClass != null && userDetail != null && studentClass.equals(userDetail.getStudentClass()));
+                    return matchGrade || matchClass;
                 })
                 .map(student -> {
                     UserDetail userDetail = userDetailService.getUserDetailByUid(student.getUid());
+
                     Map<String, Object> studentData = new HashMap<>();
                     studentData.put("uid", student.getUid());
                     studentData.put("username", student.getUsername());
@@ -265,19 +270,25 @@ public class SearchController {
                         studentData.put("photourl", userDetail.getPhotoUrl());
                         studentData.put("grade", userDetail.getStudentGrade());
                         studentData.put("class", userDetail.getStudentClass());
+                    } else {
+                        studentData.put("photourl", null);
+                        studentData.put("grade", null);
+                        studentData.put("class", null);
                     }
                     return studentData;
-                })
-                .collect(Collectors.toList());
+                }).collect(Collectors.toList());
 
-
+        int filteredStudentsCount = filteredStudents.size(); // 获取筛选后的学生数量
 
         Map<String, Object> responseBody = new HashMap<>();
         responseBody.put("code", 200);
+        responseBody.put("totalStudents", totalStudents); // 总学生数量
+        responseBody.put("filteredStudentsCount", filteredStudentsCount); // 筛选后的学生数量
         responseBody.put("data", filteredStudents);
 
         return ResponseEntity.ok(responseBody);
     }
+
 
 
 

@@ -42,9 +42,6 @@ public class UserDetail {
     @Column(name = "student_grade", length = 50)
     private String studentGrade; // 学生年级
 
-    @Size(max = 50)
-    @Column(name = "grade", length = 50)
-    private String grade; // 学生成绩或学术等级
 
     // Getter 和 Setter 方法
     public Long getUid() {
@@ -119,11 +116,4 @@ public class UserDetail {
         this.studentGrade = studentGrade;
     }
 
-    public String getGrade() {
-        return grade;
-    }
-
-    public void setGrade(String grade) {
-        this.grade = grade;
-    }
 }
