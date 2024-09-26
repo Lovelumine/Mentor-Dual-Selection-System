@@ -16,9 +16,24 @@ export default {
             component: () => import('@/components/Home/Notice/NoticeComp.vue')
         },
         {
-            path: 'student_list',
-            name: 'studentList',
-            component: () => import('@/components/Home/StudentList/StudentListComp.vue')
+            path: 'student_list1',
+            name: 'studentList1',
+            component: () => import('@/components/Home/StudentList1/StudentList1Comp.vue')
+        },
+        {
+            path: 'student_list2',
+            name: 'studentList2',
+            component: () => import('@/components/Home/StudentList2/StudentList2Comp.vue')
+        },
+        {
+            path: 'student_list3',
+            name: 'studentList3',
+            component: () => import('@/components/Home/StudentList3/StudentList3Comp.vue')
+        },
+        {
+            path: 'student_list4',
+            name: 'studentList4',
+            component: () => import('@/components/Home/StudentList4/StudentList4Comp.vue')
         },
         {
             path: 'select_teacher',

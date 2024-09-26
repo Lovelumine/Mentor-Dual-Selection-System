@@ -7,7 +7,7 @@ import Footer from "@/components/HeaderFooterMenu/FooterComp.vue";
 <template>
   <NavHeader/>
   <router-view/>
-  <Footer/>
+<!--  <Footer/>-->
 </template>
 
 <style scoped lang="sass">

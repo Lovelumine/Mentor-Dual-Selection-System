@@ -23,7 +23,7 @@ onMounted(() => {
 
 function studentListClicked(grade: number) {
   stuListGrade.changeGrade(grade);
-  router.push('/student_list');
+  router.push(`/student_list${grade}`);
 }
 
 function handleIsShowFunction (target: string) {
@@ -73,18 +73,18 @@ watch(() => userInfoStore.userInfo, (newValue) => {
             <el-icon><Avatar /></el-icon>
             <span>选择导师</span>
           </el-menu-item>
-          <el-sub-menu index="stm">
-            <template #title>
-              <el-icon><Menu /></el-icon>
-              <span>状态管理</span>
-            </template>
-            <el-menu-item-group title="学年" class="sub_menu">
-              <el-menu-item index="3-1" @click="router.push('/student_list2');">大一</el-menu-item>
-              <el-menu-item index="3-2" @click="router.push('/student_list2');">大二</el-menu-item>
-              <el-menu-item index="3-3" @click="router.push('/student_list2');">大三</el-menu-item>
-              <el-menu-item index="3-4" @click="router.push('/student_list2');">大四</el-menu-item>
-            </el-menu-item-group>
-          </el-sub-menu>
+<!--          <el-sub-menu index="stm">-->
+<!--            <template #title>-->
+<!--              <el-icon><Menu /></el-icon>-->
+<!--              <span>状态管理</span>-->
+<!--            </template>-->
+<!--            <el-menu-item-group title="学年" class="sub_menu">-->
+<!--              <el-menu-item index="3-1" @click="router.push('/student_list2');">大一</el-menu-item>-->
+<!--              <el-menu-item index="3-2" @click="router.push('/student_list2');">大二</el-menu-item>-->
+<!--              <el-menu-item index="3-3" @click="router.push('/student_list2');">大三</el-menu-item>-->
+<!--              <el-menu-item index="3-4" @click="router.push('/student_list2');">大四</el-menu-item>-->
+<!--            </el-menu-item-group>-->
+<!--          </el-sub-menu>-->
           <el-menu-item @click="router.push('/notice');">
             <el-icon><BellFilled /></el-icon>
             <span>通知公告</span>

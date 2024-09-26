@@ -23,6 +23,11 @@ export default defineConfig({
         target: 'http://223.82.75.76:50000/admin',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/admin/, ''),
+      },
+      '/teacher': {
+        target: 'http://223.82.75.76:50000/teacher',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/teacher/, ''),
       }
     },
   },

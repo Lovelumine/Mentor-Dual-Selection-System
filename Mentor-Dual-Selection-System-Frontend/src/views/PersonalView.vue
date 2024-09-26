@@ -4,6 +4,7 @@ import {onMounted, ref, watch} from "vue";
 const userStore = useUserInfoStore();
 import {useRouter} from "vue-router";
 import PersonalTitleComp from "@/components/Personal/PersonalTitleComp.vue";
+import MyDetailComp from "@/components/Personal/MyDetailComp.vue";
 const router = useRouter();
 
 const userInfoComp = ref({
@@ -80,7 +81,7 @@ watch(() => userStore.userInfo, (newValue) => {
         <button class="button" type="submit">确认修改</button>
       </form>
     </div>
-<!--    <SignupComp v-if="userInfoComp.role === 'ADMIN'"/>-->
+<!--    <MyDetailComp/>-->
   </div>
 </template>
 

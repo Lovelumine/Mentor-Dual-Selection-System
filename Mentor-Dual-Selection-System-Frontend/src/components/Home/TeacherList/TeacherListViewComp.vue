@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import {onMounted, ref, watch} from "vue";
 import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
-import {httpAdmin} from "@/utils/http";
+import {http} from "@/utils/http";
 const userStore = useUserInfoStore();
 
 const isUtilButtons = ref(false);
 const tableData = ref([]);
-const teacherList = ref([]);
 
 const handleEdit = (index: number, row) => {
   console.log(index, row)
@@ -19,8 +18,8 @@ function handleIsUtilButtons(target: string) {
 }
 onMounted(() => {
   if (userStore.userInfo) handleIsUtilButtons(userStore.userInfo.role);
-  httpAdmin({
-    url: '/teachers',
+  http({
+    url: '/search/teachers',
     method: 'GET',
     headers: {
       Accept: '*/*',
@@ -50,7 +49,7 @@ watch(() => userStore.userInfo, (newValue) => {
     <span>列表内容</span>
   </div>
   <el-table :data="tableData" stripe class="table">
-    <el-table-column prop="name" label="姓名"  />
+    <el-table-column prop="fullName" label="姓名"  />
     <el-table-column prop="netid" label="工号"  />
     <el-table-column prop="email" label="邮箱"  />
     <el-table-column prop="professionalDirection" label="研究专业" show-overflow-tooltip />
