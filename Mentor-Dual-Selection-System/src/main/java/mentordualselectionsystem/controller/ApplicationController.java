@@ -190,6 +190,7 @@ public class ApplicationController {
                     studentMap.put("fullName", student.getFullName());
                     studentMap.put("email", student.getEmail());
                     studentMap.put("username", student.getUsername());
+
                     return studentMap;
                 }).collect(Collectors.toList());
 

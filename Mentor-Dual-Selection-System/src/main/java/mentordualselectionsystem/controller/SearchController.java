@@ -113,6 +113,7 @@ public class SearchController {
         data.put("photourl", userDetail.getPhotoUrl());
         data.put("grade", userDetail.getStudentGrade());
         data.put("class", userDetail.getStudentClass());
+        data.put("resume", userDetail.getResume());
 
         responseBody.put("data", data);
         return ResponseEntity.ok(responseBody);
@@ -180,10 +181,12 @@ public class SearchController {
                 studentData.put("photourl", userDetail.getPhotoUrl());
                 studentData.put("grade", userDetail.getStudentGrade());
                 studentData.put("class", userDetail.getStudentClass());
+                studentData.put("resume", userDetail.getResume());
             } else {
                 studentData.put("photourl", null);
                 studentData.put("grade", null);
                 studentData.put("class", null);
+                studentData.put("resume", null);
             }
             return studentData;
         }).collect(Collectors.toList());
@@ -258,10 +261,12 @@ public class SearchController {
                 studentData.put("photourl", userDetail.getPhotoUrl());
                 studentData.put("grade", userDetail.getStudentGrade());
                 studentData.put("class", userDetail.getStudentClass());
+                studentData.put("resume", userDetail.getResume());
             } else {
                 studentData.put("photourl", null);
                 studentData.put("grade", null);
                 studentData.put("class", null);
+                studentData.put("resume", null);
             }
             return studentData;
         }).collect(Collectors.toList());
@@ -354,10 +359,12 @@ public class SearchController {
                         studentData.put("photourl", userDetail.getPhotoUrl());
                         studentData.put("grade", userDetail.getStudentGrade());
                         studentData.put("class", userDetail.getStudentClass());
+                        studentData.put("resume", userDetail.getResume());
                     } else {
                         studentData.put("photourl", null);
                         studentData.put("grade", null);
                         studentData.put("class", null);
+                        studentData.put("resume", null);
                     }
                     return studentData;
                 }).collect(Collectors.toList());
@@ -425,12 +432,14 @@ public class SearchController {
             teacherData.put("avatarUrl", teacher.getAvatarUrl());
             if (userDetail != null) {
                 teacherData.put("photourl", userDetail.getPhotoUrl());
-                teacherData.put("grade", userDetail.getStudentGrade());
-                teacherData.put("class", userDetail.getStudentClass());
+                teacherData.put("teacherposition", userDetail.getTeacherPosition());
+                teacherData.put("research_direction", userDetail.getResearchDirection());
+                teacherData.put("resume", userDetail.getResume());
             } else {
                 teacherData.put("photourl", null);
-                teacherData.put("grade", null);
-                teacherData.put("class", null);
+                teacherData.put("teacherposition", null);
+                teacherData.put("research_direction", null);
+                teacherData.put("resume", null);
             }
             return teacherData;
         }).collect(Collectors.toList());
@@ -501,8 +510,9 @@ public class SearchController {
         data.put("fullName", teacher.getFullName());
         data.put("avatarUrl", teacher.getAvatarUrl());
         data.put("photourl", userDetail.getPhotoUrl());
-        data.put("grade", userDetail.getStudentGrade());
-        data.put("class", userDetail.getStudentClass());
+        data.put("teacher_position", userDetail.getTeacherPosition());
+        data.put("research_direction", userDetail.getResearchDirection());
+        data.put("resume", userDetail.getResume());
 
         responseBody.put("data", data);
         return ResponseEntity.ok(responseBody);
@@ -565,12 +575,14 @@ public class SearchController {
             teacherData.put("avatarUrl", teacher.getAvatarUrl());
             if (userDetail != null) {
                 teacherData.put("photourl", userDetail.getPhotoUrl());
-                teacherData.put("grade", userDetail.getStudentGrade());
-                teacherData.put("class", userDetail.getStudentClass());
+                teacherData.put("teacherposition", userDetail.getTeacherPosition());
+                teacherData.put("research_direction", userDetail.getResearchDirection());
+                teacherData.put("resume", userDetail.getResume());
             } else {
                 teacherData.put("photourl", null);
-                teacherData.put("grade", null);
-                teacherData.put("class", null);
+                teacherData.put("teacherposition", null);
+                teacherData.put("research_direction", null);
+                teacherData.put("resume", null);
             }
             return teacherData;
         }).collect(Collectors.toList());
