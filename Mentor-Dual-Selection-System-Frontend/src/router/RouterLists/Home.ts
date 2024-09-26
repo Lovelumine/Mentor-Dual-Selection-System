@@ -1,4 +1,5 @@
 import HomeView from "@/views/HomeView.vue";
+import TeacherListComp from "@/components/Home/TeacherList/TeacherListComp.vue";
 
 export default {
     path: '/',
@@ -6,9 +7,9 @@ export default {
     component: HomeView,
     children: [
         {
-            path: 'teacher_list',
-            name: 'teacherList',
-            component: () => import('@/components/Home/TeacherList/TeacherListComp.vue')
+            path: 'teach_list',
+            name: 'teachList',
+            component: TeacherListComp
         },
         {
             path: 'notice',

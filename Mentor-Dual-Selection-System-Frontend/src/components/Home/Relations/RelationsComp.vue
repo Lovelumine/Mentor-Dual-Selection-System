@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import {ref, watch} from "vue";
+import {onMounted, ref, watch} from "vue";
 import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
 const userStore = useUserInfoStore();
 import AllApplicationListViewByStudentComp from "@/components/Home/Relations/Student/AllApplicationListViewByStudentComp.vue";
@@ -13,6 +13,28 @@ const pageRole = ref({
   en: '',
   cn: ''
 });
+
+onMounted(() => {
+  if (userStore.userInfo){
+    switch (userStore.userInfo.role){
+      case 'STUDENT': {
+        pageRole.value.cn = '学生';
+        pageRole.value.en = 'student';
+        break;
+      } case 'TEACHER': {
+        pageRole.value.cn = '导师';
+        pageRole.value.en = 'teacher';
+        break;
+      } case 'ADMIN': {
+        pageRole.value.cn = '管理员';
+        pageRole.value.en = 'admin';
+        break;
+      } default: break;
+    }
+  } else {
+    userStore.fetchUserInfo();
+  }
+})
 
 watch(() => userStore.userInfo, (newValue) => {
   switch (newValue.role){

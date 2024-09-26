@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import {Avatar, BellFilled, UserFilled,} from "@element-plus/icons-vue";
+import {Avatar, BellFilled, CircleClose, Connection, User, UserFilled,} from "@element-plus/icons-vue";
 import {onMounted, ref, watch} from "vue";
 import {useRouter} from "vue-router";
 const router = useRouter();
@@ -32,6 +32,10 @@ function handleIsShowFunction (target: string) {
   isSelectTeacherShow.value = target === 'STUDENT';
 
 }
+function SignoutClicked() {
+  localStorage.removeItem("token");
+  window.location.reload();
+}
 
 watch(() => userInfoStore.userInfo, (newValue) => {
   handleIsShowFunction(newValue.role);
@@ -61,7 +65,7 @@ watch(() => userInfoStore.userInfo, (newValue) => {
               <el-menu-item index="1-4" @click="studentListClicked(4);console.log(4)">大四</el-menu-item>
             </el-menu-item-group>
           </el-sub-menu>
-          <el-menu-item @click="router.push('/teacher_list')">
+          <el-menu-item @click="router.push('/teach_list')">
             <el-icon><Avatar /></el-icon>
             <span>导师列表</span>
           </el-menu-item>
@@ -72,6 +76,10 @@ watch(() => userInfoStore.userInfo, (newValue) => {
           <el-menu-item @click="router.push('/select_teacher')" v-if="isSelectTeacherShow">
             <el-icon><Avatar /></el-icon>
             <span>选择导师</span>
+          </el-menu-item>
+          <el-menu-item @click="router.push('/relations')">
+            <el-icon><Connection /></el-icon>
+            <span>师生关系</span>
           </el-menu-item>
 <!--          <el-sub-menu index="stm">-->
 <!--            <template #title>-->
@@ -88,6 +96,14 @@ watch(() => userInfoStore.userInfo, (newValue) => {
           <el-menu-item @click="router.push('/notice');">
             <el-icon><BellFilled /></el-icon>
             <span>通知公告</span>
+          </el-menu-item>
+          <el-menu-item @click="router.push('/personal');">
+            <el-icon><User /></el-icon>
+            <span>个人中心</span>
+          </el-menu-item>
+          <el-menu-item @click="SignoutClicked">
+            <el-icon><CircleClose /></el-icon>
+            <span>退出登录</span>
           </el-menu-item>
         </el-menu>
       </el-col>

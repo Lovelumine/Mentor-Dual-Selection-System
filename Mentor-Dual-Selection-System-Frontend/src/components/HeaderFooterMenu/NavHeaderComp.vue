@@ -1,25 +1,44 @@
 <script setup lang="ts">
 import zhuzhanLogo from "@/assets/zhuzhanLOGO.png";
-import {User, CircleClose, Connection} from "@element-plus/icons-vue";
-import {onMounted, ref} from "vue";
+import {onMounted, ref, watch} from "vue";
+import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
+const userInfoStore = useUserInfoStore();
 
 const iconProperty = ref({color: '', size: 0});
 const isLogin = ref(false);
+const userInfoComp = ref();
+const userRoleCN = ref('');
+
 onMounted(() => {
   if (localStorage.getItem("token")) {
     isLogin.value = true;
   }
   iconProperty.value.color = '#fff';
   iconProperty.value.size = 24;
+  if (userInfoStore.userInfo) {
+    userInfoComp.value = userInfoStore.userInfo;
+    switch (userInfoStore.userInfo.role) {
+      case 'TEACHER': userRoleCN.value = '导师'; break;
+      case 'ADMIN': userRoleCN.value = '管理员'; break;
+      case 'STUDENT': userRoleCN.value = '学生'; break;
+      default: break;
+    }
+  }
+
 })
 
 function logoClicked() {
   window.location.href = "https://www.sysu.edu.cn/";
 }
-function SignoutClicked() {
-  localStorage.removeItem("token");
-  window.location.reload();
-}
+watch(() => userInfoStore.userInfo, (newValue) => {
+  userInfoComp.value = newValue;
+  switch (newValue.role) {
+    case 'TEACHER': userRoleCN.value = '导师'; break;
+    case 'ADMIN': userRoleCN.value = '管理员'; break;
+    case 'STUDENT': userRoleCN.value = '学生'; break;
+    default: break;
+  }
+})
 </script>
 
 <template>
@@ -28,24 +47,26 @@ function SignoutClicked() {
       <img class="logo" :src="zhuzhanLogo" alt="logo" title="学校主页" @click="logoClicked"/>
       <span class="logo_title">农业与生物技术学院 - 师生双选系统</span>
     </div>
-
     <div class="user_bar" v-if="isLogin">
-      <a href="/relations" title="师生关系">
-        <div class="user_icon_box">
-          <el-icon class="user_icon" :size="iconProperty.size" :color="iconProperty.color"><Connection /></el-icon>
-        </div>
-      </a>
-      <a href="/personal/" title="个人中心">
-        <div class="user_icon_box">
-          <el-icon class="user_icon" :size="iconProperty.size" :color="iconProperty.color"><User /></el-icon>
-        </div>
-      </a>
-      <a title="退出登录" @click="SignoutClicked">
-        <div class="user_icon_box">
-          <el-icon class="user_icon" :size="iconProperty.size" :color="iconProperty.color"><CircleClose /></el-icon>/
-        </div>
-      </a>
+      欢迎您！{{userRoleCN}}：{{userInfoComp.fullName}}
     </div>
+<!--    <div class="user_bar" v-if="isLogin">-->
+<!--      <a href="/relations" title="师生关系">-->
+<!--        <div class="user_icon_box">-->
+<!--          <el-icon class="user_icon" :size="iconProperty.size" :color="iconProperty.color"><Connection /></el-icon>-->
+<!--        </div>-->
+<!--      </a>-->
+<!--      <a href="/personal" title="个人中心">-->
+<!--        <div class="user_icon_box">-->
+<!--          <el-icon class="user_icon" :size="iconProperty.size" :color="iconProperty.color"><User /></el-icon>-->
+<!--        </div>-->
+<!--      </a>-->
+<!--      <a title="退出登录" @click="SignoutClicked">-->
+<!--        <div class="user_icon_box">-->
+<!--          <el-icon class="user_icon" :size="iconProperty.size" :color="iconProperty.color"><CircleClose /></el-icon>/-->
+<!--        </div>-->
+<!--      </a>-->
+<!--    </div>-->
   </Header>
 </template>
 
@@ -76,7 +97,8 @@ function SignoutClicked() {
   a
     text-decoration: none
   .user_bar
-    width: 230px
+    width: 500px
+    color: white
     margin: 0 20px 0 auto
     flex: 0 1 auto
     display: flex

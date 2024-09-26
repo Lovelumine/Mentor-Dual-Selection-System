@@ -5,6 +5,8 @@ import {onMounted, ref} from "vue";
 import SideMenuComp from "@/components/HeaderFooterMenu/SideMenuComp.vue";
 import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
 const userStore = useUserInfoStore();
+import {useRouter} from "vue-router";
+const router = useRouter();
 
 const isSignin = ref(false);
 
@@ -12,6 +14,8 @@ onMounted(() => {
   if (localStorage.getItem("token")) {
     userStore.fetchUserInfo();
     isSignin.value = true;
+  } else {
+    router.replace('/');
   }
 })
 </script>

@@ -81,7 +81,7 @@ watch(() => userStore.userInfo, (newValue) => {
         <button class="button" type="submit">确认修改</button>
       </form>
     </div>
-<!--    <MyDetailComp/>-->
+    <MyDetailComp/>
   </div>
 </template>
 

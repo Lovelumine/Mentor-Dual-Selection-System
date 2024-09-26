@@ -9,6 +9,7 @@ const router = useRouter();
 const allUser = ref([]);
 const allTeacher = ref([]);
 const pendingList = ref([]);
+const nowStatus = ref('');
 
 onMounted(() => {
   http({
@@ -59,6 +60,16 @@ onMounted(() => {
               }
             }
           }
+          for (let k = 0; k < pendingList.value.length; k++){
+            if (pendingList.value[k].status === 'ACCEPTED') {
+              nowStatus.value = '已通过';
+              break;
+            } else if (pendingList.value[k].status === 'PENDING'){
+              nowStatus.value = '待审核';
+            } else {
+              nowStatus.value = '未选择';
+            }
+          }
         } else{
           alert(res.data.data.error);
         }
@@ -81,7 +92,7 @@ onMounted(() => {
 <template>
   <div class="application_list_box">
     <div class="title">
-      <span>所有申请</span>
+      <span>所有申请&nbsp;&nbsp;&nbsp;当前状态：{{nowStatus}}</span>
     </div>
     <el-table :data="pendingList" stripe class="table">
       <el-table-column prop="id" label="申请编号"/>
