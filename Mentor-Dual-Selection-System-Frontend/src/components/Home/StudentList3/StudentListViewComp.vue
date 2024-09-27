@@ -1,6 +1,9 @@
+<!--大三列表-->
 <script setup lang="ts">
-import {onMounted, ref} from "vue";
+import {onMounted, ref, watch} from "vue";
 import {http} from "@/utils/http";
+import {useStudentListStore} from "@/stores/StudentListStore";
+const studentListStore = useStudentListStore();
 
 const grade = ref(null);
 const tableData = ref([]);
@@ -23,6 +26,19 @@ function isStudentGradeThird(): string{
     return (entryYear - 1).toString().padStart(4, '0');
   }
 }
+
+function selectStudentByName(targetStudentList){
+  const grade = isStudentGradeThird();
+  let tempList = [];
+  for (let i = 0; i < targetStudentList.length; i++) {
+    if (targetStudentList[i].grade === grade) {
+      console.log(targetStudentList[i])
+      tempList.push(targetStudentList[i]);
+    }
+  }
+  tableData.value = tempList;
+}
+
 onMounted(() => {
   grade.value = isStudentGradeThird();
   http({
@@ -46,6 +62,12 @@ onMounted(() => {
   })
 })
 
+watch([
+  () => studentListStore.isSelectTeacher,
+  () => studentListStore.studentListSt,
+], ([newIsSelectTeacherValue, newStudentList]) => {
+  if (newStudentList) selectStudentByName(newStudentList);
+})
 </script>
 
 <template>
@@ -53,7 +75,7 @@ onMounted(() => {
     <span>列表内容（{{grade}}）级</span>
   </div>
   <el-table :data="tableData" stripe class="table">
-    <el-table-column prop="name" label="姓名"  />
+    <el-table-column prop="fullName" label="姓名"  />
     <el-table-column prop="id" label="学号"  />
     <el-table-column prop="grade" label="年级"  />
     <el-table-column prop="class" label="班级" show-overflow-tooltip />

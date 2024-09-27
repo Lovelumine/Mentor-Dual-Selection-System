@@ -1,7 +1,9 @@
 <!--大一的列表-->
 <script setup lang="ts">
-import {onMounted, ref} from "vue";
+import {onMounted, ref, watch} from "vue";
 import {http} from "@/utils/http";
+import {useStudentListStore} from "@/stores/StudentListStore";
+const studentListStore = useStudentListStore();
 
 const grade = ref(null);
 const tableData = ref([]);
@@ -21,6 +23,17 @@ function isStudentGradeFirst(): string{
   } else if (entryYear === currentYear && currentMonth <= 8) { // 获取年和当前年相等，但月份八月以前，就是获取年-1的学年
     return (entryYear - 1).toString().padStart(4, '0');
   }
+}
+
+function selectStudentByName(targetStudentList){
+  const grade = isStudentGradeFirst();
+  let tempList = [];
+  for (let i = 0; i < targetStudentList.length; i++) {
+    if (targetStudentList[i].grade === grade) {
+      tempList.push(targetStudentList[i]);
+    }
+  }
+  tableData.value = tempList;
 }
 onMounted(() => {
   grade.value = isStudentGradeFirst();
@@ -45,6 +58,12 @@ onMounted(() => {
   })
 })
 
+watch([
+  () => studentListStore.isSelectTeacher,
+  () => studentListStore.studentListSt,
+], ([newIsSelectTeacherValue, newStudentList]) => {
+  if (newStudentList) selectStudentByName(newStudentList);
+})
 </script>
 
 <template>
