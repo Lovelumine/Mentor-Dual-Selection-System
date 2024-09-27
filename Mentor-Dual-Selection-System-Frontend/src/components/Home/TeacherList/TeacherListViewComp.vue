@@ -3,6 +3,8 @@ import {onMounted, ref, watch} from "vue";
 import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
 import {http} from "@/utils/http";
 const userStore = useUserInfoStore();
+import {useTeacherListStore} from "@/stores/TeacherListStore";
+const teacherListStore = useTeacherListStore();
 
 const isUtilButtons = ref(false);
 const tableData = ref([]);
@@ -14,7 +16,7 @@ const handleDelete = (index: number, row) => {
   console.log(index, row)
 }
 function handleIsUtilButtons(target: string) {
-  isUtilButtons.value = ['TEACHER', 'ADMIN'].includes(target);
+  isUtilButtons.value = 'ADMIN' === target;
 }
 onMounted(() => {
   if (userStore.userInfo) handleIsUtilButtons(userStore.userInfo.role);
@@ -39,8 +41,17 @@ onMounted(() => {
   });
 })
 
-watch(() => userStore.userInfo, (newValue) => {
-  handleIsUtilButtons(newValue.role);
+watch([
+  () => userStore.userInfo,
+  () => teacherListStore.teacherListSt
+], ([newUserInfoVal, newTeacherListVal]) => {
+  handleIsUtilButtons(newUserInfoVal.role);
+  if (newTeacherListVal){
+    console.log('ntlsv', newTeacherListVal);
+    tableData.value = newTeacherListVal;
+  } else {
+    console.log('ntlsv', newTeacherListVal);
+  }
 })
 </script>
 

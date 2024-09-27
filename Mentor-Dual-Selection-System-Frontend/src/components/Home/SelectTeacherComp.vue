@@ -93,7 +93,7 @@ watch(() => userStore.userInfo, (newValue) => {
     </div>
     <span class="input_item">
       申请该导师的理由：
-      <input type="text" placeholder="请精简至30字内（必填）" required v-model="selectReason"/>
+      <input type="text" placeholder="请精简你的理由（必填）" required v-model="selectReason"/>
       <button class="button" @click="submitApplication">提交申请</button>
     </span>
   </div>
