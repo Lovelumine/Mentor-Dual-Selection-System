@@ -44,7 +44,6 @@ function resettingClicked(){
       <select id="is_select_teacher" v-model="studentIsSelectTeacher">
         <option :value="null">全部</option>
         <option value="no">未选择</option>
-        <option value="pending">待筛选</option>
         <option value="accepted">已通过</option>
       </select>
     </span>

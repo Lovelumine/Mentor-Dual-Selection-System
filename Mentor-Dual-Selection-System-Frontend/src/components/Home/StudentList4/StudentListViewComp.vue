@@ -27,13 +27,37 @@ function isStudentGradeFourth(): string{
   }
 }
 
-function selectStudentByName(targetStudentList){
+function selectStudentByName(targetStudentList, targetIsSelectTeacher){
   const grade = isStudentGradeFourth();
   let tempList = [];
   for (let i = 0; i < targetStudentList.length; i++) {
     if (targetStudentList[i].grade === grade) {
-      console.log(targetStudentList[i])
-      tempList.push(targetStudentList[i]);
+      if (targetStudentList[i].mentor_id !== null){
+        targetStudentList[i].isMentor = '已通过';
+        http({
+          url: '/search/teacher',
+          method: 'GET',
+          headers: {
+            Accept: '*/*',
+            Authorization: 'Bearer ' + localStorage.getItem('token')
+          },
+          params: {
+            uid: targetStudentList[i].mentor_id
+          }
+        }).then(res => {
+          if (res.data.code === 200) {
+            targetStudentList[i].teacherName = res.data.data.fullName;
+          }
+        })
+      } else {
+        targetStudentList[i].isMentor = '未选择';
+      }
+      switch (targetIsSelectTeacher) {
+        case null: tempList.push(targetStudentList[i]); break;
+        case 'no': if (targetStudentList[i].mentor_id === null) tempList.push(targetStudentList[i]); break;
+        case 'accepted': if (targetStudentList[i].mentor_id !== null) tempList.push(targetStudentList[i]); break;
+        default: break;
+      }
     }
   }
   tableData.value = tempList;
@@ -54,6 +78,28 @@ onMounted(() => {
   }).then(res => {
     if (res.data.code === 200) {
       tableData.value = res.data.data;
+      for (let i = 0; i < tableData.value.length; i++) {
+        if (tableData.value[i].mentor_id !== null) {
+          tableData.value[i].isMentor = '已通过';
+          http({
+            url: '/search/teacher',
+            method: 'GET',
+            headers: {
+              Accept: '*/*',
+              Authorization: 'Bearer ' + localStorage.getItem('token')
+            },
+            params: {
+              uid: tableData.value[i].mentor_id
+            }
+          }).then(res => {
+            if (res.data.code === 200) {
+              tableData.value[i].teacherName = res.data.data.fullName;
+            }
+          })
+        } else {
+          tableData.value[i].isMentor = '未选择';
+        }
+      }
     } else {
       alert(res.data.data.error);
     }
@@ -66,7 +112,7 @@ watch([
   () => studentListStore.isSelectTeacher,
   () => studentListStore.studentListSt,
 ], ([newIsSelectTeacherValue, newStudentList]) => {
-  if (newStudentList) selectStudentByName(newStudentList);
+  if (newStudentList) selectStudentByName(newStudentList, newIsSelectTeacherValue);
 })
 </script>
 
