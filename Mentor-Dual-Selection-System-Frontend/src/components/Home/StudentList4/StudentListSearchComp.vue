@@ -9,6 +9,7 @@ const studentIsSelectTeacher = ref(null);
 function selectStudentClicked() {
   const studentListStore = useStudentListStore();
   studentListStore.updateIsSelectTeacher(studentIsSelectTeacher);
+  if (studentNameValue.value === null) studentNameValue.value = "";
   http({
     url: '/search/students/search',
     method: "GET",
