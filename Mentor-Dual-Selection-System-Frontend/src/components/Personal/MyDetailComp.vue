@@ -5,7 +5,33 @@ import {httpStudent, httpTeacher} from "@/utils/http";
 const userInfoStore = useUserInfoStore();
 
 const userRole = ref(null);
-const userDetail = ref(null);
+const userDetail = ref({
+  uid: -1,
+  photoUrl: '',
+  teacherPosition: '',
+  researchDirection: '',
+  professionalDirection: '',
+  resume: '',
+  netid: '',
+  studentClass: null,
+  studentGender: null,
+});
+const userDetailTemp = ref({
+  uid: -1,
+  photoUrl: '',
+  teacherPosition: '',
+  researchDirection: '',
+  professionalDirection: '',
+  resume: '',
+  netid: '',
+  studentClass: null,
+  studentGender: null,
+});
+const isChangeDetailDisabled = ref(true);
+
+function changeDetailDisabled(){
+  isChangeDetailDisabled.value = !isChangeDetailDisabled.value;
+}
 
 onMounted(() => {
   if (userInfoStore.userInfo) getUserDetail(userInfoStore.userInfo.role);
@@ -25,6 +51,7 @@ function getUserDetail(target: string) {
       console.log(res);
       if (res.data.code === 200) {
         userDetail.value = res.data.data;
+        userDetailTemp.value = userDetail.value
       } else {
         alert(res.data.data.error);
       }
@@ -43,6 +70,7 @@ function getUserDetail(target: string) {
     }).then(res => {
       if (res.data.code === 200) {
         userDetail.value = res.data.data;
+        userDetailTemp.value = userDetail.value
       } else {
         alert(res.data.data.error);
       }
@@ -61,9 +89,21 @@ watch(() => userInfoStore.userInfo, (newValue) => {
 <template>
   <div class="my_detail_box">
     <h3>账号详细信息</h3>
-    <div>
-      {{userDetail}}
-    </div>
+    <el-form label-width="auto" style="max-width: 600px">
+      <el-form-item label="职称">
+        <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.teacherPosition"/>
+      </el-form-item>
+      <el-form-item label="研究方向">
+        <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.researchDirection"/>
+      </el-form-item>
+      <el-form-item label="专业方向">
+        <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.professionalDirection"/>
+      </el-form-item>
+      <el-form-item label="简介">
+        <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.resume"/>
+      </el-form-item>
+    </el-form>
+    <button @click="changeDetailDisabled">{{isChangeDetailDisabled? '开启修改': '关闭修改'}}</button>
   </div>
 </template>
 
