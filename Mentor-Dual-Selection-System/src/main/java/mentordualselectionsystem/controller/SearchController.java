@@ -114,6 +114,7 @@ public class SearchController {
         data.put("grade", userDetail.getStudentGrade());
         data.put("class", userDetail.getStudentClass());
         data.put("resume", userDetail.getResume());
+        data.put("mentor_id",student.getMentorId());
 
         responseBody.put("data", data);
         return ResponseEntity.ok(responseBody);
@@ -177,6 +178,7 @@ public class SearchController {
             studentData.put("email", student.getEmail());
             studentData.put("fullName", student.getFullName());
             studentData.put("avatarUrl", student.getAvatarUrl());
+            studentData.put("mentor_id",student.getMentorId());
             if (userDetail != null) {
                 studentData.put("photourl", userDetail.getPhotoUrl());
                 studentData.put("grade", userDetail.getStudentGrade());
@@ -257,6 +259,7 @@ public class SearchController {
             studentData.put("email", student.getEmail());
             studentData.put("fullName", student.getFullName());
             studentData.put("avatarUrl", student.getAvatarUrl());
+            studentData.put("mentor_id",student.getMentorId());
             if (userDetail != null) {
                 studentData.put("photourl", userDetail.getPhotoUrl());
                 studentData.put("grade", userDetail.getStudentGrade());
@@ -355,6 +358,7 @@ public class SearchController {
                     studentData.put("email", student.getEmail());
                     studentData.put("fullName", student.getFullName());
                     studentData.put("avatarUrl", student.getAvatarUrl());
+                    studentData.put("mentor_id",student.getMentorId());
                     if (userDetail != null) {
                         studentData.put("photourl", userDetail.getPhotoUrl());
                         studentData.put("grade", userDetail.getStudentGrade());
@@ -430,6 +434,7 @@ public class SearchController {
             teacherData.put("email", teacher.getEmail());
             teacherData.put("fullName", teacher.getFullName());
             teacherData.put("avatarUrl", teacher.getAvatarUrl());
+            teacherData.put("AcceptedStudents", teacher.getAcceptedStudents());
             if (userDetail != null) {
                 teacherData.put("photourl", userDetail.getPhotoUrl());
                 teacherData.put("teacherposition", userDetail.getTeacherPosition());
@@ -509,10 +514,12 @@ public class SearchController {
         data.put("email", teacher.getEmail());
         data.put("fullName", teacher.getFullName());
         data.put("avatarUrl", teacher.getAvatarUrl());
+        data.put("AcceptedStudents", teacher.getAcceptedStudents());
         data.put("photourl", userDetail.getPhotoUrl());
         data.put("teacher_position", userDetail.getTeacherPosition());
         data.put("research_direction", userDetail.getResearchDirection());
         data.put("resume", userDetail.getResume());
+
 
         responseBody.put("data", data);
         return ResponseEntity.ok(responseBody);
@@ -573,6 +580,7 @@ public class SearchController {
             teacherData.put("email", teacher.getEmail());
             teacherData.put("fullName", teacher.getFullName());
             teacherData.put("avatarUrl", teacher.getAvatarUrl());
+            teacherData.put("AcceptedStudents", teacher.getAcceptedStudents());
             if (userDetail != null) {
                 teacherData.put("photourl", userDetail.getPhotoUrl());
                 teacherData.put("teacherposition", userDetail.getTeacherPosition());
