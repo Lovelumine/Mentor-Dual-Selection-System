@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {onMounted, ref, watch} from "vue";
 import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
-import {httpStudent, httpTeacher} from "@/utils/http";
+import {http, httpStudent, httpTeacher} from "@/utils/http";
 const userInfoStore = useUserInfoStore();
 
 const userRole = ref(null);
@@ -31,6 +31,28 @@ const isChangeDetailDisabled = ref(true);
 
 function changeDetailDisabled(){
   isChangeDetailDisabled.value = !isChangeDetailDisabled.value;
+}
+function changeDetailChecked(){
+  console.log(userDetailTemp.value);
+  http({
+    url: '/user/update',
+    method: 'POST',
+    headers: {
+      Accept: '*/*',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+    data: userDetailTemp.value
+  }).then(res => {
+    if (res.data.code === 200) {
+      alert('修改成功');
+      window.location.reload();
+    } else {
+      alert(res.data.data.error);
+    }
+  }).catch(err => {
+    alert(JSON.parse(err.request.responseText).data.error);
+  })
 }
 
 onMounted(() => {
@@ -89,21 +111,22 @@ watch(() => userInfoStore.userInfo, (newValue) => {
 <template>
   <div class="my_detail_box">
     <h3>账号详细信息</h3>
-    <el-form label-width="auto" style="max-width: 600px">
-      <el-form-item label="职称">
+    <el-form label-width="auto" style="max-width: 600px; margin: 0 auto">
+      <el-form-item label="职称：">
         <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.teacherPosition"/>
       </el-form-item>
-      <el-form-item label="研究方向">
+      <el-form-item label="研究方向：">
         <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.researchDirection"/>
       </el-form-item>
-      <el-form-item label="专业方向">
+      <el-form-item label="专业方向：">
         <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.professionalDirection"/>
       </el-form-item>
-      <el-form-item label="简介">
+      <el-form-item label="简介：">
         <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.resume"/>
       </el-form-item>
     </el-form>
-    <button @click="changeDetailDisabled">{{isChangeDetailDisabled? '开启修改': '关闭修改'}}</button>
+    <button class="button" @click="changeDetailDisabled">{{isChangeDetailDisabled? '开启修改': '关闭修改'}}</button>
+    <button class="button" @click="changeDetailChecked" :disabled="isChangeDetailDisabled">确认修改</button>
   </div>
 </template>
 
@@ -117,4 +140,18 @@ watch(() => userInfoStore.userInfo, (newValue) => {
   h3
     color: #005826
     font-weight: bold
+  .button
+    border-radius: 5px
+    width: 100px
+    height: 32px
+    background-color: #005826
+    color: white
+    margin-left: 20px
+    border: none
+    font-size: 15px
+    transition: .3s ease
+  .button:hover
+    background-color: #0f7e3f
+  .button:disabled
+    background-color: #55655b
 </style>
