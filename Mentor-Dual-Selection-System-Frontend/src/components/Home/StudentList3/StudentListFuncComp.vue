@@ -10,6 +10,10 @@ const excelData = ref([]);
 const excelName = ref('');
 const isUploadBoxShow = ref(false);
 
+function downloadStudentTemplate () {
+  window.location.href = 'https://minio.lumoxuan.cn/mentor-dual-selection-system/teacher0/学生表格模板.xlsx';
+}
+
 function checkUpload() {
   uploadCoverStore.triggerCoverShow(true);
   uploadCoverStore.recordNumberOfPeople(excelData.value.length - 1);
@@ -79,7 +83,7 @@ function handleFileChange(event) {
   <div class="button_box">
     <button>添加单条学生信息</button>
     <button>下载当前学生状态</button>
-    <button>下载学生表格模板</button>
+    <button @click="downloadStudentTemplate">下载学生表格模板</button>
     <input type="file" @change="handleFileChange" ref="fileInput" style="display: none;" accept=".xlsx, .xls">
     <button @click="triggerFileInput">批量上传学生信息</button>
     <button>批量下载学生附件</button>
