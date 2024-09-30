@@ -111,6 +111,8 @@ watch(() => userStore.userInfo, (newValue) => {
   .item_box
     margin: 20px auto 20px 20px
     display: flex
+    flex-wrap: wrap
+    row-gap: 20px
     .item
       margin-right: 20px
       width: 320px
