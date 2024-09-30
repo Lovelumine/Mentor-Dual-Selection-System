@@ -109,6 +109,7 @@ function getUserDetail(targetInfo) {
         }
       }
       userDetailTemp.value = userDetail.value;
+      console.log(userDetailTemp.value);
     }).catch(err => {
       alert(JSON.parse(err.requests.responseText).data.error);
       console.error(err);
