@@ -31,6 +31,9 @@ const isChangeDetailDisabled = ref(true);
 
 function changeDetailDisabled(){
   isChangeDetailDisabled.value = !isChangeDetailDisabled.value;
+  if (isChangeDetailDisabled.value) {
+    window.location.reload();
+  }
 }
 
 function changeDetailChecked(target: string){
@@ -47,10 +50,35 @@ function changeDetailChecked(target: string){
     }).then(res => {
       if (res.data.code === 200){
         alert('修改成功！');
+        window.location.reload();
       } else {
+        alert('修改失败！');
         console.log(res);
       }
     }).catch(err => {
+      alert('修改失败！');
+      console.error(err);
+    })
+  } else if (target === 'TEACHER'){
+    httpTeacher({
+      url: '/update',
+      method: 'PUT',
+      headers: {
+        Accept: '*/*',
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        'Content-Type': 'application/json'
+      },
+      data: userDetailTemp.value
+    }).then(res => {
+      if (res.data.code === 200){
+        alert('修改成功！');
+        window.location.reload();
+      } else {
+        alert('修改失败！');
+        console.log(res);
+      }
+    }).catch(err => {
+      alert('修改失败！');
       console.error(err);
     })
   }
@@ -74,10 +102,13 @@ function getUserDetail(targetInfo) {
       console.log(res);
       if (res.data.code === 200) {
         userDetail.value = res.data.data;
-        userDetailTemp.value = userDetail.value
       } else {
-        alert(res.data.data.error);
+        if (targetInfo){
+          userDetail.value.uid = targetInfo.uid;
+          userDetail.value.netid = targetInfo.username;
+        }
       }
+      userDetailTemp.value = userDetail.value;
     }).catch(err => {
       alert(JSON.parse(err.requests.responseText).data.error);
       console.error(err);
@@ -92,16 +123,14 @@ function getUserDetail(targetInfo) {
       }
     }).then(res => {
       if (res.data.code === 200) {
-        console.log(1, res.data.data);
         userDetail.value = res.data.data;
       } else {
-        console.log(2, res);
         if (targetInfo){
           userDetail.value.uid = targetInfo.uid;
           userDetail.value.netid = targetInfo.username;
         }
       }
-      userDetailTemp.value = userDetail.value
+      userDetailTemp.value = userDetail.value;
     }).catch(err => {
       alert(JSON.parse(err.requests.responseText).data.error);
     })
