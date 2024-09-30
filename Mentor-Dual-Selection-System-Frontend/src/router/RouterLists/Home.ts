@@ -17,23 +17,23 @@ export default {
             component: () => import('@/components/Home/Notice/NoticeComp.vue')
         },
         {
-            path: 'student_list1',
-            name: 'studentList1',
+            path: 'stu_list1',
+            name: 'stuList1',
             component: () => import('@/components/Home/StudentList1/StudentList1Comp.vue')
         },
         {
-            path: 'student_list2',
-            name: 'studentList2',
+            path: 'stu_list2',
+            name: 'stuList2',
             component: () => import('@/components/Home/StudentList2/StudentList2Comp.vue')
         },
         {
-            path: 'student_list3',
-            name: 'studentList3',
+            path: 'stu_list3',
+            name: 'stuList3',
             component: () => import('@/components/Home/StudentList3/StudentList3Comp.vue')
         },
         {
-            path: 'student_list4',
-            name: 'studentList4',
+            path: 'stu_list4',
+            name: 'stuList4',
             component: () => import('@/components/Home/StudentList4/StudentList4Comp.vue')
         },
         {
@@ -50,6 +50,16 @@ export default {
             path: 'relations',
             name: 'relations',
             component: () => import('@/components/Home/Relations/RelationsComp.vue')
+        },
+        {
+            path: 'add_single_stu',
+            name: 'addSingleStu',
+            component: () => import('@/components/Home/AddSingleStuInfoComp.vue')
+        },
+        {
+            path: 'add_single_teach',
+            name: 'addSingleTeach',
+            component: () => import('@/components/Home/AddSingleTeachInfoComp.vue')
         }
     ]
 }

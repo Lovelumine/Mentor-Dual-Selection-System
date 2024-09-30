@@ -6,7 +6,9 @@ const userInfoStore = useUserInfoStore();
 
 const iconProperty = ref({color: '', size: 0});
 const isLogin = ref(false);
-const userInfoComp = ref();
+const userInfoComp = ref({
+  fullName: '',
+});
 const userRoleCN = ref('');
 
 onMounted(() => {

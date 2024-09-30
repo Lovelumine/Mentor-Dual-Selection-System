@@ -64,7 +64,7 @@ function selectStudentByName(targetStudentList, targetIsSelectTeacher){
 }
 
 onMounted(() => {
-  grade.value = isStudentGradeThird();
+  grade.value = isStudentGradeFourth();
   http({
     url: '/search/students/filter',
     method: 'GET',

@@ -23,7 +23,7 @@ onMounted(() => {
 
 function studentListClicked(grade: number) {
   stuListGrade.changeGrade(grade);
-  router.push(`/student_list${grade}`);
+  router.push(`/stu_list${grade}`);
 }
 
 function handleIsShowFunction (target: string) {
