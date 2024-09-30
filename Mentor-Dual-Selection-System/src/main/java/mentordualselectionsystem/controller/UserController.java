@@ -10,8 +10,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import mentordualselectionsystem.dto.UserRequest;
 import mentordualselectionsystem.mysql.User;
+import mentordualselectionsystem.mysql.UserDetail;
 import mentordualselectionsystem.repositories.UserRepository;
 import mentordualselectionsystem.security.JwtUtils;
+import mentordualselectionsystem.services.UserDetailService;
 import mentordualselectionsystem.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -31,12 +33,15 @@ public class UserController {
     private final UserService userService;
     private final JwtUtils jwtUtils;
     private final UserRepository userRepository;
+    private final UserDetailService userDetailService;  // 添加 UserDetailService 声明
+
 
     @Autowired
-    public UserController(UserService userService, JwtUtils jwtUtils, UserRepository userRepository) {
+    public UserController(UserService userService, JwtUtils jwtUtils, UserRepository userRepository, UserDetailService userDetailService) {
         this.userService = userService;
         this.jwtUtils = jwtUtils;
         this.userRepository = userRepository;
+        this.userDetailService = userDetailService;
     }
 
     @Operation(summary = "获取当前用户信息", description = "根据 JWT 令牌获取当前用户的详细信息。")
@@ -174,26 +179,36 @@ public class UserController {
             String username = userRequest.getUsername();
             String password = userRequest.getPassword() != null ? userRequest.getPassword() : "123";  // 默认密码为123
 
-            // 如果用户 ID 为空，则新建用户
             if (uid == null) {
                 if (userRepository.findByUsername(username).isPresent()) {
                     return buildErrorResponse(400, "用户名已存在");
                 }
-                // 新建用户
+
                 User newUser = new User();
                 newUser.setUsername(username);
                 newUser.setFullName(fullName);
                 newUser.setEmail(email);
                 newUser.setAvatarUrl(avatarUrl != null ? avatarUrl : "https://minio.lumoxuan.cn/mentor-dual-selection-system/defaultavater.webp");
-                newUser.setPassword(password);  // 设置默认密码
-                newUser.setRole(userService.getRoleByName(role));  // 设置角色
+                newUser.setPassword(password);
+                newUser.setRole(userService.getRoleByName(role));
                 userService.saveUser(newUser);
+
+                if ("STUDENT".equals(role)) {
+                    String grade = userRequest.getGrade();
+                    if (grade == null || grade.isEmpty()) {
+                        return buildErrorResponse(400, "学生角色必须提供年级信息");
+                    }
+
+                    UserDetail userDetail = new UserDetail();
+                    userDetail.setUid(newUser.getUid());
+                    userDetail.setStudentGrade(grade);
+                    userDetailService.createUserDetail(userDetail);  // 使用 createUserDetail 保存用户详细信息
+                }
+
             } else {
-                // 更新现有用户
                 User existingUser = userRepository.findById(uid)
                         .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
 
-                // 如果用户名已更改，检查新用户名是否已存在
                 if (!existingUser.getUsername().equals(username) && userRepository.findByUsername(username).isPresent()) {
                     return buildErrorResponse(400, "用户名已存在");
                 }
@@ -205,6 +220,21 @@ public class UserController {
                 existingUser.setPassword(password);
                 existingUser.setRole(userService.getRoleByName(role));
                 userService.saveUser(existingUser);
+
+                if ("STUDENT".equals(role)) {
+                    String grade = userRequest.getGrade();
+                    if (grade == null || grade.isEmpty()) {
+                        return buildErrorResponse(400, "学生角色必须提供年级信息");
+                    }
+
+                    UserDetail userDetail = userDetailService.getUserDetailByUid(uid);
+                    if (userDetail == null) {
+                        userDetail = new UserDetail();
+                        userDetail.setUid(existingUser.getUid());
+                    }
+                    userDetail.setStudentGrade(grade);
+                    userDetailService.updateUserDetail(uid, userDetail);  // 使用 updateUserDetail 保存用户详细信息
+                }
             }
 
             Map<String, Object> responseBody = new HashMap<>();
@@ -217,6 +247,7 @@ public class UserController {
             return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
         }
     }
+
 
     // 新增方法：根据 UID 获取指定用户的账号信息
     @Operation(
