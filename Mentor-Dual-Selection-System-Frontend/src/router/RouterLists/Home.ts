@@ -55,6 +55,11 @@ export default {
             path: 'add_single_stu',
             name: 'addSingleStu',
             component: () => import('@/components/Home/AddSingleStuInfoComp.vue')
+        },
+        {
+            path: 'add_single_teach',
+            name: 'addSingleTeach',
+            component: () => import('@/components/Home/AddSingleTeachInfoComp.vue')
         }
     ]
 }

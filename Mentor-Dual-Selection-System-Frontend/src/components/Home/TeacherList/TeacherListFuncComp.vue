@@ -1,10 +1,15 @@
 <script setup lang="ts">
+import {useRouter} from "vue-router";
+const router = useRouter()
 
+function addSingleTeacherClicked() {
+  router.push('/add_single_teach');
+}
 </script>
 
 <template>
   <div class="button_box">
-    <button>添加单条导师信息</button>
+    <button @click="addSingleTeacherClicked">添加单条导师信息</button>
     <button>下载当前导师状态</button>
     <button>下载导师表格模板</button>
     <button>批量上传导师信息</button>
