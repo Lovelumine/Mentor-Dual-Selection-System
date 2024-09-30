@@ -61,12 +61,12 @@ watch([
   </div>
   <el-table :data="tableData" stripe class="table">
     <el-table-column prop="fullName" label="姓名"  />
-    <el-table-column prop="netid" label="工号"  />
+    <el-table-column prop="username" label="工号"  />
     <el-table-column prop="email" label="邮箱"  />
     <el-table-column prop="professionalDirection" label="研究专业" show-overflow-tooltip />
-    <el-table-column prop="researchDirection" label="研究方向" />
+    <el-table-column prop="research_direction" label="研究方向" />
     <el-table-column prop="resume" label="介绍" show-overflow-tooltip />
-    <el-table-column prop="teacherPosition" label="职称"  />
+    <el-table-column prop="teacherposition" label="职称"  />
     <el-table-column label="操作" v-if="isUtilButtons">
       <template #default="scope">
         <button class="button" @click="handleEdit(scope.$index, scope.row)">修改</button>
