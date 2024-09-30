@@ -50,6 +50,11 @@ export default {
             path: 'relations',
             name: 'relations',
             component: () => import('@/components/Home/Relations/RelationsComp.vue')
+        },
+        {
+            path: 'add_single_stu',
+            name: 'addSingleStu',
+            component: () => import('@/components/Home/AddSingleStuInfoComp.vue')
         }
     ]
 }

@@ -4,11 +4,17 @@ import * as XLSX from 'xlsx';
 import {useUploadCoverStore} from "@/stores/UploadCoverStore";
 import {http} from "@/utils/http";
 const uploadCoverStore = useUploadCoverStore();
+import {useRouter} from "vue-router";
+const router = useRouter();
 
 const fileInput = ref(null);
 const excelData = ref([]);
 const excelName = ref('');
 const isUploadBoxShow = ref(false);
+
+function addSingleStuClicked () {
+  router.push('/add_single_stu');
+}
 
 function downloadStudentTemplate () {
   window.location.href = 'https://minio.lumoxuan.cn/mentor-dual-selection-system/teacher0/学生表格模板.xlsx';
@@ -59,6 +65,10 @@ function handleFileChange(event) {
   const file = files[0];
   console.log('file', file);
   excelName.value = file.name;
+  if (!['xlsx', 'xls'].includes(file.name.toString().split('.')[-1])){
+    alert('你选择的不是Excel表格文档！');
+    return;
+  }
   const reader = new FileReader();
   reader.onload = (e) => {
     const arrayBuffer = e.target.result;
@@ -81,7 +91,7 @@ function handleFileChange(event) {
 
 <template>
   <div class="button_box">
-    <button>添加单条学生信息</button>
+    <button @click="addSingleStuClicked">添加单条学生信息</button>
     <button>下载当前学生状态</button>
     <button @click="downloadStudentTemplate">下载学生表格模板</button>
     <input type="file" @change="handleFileChange" ref="fileInput" style="display: none;" accept=".xlsx, .xls">
