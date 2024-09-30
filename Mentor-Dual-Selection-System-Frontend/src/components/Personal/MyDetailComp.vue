@@ -14,7 +14,7 @@ const userDetail = ref({
   resume: '',
   netid: '',
   studentClass: null,
-  studentGender: null,
+  studentGrade: null,
 });
 const userDetailTemp = ref({
   uid: -1,
@@ -25,34 +25,35 @@ const userDetailTemp = ref({
   resume: '',
   netid: '',
   studentClass: null,
-  studentGender: null,
+  studentGrade: null,
 });
 const isChangeDetailDisabled = ref(true);
 
 function changeDetailDisabled(){
   isChangeDetailDisabled.value = !isChangeDetailDisabled.value;
 }
-function changeDetailChecked(){
-  console.log(userDetailTemp.value);
-  http({
-    url: '/user/update',
-    method: 'POST',
-    headers: {
-      Accept: '*/*',
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
-    data: userDetailTemp.value
-  }).then(res => {
-    if (res.data.code === 200) {
-      alert('修改成功');
-      window.location.reload();
-    } else {
-      alert(res.data.data.error);
-    }
-  }).catch(err => {
-    alert(JSON.parse(err.request.responseText).data.error);
-  })
+
+function changeDetailChecked(target: string){
+  if (target === 'STUDENT'){
+    httpStudent({
+      url: '/update',
+      method: 'PUT',
+      headers: {
+        Accept: '*/*',
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        'Content-Type': 'application/json'
+      },
+      data: userDetailTemp.value
+    }).then(res => {
+      if (res.data.code === 200){
+        alert('修改成功！');
+      } else {
+        console.log(res);
+      }
+    }).catch(err => {
+      console.error(err);
+    })
+  }
 }
 
 onMounted(() => {
@@ -60,8 +61,8 @@ onMounted(() => {
 
 })
 
-function getUserDetail(target: string) {
-  if (target === 'TEACHER') {
+function getUserDetail(targetInfo) {
+  if (targetInfo.role === 'TEACHER') {
     httpTeacher({
       url: '/my-detail',
       method: 'GET',
@@ -81,7 +82,7 @@ function getUserDetail(target: string) {
       alert(JSON.parse(err.requests.responseText).data.error);
       console.error(err);
     })
-  } else if (target === 'STUDENT') {
+  } else if (targetInfo.role === 'STUDENT') {
     httpStudent({
       url: '/my-detail',
       method: 'GET',
@@ -91,11 +92,16 @@ function getUserDetail(target: string) {
       }
     }).then(res => {
       if (res.data.code === 200) {
+        console.log(1, res.data.data);
         userDetail.value = res.data.data;
-        userDetailTemp.value = userDetail.value
       } else {
-        alert(res.data.data.error);
+        console.log(2, res);
+        if (targetInfo){
+          userDetail.value.uid = targetInfo.uid;
+          userDetail.value.netid = targetInfo.username;
+        }
       }
+      userDetailTemp.value = userDetail.value
     }).catch(err => {
       alert(JSON.parse(err.requests.responseText).data.error);
     })
@@ -104,14 +110,14 @@ function getUserDetail(target: string) {
 
 watch(() => userInfoStore.userInfo, (newValue) => {
   userRole.value = newValue.role;
-  getUserDetail(newValue.role);
+  getUserDetail(newValue);
 })
 </script>
 
 <template>
   <div class="my_detail_box">
-    <h3>账号详细信息</h3>
-    <el-form label-width="auto" style="max-width: 600px; margin: 0 auto">
+    <el-form label-width="auto" style="max-width: 600px; margin: 0 auto" v-if="userRole === 'TEACHER'">
+      <h3>账号详细信息</h3>
       <el-form-item label="职称：">
         <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.teacherPosition"/>
       </el-form-item>
@@ -124,9 +130,23 @@ watch(() => userInfoStore.userInfo, (newValue) => {
       <el-form-item label="简介：">
         <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.resume"/>
       </el-form-item>
+      <button class="button" type="button" @click="changeDetailDisabled">{{isChangeDetailDisabled? '开启修改': '关闭修改'}}</button>
+      <button class="button" type="button" @click="changeDetailChecked('TEACHER')" :disabled="isChangeDetailDisabled">确认修改</button>
     </el-form>
-    <button class="button" @click="changeDetailDisabled">{{isChangeDetailDisabled? '开启修改': '关闭修改'}}</button>
-    <button class="button" @click="changeDetailChecked" :disabled="isChangeDetailDisabled">确认修改</button>
+    <el-form label-width="auto" style="max-width: 600px; margin: 0 auto" v-if="userRole === 'STUDENT'">
+      <h3>账号详细信息</h3>
+      <el-form-item label="年级：">
+        <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.studentGrade"/>
+      </el-form-item>
+      <el-form-item label="班级：">
+        <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.studentClass"/>
+      </el-form-item>
+      <el-form-item label="简介：">
+        <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.resume"/>
+      </el-form-item>
+      <button class="button" type="button" @click="changeDetailDisabled">{{isChangeDetailDisabled? '开启修改': '关闭修改'}}</button>
+      <button class="button" type="button" @click="changeDetailChecked('STUDENT')" :disabled="isChangeDetailDisabled">确认修改</button>
+    </el-form>
   </div>
 </template>
 
