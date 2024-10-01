@@ -117,7 +117,7 @@ public class TeacherController {
 
 
         if (userDetail == null) {
-            return ResponseEntity.ok(formatResponse(200, "当前还没有编辑个人信息"));
+            return ResponseEntity.ok(formatResponse(404, "当前还没有编辑个人信息"));
         }
         return ResponseEntity.ok(formatResponse(200, userDetail));
     }
