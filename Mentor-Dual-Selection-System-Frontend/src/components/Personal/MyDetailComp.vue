@@ -158,7 +158,7 @@ watch(() => userInfoStore.userInfo, (newValue) => {
         <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.professionalDirection"/>
       </el-form-item>
       <el-form-item label="简介：">
-        <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.resume"/>
+        <el-input type="textarea" :rows="4" :disabled="isChangeDetailDisabled" v-model="userDetailTemp.resume"/>
       </el-form-item>
       <button class="button" type="button" @click="changeDetailDisabled">{{isChangeDetailDisabled? '开启修改': '关闭修改'}}</button>
       <button class="button" type="button" @click="changeDetailChecked('TEACHER')" :disabled="isChangeDetailDisabled">确认修改</button>
@@ -172,7 +172,7 @@ watch(() => userInfoStore.userInfo, (newValue) => {
         <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.studentClass"/>
       </el-form-item>
       <el-form-item label="简介：">
-        <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.resume"/>
+        <el-input type="textarea" :rows="4" :disabled="isChangeDetailDisabled" v-model="userDetailTemp.resume"/>
       </el-form-item>
       <button class="button" type="button" @click="changeDetailDisabled">{{isChangeDetailDisabled? '开启修改': '关闭修改'}}</button>
       <button class="button" type="button" @click="changeDetailChecked('STUDENT')" :disabled="isChangeDetailDisabled">确认修改</button>
