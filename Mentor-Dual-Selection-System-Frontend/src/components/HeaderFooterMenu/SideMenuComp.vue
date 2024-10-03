@@ -1,37 +1,43 @@
 <script setup lang="ts">
 
-import {Avatar, BellFilled, CircleClose, Connection, User, UserFilled,} from "@element-plus/icons-vue";
-import {onMounted, ref, watch} from "vue";
-import {useRouter} from "vue-router";
+import { Avatar, BellFilled, CircleClose, Connection, User, UserFilled } from "@element-plus/icons-vue";
+import { onMounted, ref, watch } from "vue";
+import { useRouter, useRoute } from "vue-router";
 const router = useRouter();
-import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
+const route = useRoute();
+import { useUserInfoStore } from "@/stores/user/UserBasicInformation";
 const userInfoStore = useUserInfoStore();
-import {useStuListGrade} from "@/stores/StudentListGrade";
+import { useStuListGrade } from "@/stores/StudentListGrade";
 const stuListGrade = useStuListGrade();
 
 const sidemenuDet = ref(
-    {bacc: '#003c1a', atcolor: '#ffc832', baccsub: '#002912'},
+  { bacc: '#003c1a', atcolor: '#ffc832', baccsub: '#002912' }
 );
 const isSelectStudentShow = ref(false);
 const isSelectTeacherShow = ref(false);
 const isStudentListShow = ref(false);
 
+// 用于高亮选中的菜单项
+const activeMenu = ref(route.path);
+
 onMounted(() => {
   if (userInfoStore.userInfo) handleIsShowFunction(userInfoStore.userInfo.role);
-
-})
+  activeMenu.value = route.path; // 初始化当前高亮菜单项
+});
 
 function studentListClicked(grade: number) {
   stuListGrade.changeGrade(grade);
-  router.push(`/stu_list${grade}`);
+  const path = `/stu_list${grade}`;
+  activeMenu.value = path;
+  router.push(path);
 }
 
-function handleIsShowFunction (target: string) {
+function handleIsShowFunction(target: string) {
   isSelectStudentShow.value = ['TEACHER', 'ADMIN'].includes(target);
   isStudentListShow.value = ['TEACHER', 'ADMIN'].includes(target);
   isSelectTeacherShow.value = target === 'STUDENT';
-
 }
+
 function SignoutClicked() {
   localStorage.removeItem("token");
   window.location.reload();
@@ -39,19 +45,24 @@ function SignoutClicked() {
 
 watch(() => userInfoStore.userInfo, (newValue) => {
   handleIsShowFunction(newValue.role);
-})
+});
+
+watch(route, (newRoute) => {
+  activeMenu.value = newRoute.path; // 路由变化时高亮相应菜单项
+});
 
 </script>
 
 <template>
   <div class="sidemenu_box">
     <el-row class="tac">
-      <el-col >
+      <el-col>
         <el-menu
-            :active-text-color="sidemenuDet.atcolor"
-            :background-color="sidemenuDet.bacc"
-            class="el-menu-vertical-demo"
-            text-color="#fff"
+          :default-active="activeMenu"
+          :active-text-color="sidemenuDet.atcolor"
+          :background-color="sidemenuDet.bacc"
+          class="el-menu-vertical-demo"
+          text-color="#fff"
         >
           <el-sub-menu v-if="isStudentListShow" index="sl">
             <template #title>
@@ -59,45 +70,33 @@ watch(() => userInfoStore.userInfo, (newValue) => {
               <span>学生列表</span>
             </template>
             <el-menu-item-group title="学年" class="sub_menu">
-              <el-menu-item index="1-1" @click="studentListClicked(1);console.log(1)">大一</el-menu-item>
-              <el-menu-item index="1-2" @click="studentListClicked(2);console.log(2)">大二</el-menu-item>
-              <el-menu-item index="1-3" @click="studentListClicked(3);console.log(3)">大三</el-menu-item>
-              <el-menu-item index="1-4" @click="studentListClicked(4);console.log(4)">大四</el-menu-item>
+              <el-menu-item index="/stu_list1" @click="studentListClicked(1)">大一</el-menu-item>
+              <el-menu-item index="/stu_list2" @click="studentListClicked(2)">大二</el-menu-item>
+              <el-menu-item index="/stu_list3" @click="studentListClicked(3)">大三</el-menu-item>
+              <el-menu-item index="/stu_list4" @click="studentListClicked(4)">大四</el-menu-item>
             </el-menu-item-group>
           </el-sub-menu>
-          <el-menu-item @click="router.push('/teach_list')">
+          <el-menu-item index="/teach_list" @click="activeMenu = '/teach_list'; router.push('/teach_list')">
             <el-icon><Avatar /></el-icon>
             <span>导师列表</span>
           </el-menu-item>
-          <el-menu-item @click="router.push('/select_student')" v-if="isSelectStudentShow">
+          <el-menu-item index="/select_student" @click="activeMenu = '/select_student'; router.push('/select_student')" v-if="isSelectStudentShow">
             <el-icon><Avatar /></el-icon>
             <span>选择学生</span>
           </el-menu-item>
-          <el-menu-item @click="router.push('/select_teacher')" v-if="isSelectTeacherShow">
+          <el-menu-item index="/select_teacher" @click="activeMenu = '/select_teacher'; router.push('/select_teacher')" v-if="isSelectTeacherShow">
             <el-icon><Avatar /></el-icon>
             <span>选择导师</span>
           </el-menu-item>
-          <el-menu-item @click="router.push('/relations')">
+          <el-menu-item index="/relations" @click="activeMenu = '/relations'; router.push('/relations')">
             <el-icon><Connection /></el-icon>
             <span>师生关系</span>
           </el-menu-item>
-<!--          <el-sub-menu index="stm">-->
-<!--            <template #title>-->
-<!--              <el-icon><Menu /></el-icon>-->
-<!--              <span>状态管理</span>-->
-<!--            </template>-->
-<!--            <el-menu-item-group title="学年" class="sub_menu">-->
-<!--              <el-menu-item index="3-1" @click="router.push('/student_list2');">大一</el-menu-item>-->
-<!--              <el-menu-item index="3-2" @click="router.push('/student_list2');">大二</el-menu-item>-->
-<!--              <el-menu-item index="3-3" @click="router.push('/student_list2');">大三</el-menu-item>-->
-<!--              <el-menu-item index="3-4" @click="router.push('/student_list2');">大四</el-menu-item>-->
-<!--            </el-menu-item-group>-->
-<!--          </el-sub-menu>-->
-          <el-menu-item @click="router.push('/notice');">
+          <el-menu-item index="/notice" @click="activeMenu = '/notice'; router.push('/notice')">
             <el-icon><BellFilled /></el-icon>
             <span>通知公告</span>
           </el-menu-item>
-          <el-menu-item @click="router.push('/personal');">
+          <el-menu-item index="/personal" @click="activeMenu = '/personal'; router.push('/personal')">
             <el-icon><User /></el-icon>
             <span>个人中心</span>
           </el-menu-item>
