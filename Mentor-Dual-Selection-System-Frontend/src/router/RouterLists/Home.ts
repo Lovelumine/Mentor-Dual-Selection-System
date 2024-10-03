@@ -5,6 +5,7 @@ export default {
     path: '/',
     name: 'home',
     component: HomeView,
+    redirect: '/notice',
     children: [
         {
             path: 'teach_list',
