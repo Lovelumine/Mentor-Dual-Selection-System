@@ -5,6 +5,8 @@ const userStore = useUserInfoStore();
 import {useRouter} from "vue-router";
 import PersonalTitleComp from "@/components/Personal/PersonalTitleComp.vue";
 import MyDetailComp from "@/components/Personal/MyDetailComp.vue";
+import axios from "axios";
+import {http} from "@/utils/http";
 const router = useRouter();
 
 const userInfoComp = ref({
@@ -12,10 +14,44 @@ const userInfoComp = ref({
   email: '',
   username: '',
   role: '',
-  avatarUrl: ''
+  avatarUrl: '',
+  grade: ''
 });
 const userInfoChange = ref({...userInfoComp.value});
 const isStartChangeInfo = ref(false);
+const fileInput = ref(null);
+
+function handleFileChange(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const formData = new FormData();
+  formData.append("file", file);
+  axios({
+    url: "/upload",
+    method: "POST",
+    headers: {
+      Accept: "*/*",
+      "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      "Content-Type": "multipart/form-data", // 确保使用 multipart/form-data
+    },
+    data: formData,
+  }).then((res) => {
+    if (res.status === 200 && res.data) {
+      // 假设响应返回文件的访问链接
+      userInfoChange.value.avatarUrl = res.data;
+      alert("文件上传成功！");
+    } else {
+      alert("文件上传失败！");
+    }
+  }).catch((err) => {
+    alert("文件上传失败！");
+    console.error(err);
+  });
+}
+
+function triggerUploadFile() {
+  fileInput.value.click();
+}
 
 function startChangeInfoClicked () {
   isStartChangeInfo.value = !isStartChangeInfo.value;
@@ -23,7 +59,28 @@ function startChangeInfoClicked () {
 function changeInfoClicked () {
   console.log(userInfoChange.value);
   startChangeInfoClicked();
-  window.location.reload();
+  http({
+    url: '/user/update',
+    method: "POST",
+    headers: {
+      Accept: "*/*",
+      "Authorization": `Bearer ${localStorage.getItem("token")}`,
+    },
+    data: userInfoChange.value
+  }).then(res => {
+    console.log(res);
+    if (res.data.code === 200) {
+      alert('更新成功！');
+      window.location.reload();
+    } else alert('更新失败！');
+  }).catch((err) => {
+    if (err.request.status === 400) {
+      alert(JSON.parse(err.request.responseText).data.error);
+      window.location.reload();
+    } else {
+      alert(JSON.parse(err.request.responseText).data.error);
+    }
+  })
 }
 
 onMounted(() => {
@@ -48,7 +105,9 @@ watch(() => userStore.userInfo, (newValue) => {
   <PersonalTitleComp/>
   <div class="personal_box">
     <div class="user_info_box">
-      <img class="avatar" :src="userInfoComp.avatarUrl" alt="avatar"/>
+      <div class="avatar_box">
+        <img class="avatar" :src="userInfoComp.avatarUrl" alt="avatar"/>
+      </div>
       <ul>
         <li>
           姓名：{{userInfoComp.fullName}}
@@ -77,6 +136,16 @@ watch(() => userStore.userInfo, (newValue) => {
           <li>
             电子邮箱：<input type="text" required placeholder="请输入" v-model="userInfoChange.email" />
           </li>
+          <li class="avatar_list">
+            用户头像：<div class="avatar_box">
+            <img :src="userInfoComp.avatarUrl" alt="avatar"/>
+          </div>
+            <input style="display: none" type="file" @change="handleFileChange" ref="fileInput" :accept="['.jpg', '.jpeg', '.png']"/>
+            <button type="button" @click="triggerUploadFile">选择图片</button>
+          </li>
+          <li>
+            年级：<input type="text" required placeholder="例：2024" v-model="userInfoChange.grade" />
+          </li>
         </ul>
         <button class="button" type="submit">确认修改</button>
       </form>
@@ -97,11 +166,14 @@ watch(() => userStore.userInfo, (newValue) => {
     margin: 0 auto
     display: flex
     align-items: center
-    .avatar
+    .avatar_box
       width: 64px
       height: 64px
-      border-radius: 50%
+      overflow: hidden
       margin-left: 50px
+      border-radius: 50%
+      .avatar
+        width: 100%
     ul
       padding: 20px 0 20px 0
       margin-left: 50px
@@ -121,9 +193,30 @@ watch(() => userStore.userInfo, (newValue) => {
       margin-left: 50px
       ul
         padding: 0
+        .avatar_list
+          display: flex
+          button
+            margin: auto auto auto 5%
+            background-color: #005826
+            border: 1px solid #005826
+            color: white
+            width: 100px
+            height: 32px
+            border-radius: 5px
+            font-size: 15px
+            transition: .3s ease
+          button:hover
+            cursor: pointer
+            background-color: #0f7e3f
+            border: 1px solid #0f7e3f
         li
           list-style: none
           margin-top: 20px
+          .avatar_box
+            width: 64px
+            height: 64px
+            img
+              width: 100%
           input
             width: 220px
             height: 32px
