@@ -1,82 +1,184 @@
 <script setup lang="ts">
-
 import {Paperclip} from "@element-plus/icons-vue";
 import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
 import {onMounted, ref, watch} from "vue";
+import {httpAdmin} from "@/utils/http";
 const userStore = useUserInfoStore();
 
 const userPermi = ref('');
+const allNotice = ref([]);
+const dialogVisible = ref(false)
+const noticeDetails = ref({
+  id: null,
+  title: null,
+  content: null,
+  attachmentUrl: null,
+  published: true
+})
 
 function changePermi(target: any) {
   userPermi.value = target.role;
+}
+
+function changeNotice(target: number, index: number) {
+  noticeDetails.value.id = target;
+  noticeDetails.value.title = allNotice.value[index].title;
+  noticeDetails.value.content = allNotice.value[index].content;
+  dialogVisible.value = true;
+}
+
+function changeNoticeCheck() {
+  if (noticeDetails.value.id === null) {
+    alert('页面错误！请重新操作！');
+    return;
+  } else if (noticeDetails.value.title === null || noticeDetails.value.title === '') {
+    alert('请填写公告标题！');
+    return;
+  } else if (noticeDetails.value.content === null || noticeDetails.value.content === '') {
+    alert('请填写公告内容！');
+    return;
+  }
+  httpAdmin({
+    url: `/announcements/${noticeDetails.value.id}`,
+    method: 'PUT',
+    headers: {
+      Accept: '*/*',
+      Authorization: `Bearer ${localStorage.getItem("token")}`
+    },
+    data: noticeDetails.value
+  }).then(res => {
+    if (res.data.code === 200){
+      alert('修改成功！');
+      window.location.reload();
+    } else alert('修改失败！');
+  }).catch(err => {
+    alert('修改失败！');
+    console.error(err);
+  })
+}
+
+function deleteNotice(target: number){
+  httpAdmin({
+    url: `/announcements/${target}`,
+    method: 'DELETE',
+    headers: {
+      Accept: '*/*',
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    }
+  }).then(res => {
+    if (res.data.code === 200){
+      alert('删除成功！');
+      window.location.reload();
+    } else alert('删除失败！');
+  }).catch(err => {
+    alert('删除成功！');
+    console.error(err);
+  })
 }
 onMounted(() => {
   if (userStore.userInfo){
     userPermi.value = userStore.userInfo.role;
   }
+  httpAdmin({
+    url: '/announcements',
+    method: 'GET',
+    headers: {
+      Accept: '*/*',
+      Authorization: 'Bearer ' + localStorage.getItem('token'),
+    }
+  }).then(res => {
+    if (res.data.code === 200) {
+      allNotice.value = res.data.data;
+    } else {
+      alert('公告获取异常！');
+    }
+  }).catch(err => {
+    alert('公告获取异常！');
+    console.error(err);
+  })
 })
 
-watch(() => userStore.userInfo, (newValue, oldValue) => {
+watch(() => userStore.userInfo, (newValue) => {
   changePermi(newValue);
 })
 </script>
 
 <template>
-  <div class="card_box">
-    <div class="notice_title_box">
-      <h3 class="notice_title">
-        关于个性化培养方案的说明{{userPermi}}
-      </h3>
-      <span class="release_date">
-        发布时间：2024年9月10日
+  <div class="card_container">
+    <el-dialog v-model="dialogVisible" :title="`修改公告：${noticeDetails.title}`">
+      <el-form :model="noticeDetails" @submit.prevent="changeNoticeCheck">
+        <el-form-item label="公告标题：">
+          <el-input type="text" v-model="noticeDetails.title"/>
+        </el-form-item>
+        <el-form-item label="公告内容：">
+          <el-input type="textarea" :rows="4" v-model="noticeDetails.content"/>
+        </el-form-item>
+        <el-button native-type="submit" type="primary">确认修改</el-button>
+        <el-button native-type="button" @click="dialogVisible = false">取消修改</el-button>
+      </el-form>
+    </el-dialog>
+    <div class="card_box" v-for="(item, index) in allNotice" :key="index">
+      <div class="notice_title_box">
+        <h3 class="notice_title">
+          {{item.title}}
+        </h3>
+        <span class="release_date">
+        发布时间：{{item.lastModified}}
       </span>
-    </div>
-    <hr/>
-    <div class="notice_content">
-      本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。
-    </div>
-    <div class="annex">
-      <a href="#"><el-icon size="20"><Paperclip /></el-icon>下载文件.docx</a>
-      <div class="button_box" v-if="userPermi === 'ADMIN'">
-        <button class="button" @click="handleEdit(scope.$index, scope.row)">修改</button>
-        <button class="button" @click="handleDelete(scope.$index, scope.row)">删除</button>
+      </div>
+      <hr/>
+      <div class="notice_content">
+        {{item.content}}
+      </div>
+      <div class="annex">
+        <a :href="item.attachmentUrl" v-if="item.attachmentUrl"><el-icon size="20"><Paperclip /></el-icon>下载文件.docx</a>
+        <div class="button_box" v-if="userPermi === 'ADMIN'">
+          <button class="button" @click="changeNotice(item.id, index)">修改</button>
+          <button class="button" @click="deleteNotice(item.id)">删除</button>
+        </div>
       </div>
     </div>
-  </div>
-  <div class="card_box">
-    <div class="notice_title_box">
-      <h3 class="notice_title">
-        关于个性化培养方案的说明
-      </h3>
-      <span class="release_date">
-        发布时间：2024年9月10日
-      </span>
-    </div>
-    <hr/>
-    <div class="notice_content">
-      本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。
-    本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。
-    本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。
-    本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。
-    本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。
-    本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。
-    本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。
-    本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。
-      本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。
-      本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。
 
-    </div>
-    <div class="annex">
-      <a href="#"><el-icon size="20"><Paperclip /></el-icon>下载文件.docx</a>
-      <div class="button_box" v-if="userPermi === 'ADMIN'">
-        <button class="button" @click="handleEdit(scope.$index, scope.row)">修改</button>
-        <button class="button" @click="handleDelete(scope.$index, scope.row)">删除</button>
-      </div>
-    </div>
+<!--    <div class="card_box">-->
+<!--      <div class="notice_title_box">-->
+<!--        <h3 class="notice_title">-->
+<!--          关于个性化培养方案的说明-->
+<!--        </h3>-->
+<!--        <span class="release_date">-->
+<!--        发布时间：2024年9月10日-->
+<!--      </span>-->
+<!--      </div>-->
+<!--      <hr/>-->
+<!--      <div class="notice_content">-->
+<!--        本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。-->
+<!--        本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。-->
+<!--        本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。-->
+<!--        本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。-->
+<!--        本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。-->
+<!--        本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。-->
+<!--        本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。-->
+<!--        本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。-->
+<!--        本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。-->
+<!--        本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。-->
+
+<!--      </div>-->
+<!--      <div class="annex">-->
+<!--        <a href="#"><el-icon size="20"><Paperclip /></el-icon>下载文件.docx</a>-->
+<!--        <div class="button_box" v-if="userPermi === 'ADMIN'">-->
+<!--          <button class="button" @click="handleEdit(scope.$index, scope.row)">修改</button>-->
+<!--          <button class="button" @click="handleDelete(scope.$index, scope.row)">删除</button>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
   </div>
 </template>
 
 <style scoped lang="sass">
+.card_container
+  width: 100%
+  min-height: calc(100vh - 150px)
+  max-height: calc(100vh - 150px)
+  overflow: scroll
 .card_box
   margin: 0 auto 30px auto
   width: 97%

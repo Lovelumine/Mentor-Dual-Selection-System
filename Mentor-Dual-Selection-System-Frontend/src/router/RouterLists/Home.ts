@@ -14,7 +14,18 @@ export default {
         {
             path: 'notice',
             name: 'notice',
-            component: () => import('@/components/Home/Notice/NoticeComp.vue')
+            component: () => import('@/components/Home/Notice/NoticeComp.vue'),
+            children: [
+                {
+                    path: '',
+                    component: () => import('@/components/Home/Notice/NoticeCardComp.vue'),
+                },
+                {
+                    path: 'release',
+                    name: 'noticeRelease',
+                    component: () => import('@/components/Home/Notice/NoticeReleaseComp.vue'),
+                }
+            ]
         },
         {
             path: 'stu_list1',
