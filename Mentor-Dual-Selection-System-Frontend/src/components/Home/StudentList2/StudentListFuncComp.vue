@@ -92,12 +92,12 @@ function handleFileChange(event) {
 <template>
   <div class="button_box">
     <button @click="addSingleStuClicked">添加单条学生信息</button>
-    <button>下载当前学生状态</button>
+<!--    <button>下载当前学生状态</button>-->
     <button @click="downloadStudentTemplate">下载学生表格模板</button>
     <input type="file" @change="handleFileChange" ref="fileInput" style="display: none;" accept=".xlsx, .xls">
     <button @click="triggerFileInput">批量上传学生信息</button>
-    <button>批量下载学生附件</button>
-    <button>下载列表</button>
+<!--    <button>批量下载学生附件</button>-->
+<!--    <button>下载列表</button>-->
   </div>
   <div v-if="isUploadBoxShow" class="excel_status">
     <p>{{excelData.length > 0? `文件已准备就绪：${excelName}`: ''}}</p>

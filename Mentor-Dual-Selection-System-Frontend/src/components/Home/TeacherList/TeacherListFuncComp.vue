@@ -92,7 +92,7 @@ function handleFileChange(event) {
 <template>
   <div class="button_box">
     <button @click="addSingleTeacherClicked">添加单条导师信息</button>
-    <button>下载当前导师状态</button>
+<!--    <button>下载当前导师状态</button>-->
     <button @click="downloadTeacherTemplate">下载导师表格模板</button>
     <input type="file" @change="handleFileChange" ref="fileInput" style="display: none;" accept=".xlsx, .xls">
     <button @click="triggerFileInput">批量上传导师信息</button>
