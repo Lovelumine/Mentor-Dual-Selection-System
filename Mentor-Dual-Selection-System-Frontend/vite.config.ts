@@ -33,7 +33,12 @@ export default defineConfig({
         target: 'http://223.82.75.76:50000/student',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/student/, ''),
-      }
+      },
+      '/upload': {
+        target: 'http://223.82.75.76:50000/upload',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/upload/, ''),
+      },
     },
   },
 })
