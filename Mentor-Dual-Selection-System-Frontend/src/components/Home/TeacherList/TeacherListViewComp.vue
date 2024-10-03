@@ -70,7 +70,6 @@ watch([
     <el-table-column label="操作" v-if="isUtilButtons">
       <template #default="scope">
         <button class="button" @click="handleEdit(scope.$index, scope.row)">修改</button>
-        <button class="button" @click="handleDelete(scope.$index, scope.row)">删除</button>
       </template>
     </el-table-column>
   </el-table>
@@ -104,14 +103,14 @@ watch([
     cursor: pointer
     background-color: #0f7e3f
     border: 1px solid #0f7e3f
-  .button:last-child
-    margin-left: 10px
-    border: 1px solid #bd0000
-    background-color: #bd000000
-    color: #bd0000
-  .button:last-child:hover
-    background-color: #bd0000
-    color: white
+  //.button:last-child
+  //  margin-left: 10px
+  //  border: 1px solid #bd0000
+  //  background-color: #bd000000
+  //  color: #bd0000
+  //.button:last-child:hover
+  //  background-color: #bd0000
+  //  color: white
 .table:hover
   box-shadow: #005826 0 0 10px
 </style>

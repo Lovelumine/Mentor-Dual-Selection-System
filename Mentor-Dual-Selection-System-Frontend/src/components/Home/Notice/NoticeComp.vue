@@ -2,14 +2,18 @@
 import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
 const userInfoStore = useUserInfoStore();
 import {useRouter} from "vue-router";
-import {ref, watch} from "vue";
+import {onMounted, ref, watch} from "vue";
 const router = useRouter();
 
-const isFuncShow = ref(null);
+const isFuncShow = ref(false);
 
 function releaseNoticeClicked(){
   router.push('/notice/release');
 }
+
+onMounted(() => {
+  if (userInfoStore.userInfo) isFuncShow.value = userInfoStore.userInfo.role === 'ADMIN';
+})
 
 watch(() => userInfoStore.userInfo, (newVal) => {
   isFuncShow.value = newVal.role === 'ADMIN';
