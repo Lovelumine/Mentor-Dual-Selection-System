@@ -1,15 +1,13 @@
 <script setup lang="ts">
-
 import {onMounted, ref} from "vue";
 import {http} from "@/utils/http";
 import {useRouter} from "vue-router";
 const router = useRouter();
 
-
 const allUser = ref([]);
 const allTeacher = ref([]);
 const pendingList = ref([]);
-const nowStatus = ref('');
+const nowStatus = ref('未选择');
 
 onMounted(() => {
   http({
@@ -40,6 +38,10 @@ onMounted(() => {
       }).then(res => {
         if (res.data.code === 200) {
           pendingList.value = res.data.data;
+
+          // 更新状态
+          let hasAccepted = false;
+          let hasPending = false;
           for (let i = 0; i < pendingList.value.length; i++) {
             switch (pendingList.value[i].status) {
               case 'REJECTED':
@@ -47,37 +49,39 @@ onMounted(() => {
                 break;
               case 'PENDING':
                 pendingList.value[i].statusCN = '待审核';
+                hasPending = true;
                 break;
               case 'ACCEPTED':
                 pendingList.value[i].statusCN = '已通过';
+                hasAccepted = true;
                 break;
               default:
                 break;
             }
+            // 匹配导师名字
             for (let j = 0; j < allTeacher.value.length; j++) {
               if (pendingList.value[i].mentorId === allTeacher.value[j].uid) {
                 pendingList.value[i].teacherName = allTeacher.value[j].fullName;
               }
             }
           }
-          for (let k = 0; k < pendingList.value.length; k++){
-            if (pendingList.value[k].status === 'ACCEPTED') {
-              nowStatus.value = '已通过';
-              break;
-            } else if (pendingList.value[k].status === 'PENDING'){
-              nowStatus.value = '待审核';
-            } else {
-              nowStatus.value = '未选择';
-            }
+          // 根据优先级设置 nowStatus
+          if (hasAccepted) {
+            nowStatus.value = '已通过';
+          } else if (hasPending) {
+            nowStatus.value = '待审核';
+          } else {
+            nowStatus.value = '未选择';
           }
-        } else{
+
+        } else {
           alert(res.data.data.error);
         }
       }).catch(err => {
         console.error(err);
         alert(JSON.parse(err.request.responseText).data.error);
-      })
-    }else{
+      });
+    } else {
       alert(res.data.data.error);
       localStorage.removeItem('token');
       window.location.reload();
@@ -85,8 +89,22 @@ onMounted(() => {
   }).catch(err => {
     alert(JSON.parse(err.request.responseText).data.error);
     router.back();
-  })
-})
+  });
+});
+
+// 动态返回状态对应的 CSS 类
+function statusClass(statusCN: string) {
+  switch (statusCN) {
+    case '已通过':
+      return 'accepted-status';
+    case '已拒绝':
+      return 'rejected-status';
+    case '待审核':
+      return 'pending-status';
+    default:
+      return '';
+  }
+}
 </script>
 
 <template>
@@ -98,7 +116,16 @@ onMounted(() => {
       <el-table-column prop="id" label="申请编号"/>
       <el-table-column prop="teacherName" label="导师姓名"/>
       <el-table-column prop="applicationReason" label="申请理由"/>
-      <el-table-column prop="statusCN" label="当前状态"/>
+      
+      <!-- 动态改变状态栏颜色 -->
+      <el-table-column prop="statusCN" label="当前状态">
+        <template #default="scope">
+          <span :class="statusClass(scope.row.statusCN)">
+            {{ scope.row.statusCN }}
+          </span>
+        </template>
+      </el-table-column>
+
       <el-table-column prop="rejectionReason" label="拒绝理由"/>
     </el-table>
   </div>
@@ -114,4 +141,26 @@ onMounted(() => {
     padding-left: 20px
     font-size: 16px
     margin-bottom: 20px
+
+  .table
+    .accepted-status
+      background-color: #e6ffe6 // 绿色背景
+      color: #2e7d32
+      font-weight: bold
+      padding: 5px 10px
+      border-radius: 4px
+
+    .rejected-status
+      background-color: #ffe6e6 // 红色背景
+      color: #d32f2f
+      font-weight: bold
+      padding: 5px 10px
+      border-radius: 4px
+
+    .pending-status
+      background-color: #fff9c4 // 黄色背景
+      color: #f9a825
+      font-weight: bold
+      padding: 5px 10px
+      border-radius: 4px
 </style>
