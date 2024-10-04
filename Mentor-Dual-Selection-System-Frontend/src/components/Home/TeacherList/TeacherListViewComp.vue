@@ -67,11 +67,11 @@ watch([
     <el-table-column prop="research_direction" label="研究方向" />
     <el-table-column prop="resume" label="介绍" show-overflow-tooltip />
     <el-table-column prop="teacherposition" label="职称"  />
-    <el-table-column label="操作" v-if="isUtilButtons">
-      <template #default="scope">
-        <button class="button" @click="handleEdit(scope.$index, scope.row)">修改</button>
-      </template>
-    </el-table-column>
+<!--    <el-table-column label="操作" v-if="isUtilButtons">-->
+<!--      <template #default="scope">-->
+<!--        <button class="button" @click="handleEdit(scope.$index, scope.row)">修改</button>-->
+<!--      </template>-->
+<!--    </el-table-column>-->
   </el-table>
 </template>
 
