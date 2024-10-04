@@ -5,6 +5,8 @@ import {onMounted, ref, watch} from "vue";
 import {httpAdmin} from "@/utils/http";
 import axios from "axios";
 const userStore = useUserInfoStore();
+import {useUploadFileStore} from "@/stores/UploadFileStore";
+const uploadFileStore = useUploadFileStore();
 
 const userPermi = ref('');
 const allNotice = ref([]);
@@ -29,6 +31,7 @@ function handleFileChange(event) {
   fileName.value = file.name;
   const formData = new FormData();
   formData.append("file", file);
+  uploadFileStore.changeIsLoading(true);
   axios({
     url: "/upload",
     method: "POST",
@@ -43,14 +46,17 @@ function handleFileChange(event) {
       noticeDetails.value.attachmentUrl = res.data;
       alert("文件上传成功！");
       fileName.value += '-上传成功';
+      uploadFileStore.changeIsLoading(false);
     } else {
       alert("文件上传失败！");
       fileName.value += '-上传失败';
+      uploadFileStore.changeIsLoading(false);
     }
   }).catch((err) => {
     alert("文件上传失败！");
     fileName.value += '-上传失败';
     console.error(err);
+    uploadFileStore.changeIsLoading(false);
   });
 }
 

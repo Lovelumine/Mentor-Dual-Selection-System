@@ -6,6 +6,8 @@ import { http, httpAdmin } from "@/utils/http";
 import axios from "axios";
 const userInfoStore = useUserInfoStore();
 const router = useRouter();
+import {useUploadFileStore} from "@/stores/UploadFileStore";
+const uploadFileStore = useUploadFileStore();
 
 const noticeForm = ref({
   title: null,
@@ -15,6 +17,7 @@ const noticeForm = ref({
 });
 const attachmentInput = ref(null);
 const uploadStatus = ref("");
+const fileName = ref('未选择');
 
 function resettingClicked() {
   window.location.reload();
@@ -26,7 +29,8 @@ function handleFileChange(event) {
   if (!file) return;
   const formData = new FormData();
   formData.append("file", file);
-
+  fileName.value = file.name
+  uploadFileStore.changeIsLoading(true);
   // 上传文件到 /upload 接口（不是 /admin/upload）
   axios({
     url: "/upload", 
@@ -43,12 +47,18 @@ function handleFileChange(event) {
         // 假设响应返回文件的访问链接
         noticeForm.value.attachmentUrl = res.data;
         uploadStatus.value = "文件上传成功！";
+        fileName.value += uploadStatus.value;
+        uploadFileStore.changeIsLoading(false);
       } else {
         uploadStatus.value = "文件上传失败！";
+        fileName.value += uploadStatus.value;
+        uploadFileStore.changeIsLoading(false);
       }
     })
     .catch((err) => {
       uploadStatus.value = "文件上传失败！";
+      fileName.value += uploadStatus.value;
+      uploadFileStore.changeIsLoading(false);
       console.error(err);
     });
 }
@@ -100,7 +110,6 @@ watch(
 
 <template>
   <div class="release_box">
-    <p v-if="uploadStatus">{{ uploadStatus }}</p>
     <el-form label-width="auto" style="max-width: 600px" :model="noticeForm" @submit.prevent="uploadRelease">
       <el-form-item label="公告标题：">
         <el-input type="text" v-model="noticeForm.title" placeholder="请简略表达" />
@@ -111,6 +120,7 @@ watch(
       <el-form-item label="附件：">
         <input style="display: none" @change="handleFileChange" type="file" ref="attachmentInput"/>
         <button class="button" @click="triggerUploadFile" type="button">上传附件</button>
+        <p>&nbsp;&nbsp;&nbsp;{{ fileName }}</p>
       </el-form-item>
       <button type="submit" class="button_out">上传</button>
       <button type="button" @click="resettingClicked" class="button_out">重置</button>
@@ -120,7 +130,6 @@ watch(
 
 <style scoped lang="sass">
 .button_out, .button
-  margin-left: 20px
   padding: 0 20px
   height: 32px
   width: 120px
@@ -139,4 +148,6 @@ watch(
 .button_out:last-child:hover
   background-color: #bd0000
   color: white
+.button_out
+  margin-left: 20px
 </style>

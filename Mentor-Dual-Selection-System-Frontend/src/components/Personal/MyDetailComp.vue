@@ -4,6 +4,8 @@ import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
 import {http, httpStudent, httpTeacher} from "@/utils/http";
 import axios from "axios";
 const userInfoStore = useUserInfoStore();
+import {useUploadFileStore} from "@/stores/UploadFileStore";
+const uploadFileStore = useUploadFileStore();
 
 const userRole = ref(null);
 const userDetail = ref({
@@ -42,6 +44,7 @@ function handleFileChange(event) {
   fileName.value = file.name;
   const formData = new FormData();
   formData.append("file", file);
+  uploadFileStore.changeIsLoading(true);
   axios({
     url: "/upload",
     method: "POST",
@@ -57,14 +60,17 @@ function handleFileChange(event) {
       userDetailTemp.value.photoUrl = res.data;
       fileName.value += '-上传成功';
       alert("文件上传成功！");
+      uploadFileStore.changeIsLoading(false);
     } else {
       fileName.value += '-上传失败';
       alert("文件上传失败！");
+      uploadFileStore.changeIsLoading(false);
     }
   }).catch((err) => {
     fileName.value += '-上传失败';
     alert("文件上传失败！");
     console.error(err);
+    uploadFileStore.changeIsLoading(false);
   });
 }
 

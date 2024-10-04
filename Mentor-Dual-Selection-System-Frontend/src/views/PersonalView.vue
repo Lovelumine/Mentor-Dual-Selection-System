@@ -8,6 +8,8 @@ import MyDetailComp from "@/components/Personal/MyDetailComp.vue";
 import axios from "axios";
 import {http} from "@/utils/http";
 const router = useRouter();
+import {useUploadFileStore} from "@/stores/UploadFileStore";
+const uploadFileStore = useUploadFileStore();
 
 const userInfoComp = ref({
   fullName: '',
@@ -25,6 +27,7 @@ function handleFileChange(event) {
   if (!file) return;
   const formData = new FormData();
   formData.append("file", file);
+  uploadFileStore.changeIsLoading(true);
   axios({
     url: "/upload",
     method: "POST",
@@ -40,12 +43,15 @@ function handleFileChange(event) {
       userInfoChange.value.avatarUrl = res.data;
       userInfoComp.value.avatarUrl = res.data;
       alert("文件上传成功！");
+      uploadFileStore.changeIsLoading(false);
     } else {
       alert("文件上传失败！");
+      uploadFileStore.changeIsLoading(false);
     }
   }).catch((err) => {
     alert("文件上传失败！");
     console.error(err);
+    uploadFileStore.changeIsLoading(false);
   });
 }
 
