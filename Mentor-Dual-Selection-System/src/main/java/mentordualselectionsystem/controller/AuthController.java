@@ -53,11 +53,8 @@ public class AuthController {
         User user = (User) authentication.getPrincipal(); // 获取用户信息
         String token = jwtUtils.generateToken(Long.valueOf(user.getUid().toString()));  // 使用用户的 uid 生成 token
 
-        // 返回 {code: "", token: ""}
-        Map<String, String> response = new HashMap<>();
-        response.put("code", "200");  // 状态码
-        response.put("token", token); // 返回 JWT Token
-
+        // 使用 formatResponse 构建返回格式
+        Map<String, Object> response = formatResponse(200, Map.of("token", token));
         return ResponseEntity.ok(response);
     }
 
@@ -69,26 +66,25 @@ public class AuthController {
         String newPassword = resetPasswordRequest.getNewPassword();
         String confirmPassword = resetPasswordRequest.getConfirmPassword();
 
-
         User user;
         try {
             // 尝试获取用户信息，如果用户不存在会抛出异常
             user = userService.getUserByUsername(username);
         } catch (UsernameNotFoundException e) {
             // 捕获用户名不存在的异常并返回 404 错误信息
-            return buildErrorResponse(404, "用户不存在");
+            return ResponseEntity.status(404).body(formatResponse(404, "用户不存在"));
         }
 
         // 检查新密码和确认密码是否匹配
         if (!newPassword.equals(confirmPassword)) {
             // 返回错误信息，新密码和确认密码不匹配
-            return buildErrorResponse(400, "新密码和确认密码不匹配");
+            return ResponseEntity.status(400).body(formatResponse(400, "新密码和确认密码不匹配"));
         }
 
         // 验证旧密码
         if (!userService.checkPassword(username, oldPassword)) {
             // 返回错误信息，旧密码不正确
-            return buildErrorResponse(401, "旧密码不正确");
+            return ResponseEntity.status(401).body(formatResponse(401, "旧密码不正确"));
         }
 
         // 更新密码
@@ -98,21 +94,15 @@ public class AuthController {
         String token = jwtUtils.generateToken(user.getUid());
 
         // 返回 {code: 200, token: ""} 格式的响应
-        Map<String, String> response = new HashMap<>();
-        response.put("code", "200");  // 状态码
-        response.put("token", token); // 返回新的 JWT Token
-
+        Map<String, Object> response = formatResponse(200, Map.of("token", token));
         return ResponseEntity.ok(response);
     }
 
-    // 构建错误响应的辅助方法
-    private ResponseEntity<Map<String, Object>> buildErrorResponse(int code, String errorMessage) {
+    // 新的通用响应格式化方法
+    private Map<String, Object> formatResponse(int code, Object data) {
         Map<String, Object> response = new HashMap<>();
-        response.put("code", code);  // 状态码
-        Map<String, String> data = new HashMap<>();
-        data.put("error", errorMessage);  // 错误信息
+        response.put("code", code);
         response.put("data", data);
-
-        return ResponseEntity.status(code).body(response);
+        return response;
     }
 }
