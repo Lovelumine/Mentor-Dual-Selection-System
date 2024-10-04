@@ -72,6 +72,16 @@ export default {
             path: 'add_single_teach',
             name: 'addSingleTeach',
             component: () => import('@/components/Home/AddSingleTeachInfoComp.vue')
+        },
+        {
+            path: 'reset_pwd',
+            name: 'resetPwd',
+            component: () => import('@/components/Home/ResetPwdComp.vue')
+        },
+        {
+            path: 'teach_resume',
+            name: 'teachResume',
+            component: () => import('@/components/Home/TeachResumeComp.vue')
         }
     ]
 }

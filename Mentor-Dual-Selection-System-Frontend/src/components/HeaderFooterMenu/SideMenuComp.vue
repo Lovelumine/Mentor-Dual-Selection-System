@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import { Avatar, BellFilled, CircleClose, Connection, User, UserFilled } from "@element-plus/icons-vue";
+import {Avatar, BellFilled, CircleClose, Connection, Lock, Position, User, UserFilled} from "@element-plus/icons-vue";
 import { onMounted, ref, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 const router = useRouter();
@@ -96,9 +96,17 @@ watch(route, (newRoute) => {
             <el-icon><BellFilled /></el-icon>
             <span>通知公告</span>
           </el-menu-item>
+          <el-menu-item index="/teach_resume" @click="activeMenu = '/teach_resume'; router.push('/teach_resume')">
+            <el-icon><Position /></el-icon>
+            <span>通知公告</span>
+          </el-menu-item>
           <el-menu-item index="/personal" @click="activeMenu = '/personal'; router.push('/personal')">
             <el-icon><User /></el-icon>
             <span>个人中心</span>
+          </el-menu-item>
+          <el-menu-item index="/reset_pwd" @click="activeMenu = '/reset_pwd'; router.push('/reset_pwd')">
+            <el-icon><Lock /></el-icon>
+            <span>重置密码</span>
           </el-menu-item>
           <el-menu-item @click="SignoutClicked">
             <el-icon><CircleClose /></el-icon>
