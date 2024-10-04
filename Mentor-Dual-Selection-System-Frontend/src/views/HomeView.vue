@@ -50,6 +50,6 @@ onMounted(() => {
 .container_login
   display: flex
   .router_container
-    flex-grow: 1
+    flex: 1
 
 </style>

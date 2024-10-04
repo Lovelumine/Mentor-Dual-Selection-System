@@ -112,7 +112,6 @@ watch(route, (newRoute) => {
 
 <style scoped lang="sass">
 .sidemenu_box
-  overflow: clip
   .el-menu-vertical-demo
     min-height: calc(100vh - 60px)
     width: 200px

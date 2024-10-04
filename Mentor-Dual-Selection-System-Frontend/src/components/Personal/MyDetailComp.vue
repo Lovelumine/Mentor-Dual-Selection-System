@@ -186,7 +186,15 @@ watch(() => userInfoStore.userInfo, (newValue) => {
 <template>
   <div class="my_detail_box">
     <el-form label-width="auto" style="max-width: 600px; margin: 0 auto" v-if="userRole === 'TEACHER'">
-      <h3>账号详细信息</h3>
+      <h3>个人详细信息</h3>
+      <el-form-item label="照片：">
+        <div class="photo_box">
+          <img :src="userDetailTemp.photoUrl" alt="photo"/>
+        </div>
+        <input type="file" style="display: none" ref="fileInput" @change="handleFileChange"/>
+        <button type="button" class="button" @click="triggerUploadFile" :disabled="isChangeDetailDisabled">选择图片</button>
+        <p>&nbsp;&nbsp;&nbsp;{{fileName}}&nbsp;&nbsp;&nbsp;</p>
+      </el-form-item>
       <el-form-item label="职称：">
         <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.teacherPosition"/>
       </el-form-item>
@@ -203,7 +211,7 @@ watch(() => userInfoStore.userInfo, (newValue) => {
       <button class="button" type="button" @click="changeDetailChecked('TEACHER')" :disabled="isChangeDetailDisabled">确认修改</button>
     </el-form>
     <el-form label-width="auto" style="max-width: 600px; margin: 0 auto" v-if="userRole === 'STUDENT'">
-      <h3>账号详细信息</h3>
+      <h3>个人详细信息</h3>
       <el-form-item label="照片：">
         <div class="photo_box">
           <img :src="userDetailTemp.photoUrl" alt="photo"/>
@@ -218,10 +226,10 @@ watch(() => userInfoStore.userInfo, (newValue) => {
       <el-form-item label="班级：">
         <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.studentClass"/>
       </el-form-item>
-      <el-form-item label="研究方向：">
+      <el-form-item label="意向研究方向：">
         <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.researchDirection"/>
       </el-form-item>
-      <el-form-item label="专业方向：">
+      <el-form-item label="专业：">
         <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.professionalDirection"/>
       </el-form-item>
       <el-form-item label="简介：">

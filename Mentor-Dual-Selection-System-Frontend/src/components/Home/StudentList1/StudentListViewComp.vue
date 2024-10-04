@@ -119,10 +119,9 @@ watch([
   </div>
   <el-table :data="tableData" stripe class="table">
     <el-table-column prop="fullName" label="姓名"  />
-    <el-table-column prop="id" label="学号"  />
+    <el-table-column prop="username" label="学号"  />
     <el-table-column prop="grade" label="年级"  />
     <el-table-column prop="class" label="班级" show-overflow-tooltip />
-    <el-table-column prop="phone" label="电话"  />
     <el-table-column prop="email" label="邮箱"  />
     <el-table-column prop="isMentor" label="选择导师状态"/>
     <el-table-column prop="teacherName" label="导师姓名"  />
@@ -130,7 +129,7 @@ watch([
 <!--    <el-table-column prop="research_training_rating" label="科研训练评分"/>-->
 <!--    <el-table-column prop="labor_education_rating" label="劳动教育评分"/>-->
 <!--    <el-table-column prop="rating_explanation" label="评分说明"/>-->
-    <el-table-column prop="notes" label="备注"/>
+    <el-table-column prop="resume" label="简介" show-overflow-tooltip width="300"/>
   </el-table>
 </template>
 
@@ -153,6 +152,7 @@ watch([
   border: 1px solid #005826
   border-radius: 5px
   transition: .3s ease
+
 .table:hover
   box-shadow: #005826 0 0 10px
 </style>
