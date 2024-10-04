@@ -2,6 +2,7 @@
 import {onMounted, ref, watch} from "vue";
 import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
 import {http, httpStudent, httpTeacher} from "@/utils/http";
+import axios from "axios";
 const userInfoStore = useUserInfoStore();
 
 const userRole = ref(null);
@@ -28,6 +29,44 @@ const userDetailTemp = ref({
   studentGrade: null,
 });
 const isChangeDetailDisabled = ref(true);
+const fileInput = ref(null);
+const fileName = ref('未选择');
+
+function triggerUploadFile() {
+  fileInput.value.click();
+}
+
+function handleFileChange(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  fileName.value = file.name;
+  const formData = new FormData();
+  formData.append("file", file);
+  axios({
+    url: "/upload",
+    method: "POST",
+    headers: {
+      Accept: "*/*",
+      "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      "Content-Type": "multipart/form-data", // 确保使用 multipart/form-data
+    },
+    data: formData,
+  }).then((res) => {
+    if (res.status === 200 && res.data) {
+      // 假设响应返回文件的访问链接
+      userDetailTemp.value.photoUrl = res.data;
+      fileName.value += '-上传成功';
+      alert("文件上传成功！");
+    } else {
+      fileName.value += '-上传失败';
+      alert("文件上传失败！");
+    }
+  }).catch((err) => {
+    fileName.value += '-上传失败';
+    alert("文件上传失败！");
+    console.error(err);
+  });
+}
 
 function changeDetailDisabled(){
   isChangeDetailDisabled.value = !isChangeDetailDisabled.value;
@@ -165,11 +204,25 @@ watch(() => userInfoStore.userInfo, (newValue) => {
     </el-form>
     <el-form label-width="auto" style="max-width: 600px; margin: 0 auto" v-if="userRole === 'STUDENT'">
       <h3>账号详细信息</h3>
+      <el-form-item label="照片：">
+        <div class="photo_box">
+          <img :src="userDetailTemp.photoUrl" alt="photo"/>
+        </div>
+        <input type="file" style="display: none" ref="fileInput" @change="handleFileChange"/>
+        <button type="button" class="button" @click="triggerUploadFile" :disabled="isChangeDetailDisabled">选择图片</button>
+        <p>&nbsp;&nbsp;&nbsp;{{fileName}}&nbsp;&nbsp;&nbsp;</p>
+      </el-form-item>
       <el-form-item label="年级：">
         <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.studentGrade"/>
       </el-form-item>
       <el-form-item label="班级：">
         <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.studentClass"/>
+      </el-form-item>
+      <el-form-item label="研究方向：">
+        <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.researchDirection"/>
+      </el-form-item>
+      <el-form-item label="专业方向：">
+        <el-input :disabled="isChangeDetailDisabled" v-model="userDetailTemp.professionalDirection"/>
       </el-form-item>
       <el-form-item label="简介：">
         <el-input type="textarea" :rows="4" :disabled="isChangeDetailDisabled" v-model="userDetailTemp.resume"/>
@@ -187,6 +240,12 @@ watch(() => userInfoStore.userInfo, (newValue) => {
   width: 100%
   margin: 10px auto
   text-align: center
+  .photo_box
+    width: 75px
+    height: 105px
+    overflow: hidden
+    img
+      width: 100%
   h3
     color: #005826
     font-weight: bold
