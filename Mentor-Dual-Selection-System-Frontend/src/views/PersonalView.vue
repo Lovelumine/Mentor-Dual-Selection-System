@@ -14,8 +14,7 @@ const userInfoComp = ref({
   email: '',
   username: '',
   role: '',
-  avatarUrl: '',
-  grade: ''
+  avatarUrl: ''
 });
 const userInfoChange = ref({...userInfoComp.value});
 const isStartChangeInfo = ref(false);
@@ -39,6 +38,7 @@ function handleFileChange(event) {
     if (res.status === 200 && res.data) {
       // 假设响应返回文件的访问链接
       userInfoChange.value.avatarUrl = res.data;
+      userInfoComp.value.avatarUrl = res.data;
       alert("文件上传成功！");
     } else {
       alert("文件上传失败！");
@@ -95,8 +95,8 @@ onMounted(() => {
   }
 })
 watch(() => userStore.userInfo, (newValue) => {
-  userInfoComp.value = {...newValue};
-  userInfoChange.value = {...newValue};
+  userInfoComp.value = newValue;
+  userInfoChange.value = newValue;
   console.log(userInfoComp.value);
 })
 </script>
@@ -142,9 +142,6 @@ watch(() => userStore.userInfo, (newValue) => {
           </div>
             <input style="display: none" type="file" @change="handleFileChange" ref="fileInput" :accept="['.jpg', '.jpeg', '.png']"/>
             <button type="button" @click="triggerUploadFile">选择图片</button>
-          </li>
-          <li>
-            年级：<input type="text" required placeholder="例：2024" v-model="userInfoChange.grade" />
           </li>
         </ul>
         <button class="button" type="submit">确认修改</button>
@@ -215,6 +212,7 @@ watch(() => userStore.userInfo, (newValue) => {
           .avatar_box
             width: 64px
             height: 64px
+            overflow: hidden
             img
               width: 100%
           input
