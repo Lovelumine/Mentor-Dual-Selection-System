@@ -180,6 +180,7 @@ public class UserController {
             String password = userRequest.getPassword() != null ? userRequest.getPassword() : "123";  // 默认密码为123
 
             if (uid == null) {
+                // 新增用户
                 if (userRepository.findByUsername(username).isPresent()) {
                     return buildErrorResponse(400, "用户名已存在");
                 }
@@ -193,6 +194,7 @@ public class UserController {
                 newUser.setRole(userService.getRoleByName(role));
                 userService.saveUser(newUser);
 
+                // 如果是新增学生，则必须提供年级信息
                 if ("STUDENT".equals(role)) {
                     String grade = userRequest.getGrade();
                     if (grade == null || grade.isEmpty()) {
@@ -206,6 +208,7 @@ public class UserController {
                 }
 
             } else {
+                // 更新用户
                 User existingUser = userRepository.findById(uid)
                         .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
 
@@ -221,18 +224,18 @@ public class UserController {
                 existingUser.setRole(userService.getRoleByName(role));
                 userService.saveUser(existingUser);
 
+                // 如果是更新学生信息，不需要强制提供年级信息
                 if ("STUDENT".equals(role)) {
                     String grade = userRequest.getGrade();
-                    if (grade == null || grade.isEmpty()) {
-                        return buildErrorResponse(400, "学生角色必须提供年级信息");
-                    }
-
                     UserDetail userDetail = userDetailService.getUserDetailByUid(uid);
                     if (userDetail == null) {
                         userDetail = new UserDetail();
                         userDetail.setUid(existingUser.getUid());
                     }
-                    userDetail.setStudentGrade(grade);
+                    // 如果请求中提供了年级信息，则更新年级
+                    if (grade != null && !grade.isEmpty()) {
+                        userDetail.setStudentGrade(grade);
+                    }
                     userDetailService.updateUserDetail(uid, userDetail);  // 使用 updateUserDetail 保存用户详细信息
                 }
             }
@@ -247,6 +250,7 @@ public class UserController {
             return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
         }
     }
+
 
 
     // 新增方法：根据 UID 获取指定用户的账号信息
