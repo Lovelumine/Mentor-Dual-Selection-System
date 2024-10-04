@@ -36,7 +36,7 @@ function submitApplication(){
         alert('提交申请成功，请等待导师处理。');
       }
     }).catch((err) => {
-      alert(JSON.parse(err.request.responseText));
+      alert(JSON.parse(err.request.responseText).data.error);
     })
   }
 }

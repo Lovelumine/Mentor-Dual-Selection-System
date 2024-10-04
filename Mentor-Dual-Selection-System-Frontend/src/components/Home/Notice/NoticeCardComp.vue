@@ -3,6 +3,7 @@ import {Paperclip} from "@element-plus/icons-vue";
 import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
 import {onMounted, ref, watch} from "vue";
 import {httpAdmin} from "@/utils/http";
+import axios from "axios";
 const userStore = useUserInfoStore();
 
 const userPermi = ref('');
@@ -15,6 +16,43 @@ const noticeDetails = ref({
   attachmentUrl: null,
   published: true
 })
+const attachmentInput = ref(null);
+const fileName = ref('未选择（若您先前有附件，您就无需再选附件）');
+
+function triggerUploadFile() {
+  attachmentInput.value.click();
+}
+
+function handleFileChange(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  fileName.value = file.name;
+  const formData = new FormData();
+  formData.append("file", file);
+  axios({
+    url: "/upload",
+    method: "POST",
+    headers: {
+      Accept: "*/*",
+      "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      "Content-Type": "multipart/form-data",
+    },
+    data: formData,
+  }).then((res) => {
+    if (res.status === 200 && res.data) {
+      noticeDetails.value.attachmentUrl = res.data;
+      alert("文件上传成功！");
+      fileName.value += '-上传成功';
+    } else {
+      alert("文件上传失败！");
+      fileName.value += '-上传失败';
+    }
+  }).catch((err) => {
+    alert("文件上传失败！");
+    fileName.value += '-上传失败';
+    console.error(err);
+  });
+}
 
 function changePermi(target: any) {
   userPermi.value = target.role;
@@ -24,7 +62,12 @@ function changeNotice(target: number, index: number) {
   noticeDetails.value.id = target;
   noticeDetails.value.title = allNotice.value[index].title;
   noticeDetails.value.content = allNotice.value[index].content;
+  noticeDetails.value.attachmentUrl = allNotice.value[index].attachmentUrl;
   dialogVisible.value = true;
+}
+
+function resettingOrinFile() {
+  noticeDetails.value.attachmentUrl = null;
 }
 
 function changeNoticeCheck() {
@@ -106,12 +149,18 @@ watch(() => userStore.userInfo, (newValue) => {
 <template>
   <div class="card_container">
     <el-dialog v-model="dialogVisible" :title="`修改公告：${noticeDetails.title}`">
-      <el-form :model="noticeDetails" @submit.prevent="changeNoticeCheck">
+      <el-form label-width="auto" :model="noticeDetails" @submit.prevent="changeNoticeCheck">
         <el-form-item label="公告标题：">
           <el-input type="text" v-model="noticeDetails.title"/>
         </el-form-item>
         <el-form-item label="公告内容：">
           <el-input type="textarea" :rows="4" v-model="noticeDetails.content"/>
+        </el-form-item>
+        <el-form-item label="附件：">
+          <input style="display: none" type="file" ref="attachmentInput" @change="handleFileChange"/>
+          <el-button native-type="button" @click="triggerUploadFile">选择文件</el-button>
+          <p>&nbsp;&nbsp;&nbsp;文件：{{fileName}}&nbsp;&nbsp;&nbsp;</p>
+          <el-button native-type="button" @click="resettingOrinFile" title="若您先前有附件，现不再需要，可点此！">移除原有附件</el-button>
         </el-form-item>
         <el-button native-type="submit" type="primary">确认修改</el-button>
         <el-button native-type="button" @click="dialogVisible = false">取消修改</el-button>

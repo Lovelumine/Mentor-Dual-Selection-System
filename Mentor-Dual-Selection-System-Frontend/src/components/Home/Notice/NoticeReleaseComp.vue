@@ -24,7 +24,6 @@ function resettingClicked() {
 function handleFileChange(event) {
   const file = event.target.files[0];
   if (!file) return;
-
   const formData = new FormData();
   formData.append("file", file);
 
@@ -110,7 +109,7 @@ watch(
         <el-input type="textarea" :rows="4" v-model="noticeForm.content" placeholder="请简略表达" />
       </el-form-item>
       <el-form-item label="附件：">
-        <input style="display: none" @change="handleFileChange" type="file" ref="attachmentInput" :accept="['.doc', '.docx']" />
+        <input style="display: none" @change="handleFileChange" type="file" ref="attachmentInput"/>
         <button class="button" @click="triggerUploadFile" type="button">上传附件</button>
       </el-form-item>
       <button type="submit" class="button_out">上传</button>
