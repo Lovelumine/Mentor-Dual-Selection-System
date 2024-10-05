@@ -114,6 +114,7 @@ public class SearchController {
         data.put("grade", userDetail.getStudentGrade());
         data.put("class", userDetail.getStudentClass());
         data.put("resume", userDetail.getResume());
+        data.put("research_direction", userDetail.getResearchDirection());
         data.put("mentor_id",student.getMentorId());
 
         responseBody.put("data", data);
@@ -183,12 +184,14 @@ public class SearchController {
                 studentData.put("photourl", userDetail.getPhotoUrl());
                 studentData.put("grade", userDetail.getStudentGrade());
                 studentData.put("class", userDetail.getStudentClass());
+                studentData.put("research_direction", userDetail.getResearchDirection());
                 studentData.put("resume", userDetail.getResume());
             } else {
                 studentData.put("photourl", null);
                 studentData.put("grade", null);
                 studentData.put("class", null);
                 studentData.put("resume", null);
+                studentData.put("research_direction", null);
             }
             return studentData;
         }).collect(Collectors.toList());
@@ -264,12 +267,14 @@ public class SearchController {
                 studentData.put("photourl", userDetail.getPhotoUrl());
                 studentData.put("grade", userDetail.getStudentGrade());
                 studentData.put("class", userDetail.getStudentClass());
+                studentData.put("research_direction", userDetail.getResearchDirection());
                 studentData.put("resume", userDetail.getResume());
             } else {
                 studentData.put("photourl", null);
                 studentData.put("grade", null);
                 studentData.put("class", null);
                 studentData.put("resume", null);
+                studentData.put("research_direction", null);
             }
             return studentData;
         }).collect(Collectors.toList());
@@ -363,12 +368,14 @@ public class SearchController {
                         studentData.put("photourl", userDetail.getPhotoUrl());
                         studentData.put("grade", userDetail.getStudentGrade());
                         studentData.put("class", userDetail.getStudentClass());
+                        studentData.put("research_direction", userDetail.getResearchDirection());
                         studentData.put("resume", userDetail.getResume());
                     } else {
                         studentData.put("photourl", null);
                         studentData.put("grade", null);
                         studentData.put("class", null);
                         studentData.put("resume", null);
+                        studentData.put("research_direction", null);
                     }
                     return studentData;
                 }).collect(Collectors.toList());
