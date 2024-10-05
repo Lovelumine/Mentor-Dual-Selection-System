@@ -28,7 +28,10 @@ function backClicked(){
   line-height: 60px
   font-size: 20px
   margin-bottom: 20px
-  position: relative
+  position: fixed
+  top: 60px
+  left: 0
+  z-index: 1000
   .user_icon_box:hover
     background-color: #00582690
   .user_icon_box

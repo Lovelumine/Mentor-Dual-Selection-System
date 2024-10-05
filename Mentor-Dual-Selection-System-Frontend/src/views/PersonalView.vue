@@ -105,6 +105,7 @@ watch(() => userStore.userInfo, (newValue) => {
 </script>
 
 <template>
+  <div class="container">
   <PersonalTitleComp/>
 
   <div class="personal_box">
@@ -160,7 +161,7 @@ watch(() => userStore.userInfo, (newValue) => {
       </form>
     </div>
     <MyDetailComp/>
-  </div>
+  </div></div>
 </template>
 
 <style scoped lang="sass">
@@ -266,4 +267,14 @@ watch(() => userStore.userInfo, (newValue) => {
   cursor: pointer
   background-color: #0f7e3f
   border: 1px solid #0f7e3f
+
+.container
+  height: calc(100vh - 60px)  // 设置容器高度为视口高度减去标题栏高度
+  overflow-y: auto            // 允许出现垂直滚动条
+  box-sizing: border-box       // 确保内边距不会影响容器的尺寸
+  margin-top: 60px  /* 向下移动60px */
+  overflow-y: auto   /* 当内容超出页面范围时，显示滚动条 */
+  height: calc(100vh - 120px)  /* 计算容器高度，减去顶部的60px */
+
+
 </style>
