@@ -1,8 +1,19 @@
 <script setup lang="ts">
-import {onMounted, ref} from "vue";
+import {onMounted, ref, computed} from "vue";
 import {http} from "@/utils/http";
 
 const allRelations = ref([]);
+
+// 统计信息
+const totalMentors = computed(() => allRelations.value.length);
+const totalStudents = computed(() =>
+  allRelations.value.reduce((sum, item) => sum + item.students.length, 0)
+);
+const mentorStudentRatio = computed(() => {
+  return totalStudents.value === 0
+    ? "无数据"
+    : (totalMentors.value / totalStudents.value).toFixed(2);
+});
 
 onMounted(() => {
   http({
@@ -21,18 +32,26 @@ onMounted(() => {
   }).catch(err => {
     alert(JSON.parse(err.requests.responseText).data.error);
   })
-})
+});
 </script>
 
 <template>
   <div class="all_pending_box">
-    <h3>所有师生选择的学生</h3>
-    <div v-for="(item, index) in allRelations" :key="index" class="for_teacher_box">
-      <div class="teacher_item">
-        导师姓名：{{item.mentor.fullName}}
-      </div>
-      <div v-for="(sItem, sIndex) in item.students" :key="sIndex" class="for_student_box">
-        <div class="student_item">
+    <h3>导师与学生配对列表</h3>
+    
+    <!-- 统计信息展示部分 -->
+    <div class="statistics">
+      <p>目前已有 <strong>{{ totalMentors }}</strong> 位导师选择了 <strong>{{ totalStudents }}</strong> 位学生</p>
+      <p>导师和学生的比例为：<strong>{{ mentorStudentRatio }}</strong></p>
+    </div>
+
+    <!-- 导师与学生配对列表 -->
+    <div class="teacher_student_container">
+      <div v-for="(item, index) in allRelations" :key="index" class="for_teacher_box">
+        <div class="teacher_item">
+          导师姓名：{{item.mentor.fullName}}
+        </div>
+        <div v-for="(sItem, sIndex) in item.students" :key="sIndex" class="student_item">
           学生姓名：{{sItem.fullName}}
         </div>
       </div>
@@ -42,32 +61,59 @@ onMounted(() => {
 
 <style scoped lang="sass">
 .all_pending_box
-  position: relative
   margin: 50px auto 20px auto
-  width: 50%
+  padding: 20px
+  width: 90%
+  background-color: #f9f9f9
+  border-radius: 10px
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 12px
   h3
-    position: absolute
-    top: -40px
-    left: 50%
-    transform: translateX(-50%)
+    text-align: center
     font-weight: bold
+    font-size: 24px
+    color: #333
+
+.statistics
+  text-align: center
+  margin-bottom: 20px
+  p
+    font-size: 16px
+    color: #555
+    strong
+      color: #4CAF50
+
+.teacher_student_container
+  display: flex
+  flex-wrap: wrap
+  justify-content: space-between
+
+.for_teacher_box
+  flex: 1 1 calc(50% - 20px)
+  padding: 20px
+  margin: 10px
+  background-color: #e6f5e9
+  border-radius: 10px
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 12px
+  .teacher_item
+    padding: 10px
+    text-align: center
+    background-color: #4CAF50
+    color: white
+    border-radius: 10px
+    font-size: 18px
+    font-weight: bold
+
+  .student_item
+    margin-top: 10px
+    padding: 10px
+    background-color: #fff
+    color: #333
+    border: 1px solid #005826
+    border-radius: 10px
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 12px
+    text-align: center
+
+@media (max-width: 768px)
   .for_teacher_box
-    margin-bottom: 20px
-    .teacher_item
-      padding: 5px
-      text-align: center
-      box-shadow: #005826 0 0 5px
-      border-radius: 10px
-      margin: 0 auto 20px auto
-      font-size: 17px
-      font-weight: bold
-    .for_student_box
-      display: flex
-      .student_item
-        width: 50%
-        padding: 3px
-        text-align: center
-        box-shadow: #005826 0 0 5px
-        border-radius: 10px
-        margin: 0 auto 20px auto
+    flex: 1 1 100%
 </style>

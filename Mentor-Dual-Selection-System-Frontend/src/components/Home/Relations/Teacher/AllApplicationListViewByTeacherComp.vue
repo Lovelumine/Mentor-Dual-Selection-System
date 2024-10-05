@@ -82,6 +82,10 @@ function checkReject(){
   })
 }
 
+function scopeIndexGetStatus(index: number){
+  return pendingList.value[index].status === 'PENDING';
+}
+
 onMounted(() => {
   userStore.fetchUserInfo();
   http({
@@ -183,8 +187,13 @@ watch(() => userStore.userInfo, (newValue) => {
       <el-table-column prop="rejectionReason" label="拒绝理由"/>
       <el-table-column v-if="userRole === 'TEACHER' || userRole === 'ADMIN'" label="处理">
         <template #default="scope">
-          <button class="button" @click="handleAccept(scope.$index, scope.row)">同意</button>
-          <button class="button" @click="handleReject(scope.$index, scope.row)">拒绝</button>
+          <div v-if="scopeIndexGetStatus(scope.$index)">
+            <button class="button" @click="handleAccept(scope.$index, scope.row)">同意</button>
+            <button class="button" @click="handleReject(scope.$index, scope.row)">拒绝</button>
+          </div>
+          <div v-else>
+            <span>已完成</span>
+          </div>
         </template>
       </el-table-column>
     </el-table>

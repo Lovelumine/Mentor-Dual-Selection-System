@@ -25,10 +25,16 @@ spring:
       - org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration
   mvc:
     cors:
-          allowed-origins: "*"
-          allowed-methods: GET,POST,PUT,DELETE,OPTIONS
-          allowed-headers: "*"
-          allow-credentials: true  # Cookie
+      allowed-origins: "*"
+      allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+      allowed-headers: "*"
+      allow-credentials: true  # Cookie
+
+  # Multipart file upload settings
+  servlet:
+    multipart:
+      max-file-size: 100MB  # 设置单个文件上传的最大大小为 100MB
+      max-request-size: 100MB  # 设置整个请求的最大大小为 100MB
 
 # Application port
 server:
@@ -53,8 +59,14 @@ knife4j:
   enable: true
   setting:
     language: zh_cn
-    #?????
     enable-footer: false
     enable-footer-custom: true
     footer-custom-content: Copyright © 2023-2024 Yongxin County Lovelumine Technology Co., Ltd.
 debug: true
+
+# MinIO Configuration
+minio:
+  url: https://minio.lumoxuan.cn  # MinIO server URL
+  access-key: uv9Ey4hCgAeF9US8IvW7  # MinIO access key
+  secret-key: EJxNuc7hJId6cW969JXcMtd14xs7d9wTmC17Mn5W  # MinIO secret key
+  bucket-name: mentor-dual-selection-system  # default bucket name, can be customized

@@ -5,7 +5,8 @@ import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
 import {Right} from "@element-plus/icons-vue";
 import {http} from "@/utils/http";
 const userStore = useUserInfoStore();
-import {useRouter} from "vue-router";const router = useRouter();
+import {useRouter} from "vue-router";
+const router = useRouter();
 
 const userInfoComp = ref({
   fullName: '',
@@ -18,6 +19,7 @@ const targetTeacher = ref({
   email: '',
   avatarUrl: ''
 });
+const errorShow = ref(0);
 
 
 onMounted(() => {
@@ -36,8 +38,9 @@ onMounted(() => {
       alert('获取关键信息失败，请检查网络和登录状态！');
     }
   }).catch(err => {
-    alert(JSON.parse(err.request.responseText).data.error);
-    router.push('/');
+    console.error(err);
+    if (err.request.status === 404) errorShow.value = 404;
+    else if (err.request.status === 500) errorShow.value = 500;
   })
 })
 
@@ -47,7 +50,7 @@ watch(() => userStore.userInfo, (newValue) => {
 </script>
 
 <template>
-  <div class="student_to_teacher_box">
+  <div class="student_to_teacher_box" v-if="errorShow === 0">
     <h3>您的目标导师</h3>
     <div class="item_box">
       <div class="item">
@@ -63,6 +66,9 @@ watch(() => userStore.userInfo, (newValue) => {
         <div>导师邮箱：{{targetTeacher.email}}</div>
       </div>
     </div>
+  </div>
+  <div class="student_to_teacher_box" v-if="errorShow === 404">
+    <h3>您还未选择导师</h3>
   </div>
 </template>
 

@@ -162,7 +162,7 @@ public class ApplicationController {
             if ("STUDENT".equals(roleName)) {
                 // 学生获取自己的导师
                 if (currentUser.getMentorId() == null) {
-                    return buildErrorResponse(404, "你还没有导师");
+                    return buildErrorResponse(404, "您还没有选择导师");
                 }
                 User mentor = userService.getUserByUid(currentUser.getMentorId());
 
@@ -190,6 +190,7 @@ public class ApplicationController {
                     studentMap.put("fullName", student.getFullName());
                     studentMap.put("email", student.getEmail());
                     studentMap.put("username", student.getUsername());
+
                     return studentMap;
                 }).collect(Collectors.toList());
 

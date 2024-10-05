@@ -36,7 +36,7 @@ function submitApplication(){
         alert('提交申请成功，请等待导师处理。');
       }
     }).catch((err) => {
-      alert(JSON.parse(err.request.responseText));
+      alert(JSON.parse(err.request.responseText).data.error);
     })
   }
 }
@@ -93,7 +93,7 @@ watch(() => userStore.userInfo, (newValue) => {
     </div>
     <span class="input_item">
       申请该导师的理由：
-      <input type="text" placeholder="请精简至30字内（必填）" required v-model="selectReason"/>
+      <input type="text" placeholder="请精简你的理由（必填）" required v-model="selectReason"/>
       <button class="button" @click="submitApplication">提交申请</button>
     </span>
   </div>
@@ -111,6 +111,8 @@ watch(() => userStore.userInfo, (newValue) => {
   .item_box
     margin: 20px auto 20px 20px
     display: flex
+    flex-wrap: wrap
+    row-gap: 20px
     .item
       margin-right: 20px
       width: 320px

@@ -8,7 +8,8 @@ public class UserRequest {
     private String fullName;
     private String email;
     private String username;
-    private String password;  // 新增密码字段
+    private String password;
+    private String grade;  // 新增 grade 字段
 
     // Getters and setters
 
@@ -60,11 +61,19 @@ public class UserRequest {
         this.username = username;
     }
 
-    public String getPassword() {  // 新增的 getter 方法
+    public String getPassword() {
         return password;
     }
 
-    public void setPassword(String password) {  // 新增的 setter 方法
+    public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getGrade() {  // 新增的 getter 方法
+        return grade;
+    }
+
+    public void setGrade(String grade) {  // 新增的 setter 方法
+        this.grade = grade;
     }
 }

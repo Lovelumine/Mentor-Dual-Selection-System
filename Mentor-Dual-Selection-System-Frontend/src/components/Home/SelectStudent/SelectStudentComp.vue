@@ -82,6 +82,10 @@ function checkReject(){
   })
 }
 
+function scopeIndexGetStatus(index: number){
+  return pendingList.value[index].status === 'PENDING';
+}
+
 onMounted(() => {
   userStore.fetchUserInfo();
   http({
@@ -164,7 +168,7 @@ watch(() => userStore.userInfo, (newValue) => {
       width="500"
       :before-close="handleClose"
   >
-    <input type="text" placeholder="精简20字以内" required v-model="pendingUtilForm.rejectionReason"/>
+    <input type="text" placeholder="精简您的理由（必填）" required v-model="pendingUtilForm.rejectionReason"/>
     <template #footer>
       <div class="dialog-footer">
         <button class="button" @click="dialogVisible = false">关闭</button>
@@ -186,10 +190,15 @@ watch(() => userStore.userInfo, (newValue) => {
       <el-table-column prop="teacherName" label="导师姓名" v-if="userRole === 'ADMIN'"/>
       <el-table-column prop="applicationReason" label="申请理由"/>
       <el-table-column prop="statusCN" label="当前状态"/>
-      <el-table-column v-if="userRole === 'TEACHER' || userRole === 'ADMIN'" label="处理">
+      <el-table-column v-if="(userRole === 'TEACHER' || userRole === 'ADMIN')" label="处理状态">
         <template #default="scope">
-          <button class="button" @click="handleAccept(scope.$index, scope.row)">同意</button>
-          <button class="button" @click="handleReject(scope.$index, scope.row)">拒绝</button>
+          <div v-if="scopeIndexGetStatus(scope.$index)">
+            <button class="button" @click="handleAccept(scope.$index, scope.row)">同意</button>
+            <button class="button" @click="handleReject(scope.$index, scope.row)">拒绝</button>
+          </div>
+          <div v-else>
+            <span>已完成</span>
+          </div>
         </template>
       </el-table-column>
     </el-table>

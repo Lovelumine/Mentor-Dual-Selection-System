@@ -3,6 +3,26 @@
 import TeacherListSearchComp from "@/components/Home/TeacherList/TeacherListSearchComp.vue";
 import TeacherListFuncComp from "@/components/Home/TeacherList/TeacherListFuncComp.vue";
 import TeacherListViewComp from "@/components/Home/TeacherList/TeacherListViewComp.vue";
+import {onMounted, ref, watch} from "vue";
+import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
+const userInfoStore = useUserInfoStore();
+
+const isFuncShow = ref(false);
+
+function handleIsFuncShow(target){
+  isFuncShow.value = target === 'ADMIN';
+}
+
+onMounted(() => {
+  if (userInfoStore.userInfo){
+    handleIsFuncShow(userInfoStore.userInfo.role);
+  }
+  else userInfoStore.fetchUserInfo();
+})
+
+watch(() => userInfoStore.userInfo, (newValue) => {
+  handleIsFuncShow(newValue.role);
+})
 </script>
 
 <template>
@@ -10,7 +30,7 @@ import TeacherListViewComp from "@/components/Home/TeacherList/TeacherListViewCo
     <span>导师列表</span>
     <TeacherListSearchComp/>
   </div>
-  <TeacherListFuncComp/>
+  <TeacherListFuncComp v-if="isFuncShow"/>
   <TeacherListViewComp/>
 </template>
 

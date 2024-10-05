@@ -1,24 +1,52 @@
 import HomeView from "@/views/HomeView.vue";
+import TeacherListComp from "@/components/Home/TeacherList/TeacherListComp.vue";
 
 export default {
     path: '/',
     name: 'home',
     component: HomeView,
+    redirect: '/notice',
     children: [
         {
-            path: 'teacher_list',
-            name: 'teacherList',
-            component: () => import('@/components/Home/TeacherList/TeacherListComp.vue')
+            path: 'teach_list',
+            name: 'teachList',
+            component: TeacherListComp
         },
         {
             path: 'notice',
             name: 'notice',
-            component: () => import('@/components/Home/Notice/NoticeComp.vue')
+            component: () => import('@/components/Home/Notice/NoticeComp.vue'),
+            children: [
+                {
+                    path: '',
+                    component: () => import('@/components/Home/Notice/NoticeCardComp.vue'),
+                },
+                {
+                    path: 'release',
+                    name: 'noticeRelease',
+                    component: () => import('@/components/Home/Notice/NoticeReleaseComp.vue'),
+                }
+            ]
         },
         {
-            path: 'student_list',
-            name: 'studentList',
-            component: () => import('@/components/Home/StudentList/StudentListComp.vue')
+            path: 'stu_list1',
+            name: 'stuList1',
+            component: () => import('@/components/Home/StudentList1/StudentList1Comp.vue')
+        },
+        {
+            path: 'stu_list2',
+            name: 'stuList2',
+            component: () => import('@/components/Home/StudentList2/StudentList2Comp.vue')
+        },
+        {
+            path: 'stu_list3',
+            name: 'stuList3',
+            component: () => import('@/components/Home/StudentList3/StudentList3Comp.vue')
+        },
+        {
+            path: 'stu_list4',
+            name: 'stuList4',
+            component: () => import('@/components/Home/StudentList4/StudentList4Comp.vue')
         },
         {
             path: 'select_teacher',
@@ -34,6 +62,26 @@ export default {
             path: 'relations',
             name: 'relations',
             component: () => import('@/components/Home/Relations/RelationsComp.vue')
+        },
+        {
+            path: 'add_single_stu',
+            name: 'addSingleStu',
+            component: () => import('@/components/Home/AddSingleStuInfoComp.vue')
+        },
+        {
+            path: 'add_single_teach',
+            name: 'addSingleTeach',
+            component: () => import('@/components/Home/AddSingleTeachInfoComp.vue')
+        },
+        {
+            path: 'reset_pwd',
+            name: 'resetPwd',
+            component: () => import('@/components/Home/ResetPwdComp.vue')
+        },
+        {
+            path: 'teach_resume',
+            name: 'teachResume',
+            component: () => import('@/components/Home/TeachResumeComp.vue')
         }
     ]
 }

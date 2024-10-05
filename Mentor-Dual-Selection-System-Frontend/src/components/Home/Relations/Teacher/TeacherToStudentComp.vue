@@ -34,7 +34,7 @@ onMounted(() => {
 
 <template>
   <div class="teacher_to_student_box">
-    <h3>与您有过处理申请的学生</h3>
+    <h3>您指导的学生</h3>
     <div class="item_box">
       <div class="item" v-for="(item, index) in studentList" :key="index">
         <div>学生姓名：{{item.fullName}}</div>

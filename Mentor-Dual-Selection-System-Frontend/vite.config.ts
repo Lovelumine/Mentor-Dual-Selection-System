@@ -19,6 +19,26 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
+      '/admin': {
+        target: 'http://223.82.75.76:50000/admin',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/admin/, ''),
+      },
+      '/teacher': {
+        target: 'http://223.82.75.76:50000/teacher',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/teacher/, ''),
+      },
+      '/student': {
+        target: 'http://223.82.75.76:50000/student',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/student/, ''),
+      },
+      '/upload': {
+        target: 'http://223.82.75.76:50000/upload',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/upload/, ''),
+      },
     },
   },
 })

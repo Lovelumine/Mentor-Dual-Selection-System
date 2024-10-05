@@ -1,39 +1,13 @@
 <script setup lang="ts">
 import {onMounted, ref, watch} from "vue";
 import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
+import {http} from "@/utils/http";
 const userStore = useUserInfoStore();
+import {useTeacherListStore} from "@/stores/TeacherListStore";
+const teacherListStore = useTeacherListStore();
 
-const userPermi = ref(null);
-const tableData = [
-  {
-    name: '测试一',
-    id: 10001,
-    email: 'test@test.com',
-    research_direction: '生物信息学、肿瘤多组学',
-    link: 'https://test.com',
-  },
-  {
-    name: '测试二',
-    id: 10002,
-    email: 'test@test.com',
-    research_direction: '进化基因组学、生物信息学、动物系统发育与基因组进化',
-    link: 'https://test.com',
-  },
-  {
-    name: '测试三',
-    id: 10003,
-    email: 'test@test.com',
-    research_direction: '生态系统演化与修复',
-    link: 'https://test.com',
-  },
-  {
-    name: '测试四',
-    id: 10004,
-    email: 'test@test.com',
-    research_direction: '微生物智造与生物防治',
-    link: 'https://test.com',
-  },
-]
+const isUtilButtons = ref(false);
+const tableData = ref([]);
 
 const handleEdit = (index: number, row) => {
   console.log(index, row)
@@ -41,14 +15,43 @@ const handleEdit = (index: number, row) => {
 const handleDelete = (index: number, row) => {
   console.log(index, row)
 }
+function handleIsUtilButtons(target: string) {
+  isUtilButtons.value = 'ADMIN' === target;
+}
 onMounted(() => {
-  if (userStore.userInfo){
-    userPermi.value = userStore.userInfo.role;
-  }
+  if (userStore.userInfo) handleIsUtilButtons(userStore.userInfo.role);
+  http({
+    url: '/search/teachers',
+    method: 'GET',
+    headers: {
+      Accept: '*/*',
+      Authorization: 'Bearer ' + localStorage.getItem('token'),
+    }
+  }).then(res => {
+    if (res.data.code === 200) {
+      tableData.value = res.data.data;
+      for (let i = 0; i < tableData.value.length; i++){
+        tableData.value[i].uid
+      }
+    } else {
+      alert(res.data.data.error);
+    }
+  }).catch(err => {
+    alert(JSON.parse(err.requests.responseText).data.error);
+  });
 })
 
-watch(() => userStore.userInfo, (newValue) => {
-  userPermi.value = newValue.role;
+watch([
+  () => userStore.userInfo,
+  () => teacherListStore.teacherListSt
+], ([newUserInfoVal, newTeacherListVal]) => {
+  handleIsUtilButtons(newUserInfoVal.role);
+  if (newTeacherListVal){
+    console.log('ntlsv', newTeacherListVal);
+    tableData.value = newTeacherListVal;
+  } else {
+    console.log('ntlsv', newTeacherListVal);
+  }
 })
 </script>
 
@@ -57,17 +60,18 @@ watch(() => userStore.userInfo, (newValue) => {
     <span>列表内容</span>
   </div>
   <el-table :data="tableData" stripe class="table">
-    <el-table-column prop="name" label="姓名"  />
-    <el-table-column prop="id" label="工号"  />
+    <el-table-column prop="fullName" label="姓名"  />
+    <el-table-column prop="username" label="工号"  />
     <el-table-column prop="email" label="邮箱"  />
-    <el-table-column prop="research_direction" label="研究方向" show-overflow-tooltip />
-    <el-table-column prop="link" label="主页链接"  />
-    <el-table-column label="操作" v-if="userPermi === 'ADMIN' || userPermi === 'TEACHER'">
-      <template #default="scope">
-        <button class="button" @click="handleEdit(scope.$index, scope.row)">修改</button>
-        <button class="button" @click="handleDelete(scope.$index, scope.row)">删除</button>
-      </template>
-    </el-table-column>
+    <el-table-column prop="professionalDirection" label="研究专业" show-overflow-tooltip />
+    <el-table-column prop="research_direction" label="研究方向" />
+    <el-table-column prop="resume" label="介绍" show-overflow-tooltip />
+    <el-table-column prop="teacherposition" label="职称"  />
+<!--    <el-table-column label="操作" v-if="isUtilButtons">-->
+<!--      <template #default="scope">-->
+<!--        <button class="button" @click="handleEdit(scope.$index, scope.row)">修改</button>-->
+<!--      </template>-->
+<!--    </el-table-column>-->
   </el-table>
 </template>
 
@@ -99,14 +103,14 @@ watch(() => userStore.userInfo, (newValue) => {
     cursor: pointer
     background-color: #0f7e3f
     border: 1px solid #0f7e3f
-  .button:last-child
-    margin-left: 10px
-    border: 1px solid #bd0000
-    background-color: #bd000000
-    color: #bd0000
-  .button:last-child:hover
-    background-color: #bd0000
-    color: white
+  //.button:last-child
+  //  margin-left: 10px
+  //  border: 1px solid #bd0000
+  //  background-color: #bd000000
+  //  color: #bd0000
+  //.button:last-child:hover
+  //  background-color: #bd0000
+  //  color: white
 .table:hover
   box-shadow: #005826 0 0 10px
 </style>

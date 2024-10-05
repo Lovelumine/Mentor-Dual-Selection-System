@@ -67,7 +67,6 @@ public class UserDetailService {
             existingDetail.setNetid(userDetail.getNetid());
             existingDetail.setStudentClass(userDetail.getStudentClass());
             existingDetail.setStudentGrade(userDetail.getStudentGrade());
-            existingDetail.setGrade(userDetail.getGrade());
             return userDetailRepository.save(existingDetail);
         } else {
             // 如果不存在，则可以选择创建新用户详细信息

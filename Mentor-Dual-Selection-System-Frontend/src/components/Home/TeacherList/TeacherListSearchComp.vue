@@ -1,13 +1,50 @@
 <script setup lang="ts">
+import {ref} from "vue";
+import {http} from "@/utils/http";
+import {useTeacherListStore} from "@/stores/TeacherListStore";
+const teacherListStore = useTeacherListStore();
 
+const selectTeacherValue = ref(null);
+
+function selectTeacherClicked() {
+  console.log(selectTeacherValue.value);
+  if (selectTeacherValue.value === null || selectTeacherValue.value === "") {
+    alert('请输入正确的内容');
+  } else {
+    http({
+      url: '/search/teachers/search',
+      method: 'GET',
+      headers: {
+        Accept: '*/*',
+        Authorization: 'Bearer ' + localStorage.getItem('token')
+      },
+      params: {
+        name: selectTeacherValue.value,
+      }
+    }).then(res => {
+      console.log(res);
+      if (res.data.code === 200){
+        teacherListStore.updateTeacherList(res.data.data);
+      } else {
+        alert(res.data.data.error);
+      }
+    }).catch(err => {
+      alert(JSON.parse(err.requests.responseText).data.error);
+    })
+  }
+}
+
+function resettingClicked() {
+  window.location.reload();
+}
 </script>
 
 <template>
   <div class="search_box">
-    模糊搜索：
-    <input type="text" placeholder="请输入">
-    <button class="button">查询</button>
-    <button class="button">重置</button>
+    导师姓名模糊搜索：
+    <input type="text" placeholder="请输入" v-model="selectTeacherValue">
+    <button class="button" @click="selectTeacherClicked">查询</button>
+    <button class="button" @click="resettingClicked">重置</button>
   </div>
 </template>
 
