@@ -167,7 +167,7 @@ watch(() => userStore.userInfo, (newValue) => {
       width="500"
       :before-close="handleClose"
   >
-    <input type="text" placeholder="精简20字以内" required v-model="pendingUtilForm.rejectionReason"/>
+    <input type="text" placeholder="拒绝理由（必填）" required v-model="pendingUtilForm.rejectionReason"/>
     <template #footer>
       <div class="dialog-footer">
         <button class="button" @click="dialogVisible = false">关闭</button>

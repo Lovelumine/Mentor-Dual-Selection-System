@@ -13,8 +13,8 @@ const allStudent = ref([]);
 const allTeacher = ref([]);
 const userRole = ref();
 const dialogVisible = ref(false);
-const studentInfoVisible = ref(false); // 新增：控制学生详情卡片的显示
-const studentInfo = ref({}); // 新增：存储学生详细信息
+const studentInfoVisible = ref(false); // 控制学生详情卡片的显示
+const studentInfo = ref({}); // 存储学生详细信息
 const pendingUtilForm = ref({
   applicationId: null,
   approved: null,
@@ -29,6 +29,11 @@ const handleClose = (done: () => void) => {
     .catch(() => {
       // catch error
     });
+};
+
+// 定义学生详情对话框的关闭处理函数
+const handleStudentInfoClose = (done) => {
+  done();
 };
 
 function handleAccept(index: number, row) {
@@ -63,7 +68,10 @@ function handleReject(index: number, row) {
 
 function checkReject() {
   dialogVisible.value = false;
-  if (pendingUtilForm.value.rejectionReason === null || pendingUtilForm.value.rejectionReason === "") {
+  if (
+    pendingUtilForm.value.rejectionReason === null ||
+    pendingUtilForm.value.rejectionReason === ""
+  ) {
     alert("您需要填写拒绝理由。");
     return;
   }
@@ -92,13 +100,13 @@ function scopeIndexGetStatus(index: number) {
   return pendingList.value[index].status === "PENDING";
 }
 
-// 新增：获取学生详情
+// 获取学生详情
 function handleViewStudentInfo(row) {
   getStudentInfo(row.studentId)
     .then((res) => {
       if (res.data.code === 200) {
         studentInfo.value = res.data.data;
-        studentInfoVisible.value = true;
+        studentInfoVisible.value = true; // 注意这里使用 .value
       } else {
         alert("获取学生详情失败！");
       }
@@ -109,7 +117,7 @@ function handleViewStudentInfo(row) {
     });
 }
 
-// 新增：获取学生信息的API调用函数
+// 获取学生信息的API调用函数
 function getStudentInfo(uid: number) {
   return http({
     url: `/search/student?uid=${uid}`,
@@ -170,13 +178,19 @@ onMounted(() => {
                     break;
                 }
                 for (let j = 0; j < allStudent.value.length; j++) {
-                  if (pendingList.value[i].studentId === allStudent.value[j].uid) {
-                    pendingList.value[i].studentName = allStudent.value[j].fullName;
+                  if (
+                    pendingList.value[i].studentId === allStudent.value[j].uid
+                  ) {
+                    pendingList.value[i].studentName =
+                      allStudent.value[j].fullName;
                   }
                 }
                 for (let k = 0; k < allTeacher.value.length; k++) {
-                  if (pendingList.value[i].mentorId === allTeacher.value[k].uid) {
-                    pendingList.value[i].teacherName = allTeacher.value[k].fullName;
+                  if (
+                    pendingList.value[i].mentorId === allTeacher.value[k].uid
+                  ) {
+                    pendingList.value[i].teacherName =
+                      allTeacher.value[k].fullName;
                   }
                 }
               }
@@ -219,7 +233,7 @@ watch(
   >
     <input
       type="text"
-      placeholder="精简您的理由（必填）"
+      placeholder="拒绝理由（必填）"
       required
       v-model="pendingUtilForm.rejectionReason"
     />
@@ -236,7 +250,7 @@ watch(
     v-model="studentInfoVisible"
     title="学生详情"
     width="600"
-    :before-close="() => (studentInfoVisible.value = false)"
+    :before-close="handleStudentInfoClose"
   >
     <div class="student-info-card">
       <img :src="studentInfo.photourl" alt="头像" class="avatar" />
@@ -252,7 +266,9 @@ watch(
     </div>
     <template #footer>
       <div class="dialog-footer">
-        <button class="button" @click="studentInfoVisible = false">关闭</button>
+        <button class="button" @click="studentInfoVisible.value = false">
+          关闭
+        </button>
       </div>
     </template>
   </el-dialog>
@@ -274,13 +290,10 @@ watch(
       />
       <el-table-column prop="applicationReason" label="申请理由" />
       <el-table-column prop="statusCN" label="当前状态" />
-      <!-- 新增：查看学生详情按钮列 -->
+      <!-- 查看学生详情按钮列 -->
       <el-table-column label="详细信息">
         <template #default="scope">
-          <button
-            class="button"
-            @click="handleViewStudentInfo(scope.row)"
-          >
+          <button class="button" @click="handleViewStudentInfo(scope.row)">
             查看
           </button>
         </template>
@@ -291,10 +304,16 @@ watch(
       >
         <template #default="scope">
           <div v-if="scopeIndexGetStatus(scope.$index)">
-            <button class="button" @click="handleAccept(scope.$index, scope.row)">
+            <button
+              class="button"
+              @click="handleAccept(scope.$index, scope.row)"
+            >
               同意
             </button>
-            <button class="button" @click="handleReject(scope.$index, scope.row)">
+            <button
+              class="button"
+              @click="handleReject(scope.$index, scope.row)"
+            >
               拒绝
             </button>
           </div>
@@ -364,7 +383,7 @@ input:focus
   outline: none
   box-shadow: #005826 0 0 5px
   border: 1px #005826 solid
-/* 新增：学生详情卡片样式 */
+/* 学生详情卡片样式 */
 .student-info-card
   display: flex
   .avatar
