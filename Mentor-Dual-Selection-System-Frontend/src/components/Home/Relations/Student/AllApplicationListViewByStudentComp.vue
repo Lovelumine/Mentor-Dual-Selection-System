@@ -141,14 +141,17 @@ function statusClass(statusCN: string) {
     padding-left: 20px
     font-size: 16px
     margin-bottom: 20px
+    font-family: 'Microsoft YaHei', sans-serif // 确保和前面统一的字体
 
   .table
+    font-family: 'Microsoft YaHei', sans-serif // 确保表格字体统一
     .accepted-status
       background-color: #e6ffe6 // 绿色背景
       color: #2e7d32
       font-weight: bold
       padding: 5px 10px
       border-radius: 4px
+      font-family: 'Microsoft YaHei', sans-serif // 确保状态文本的字体统一
 
     .rejected-status
       background-color: #ffe6e6 // 红色背景
@@ -156,6 +159,7 @@ function statusClass(statusCN: string) {
       font-weight: bold
       padding: 5px 10px
       border-radius: 4px
+      font-family: 'Microsoft YaHei', sans-serif // 确保状态文本的字体统一
 
     .pending-status
       background-color: #fff9c4 // 黄色背景
@@ -163,4 +167,6 @@ function statusClass(statusCN: string) {
       font-weight: bold
       padding: 5px 10px
       border-radius: 4px
+      font-family: 'Microsoft YaHei', sans-serif // 确保状态文本的字体统一
 </style>
+
