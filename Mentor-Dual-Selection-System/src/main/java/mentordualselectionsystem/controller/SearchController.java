@@ -114,6 +114,7 @@ public class SearchController {
         data.put("grade", userDetail.getStudentGrade());
         data.put("class", userDetail.getStudentClass());
         data.put("resume", userDetail.getResume());
+        data.put("netid", userDetail.getNetid());
         data.put("research_direction", userDetail.getResearchDirection());
         data.put("mentor_id",student.getMentorId());
 
@@ -184,6 +185,7 @@ public class SearchController {
                 studentData.put("photourl", userDetail.getPhotoUrl());
                 studentData.put("grade", userDetail.getStudentGrade());
                 studentData.put("class", userDetail.getStudentClass());
+                studentData.put("netid",userDetail.getNetid());
                 studentData.put("research_direction", userDetail.getResearchDirection());
                 studentData.put("resume", userDetail.getResume());
             } else {
@@ -191,6 +193,7 @@ public class SearchController {
                 studentData.put("grade", null);
                 studentData.put("class", null);
                 studentData.put("resume", null);
+                studentData.put("netid", null);
                 studentData.put("research_direction", null);
             }
             return studentData;
@@ -267,12 +270,14 @@ public class SearchController {
                 studentData.put("photourl", userDetail.getPhotoUrl());
                 studentData.put("grade", userDetail.getStudentGrade());
                 studentData.put("class", userDetail.getStudentClass());
+                studentData.put("netid",userDetail.getNetid());
                 studentData.put("research_direction", userDetail.getResearchDirection());
                 studentData.put("resume", userDetail.getResume());
             } else {
                 studentData.put("photourl", null);
                 studentData.put("grade", null);
                 studentData.put("class", null);
+                studentData.put("netid",null);
                 studentData.put("resume", null);
                 studentData.put("research_direction", null);
             }
@@ -369,11 +374,13 @@ public class SearchController {
                         studentData.put("grade", userDetail.getStudentGrade());
                         studentData.put("class", userDetail.getStudentClass());
                         studentData.put("research_direction", userDetail.getResearchDirection());
+                        studentData.put("netid",userDetail.getNetid());
                         studentData.put("resume", userDetail.getResume());
                     } else {
                         studentData.put("photourl", null);
                         studentData.put("grade", null);
                         studentData.put("class", null);
+                        studentData.put("netid",null);
                         studentData.put("resume", null);
                         studentData.put("research_direction", null);
                     }
@@ -447,11 +454,13 @@ public class SearchController {
                 teacherData.put("teacherposition", userDetail.getTeacherPosition());
                 teacherData.put("research_direction", userDetail.getResearchDirection());
                 teacherData.put("resume", userDetail.getResume());
+                teacherData.put("netid", userDetail.getNetid());
             } else {
                 teacherData.put("photourl", null);
                 teacherData.put("teacherposition", null);
                 teacherData.put("research_direction", null);
                 teacherData.put("resume", null);
+                teacherData.put("netid", null);
             }
             return teacherData;
         }).collect(Collectors.toList());
@@ -526,6 +535,7 @@ public class SearchController {
         data.put("teacher_position", userDetail.getTeacherPosition());
         data.put("research_direction", userDetail.getResearchDirection());
         data.put("resume", userDetail.getResume());
+        data.put("netid",userDetail.getNetid());
 
 
         responseBody.put("data", data);
@@ -593,11 +603,13 @@ public class SearchController {
                 teacherData.put("teacherposition", userDetail.getTeacherPosition());
                 teacherData.put("research_direction", userDetail.getResearchDirection());
                 teacherData.put("resume", userDetail.getResume());
+                teacherData.put("netid", userDetail.getNetid());
             } else {
                 teacherData.put("photourl", null);
                 teacherData.put("teacherposition", null);
                 teacherData.put("research_direction", null);
                 teacherData.put("resume", null);
+                teacherData.put("netid",null);
             }
             return teacherData;
         }).collect(Collectors.toList());
