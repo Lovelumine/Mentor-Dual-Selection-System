@@ -244,6 +244,7 @@ watch(
         <p><strong>姓名：</strong>{{ studentInfo.fullName }}</p>
         <p><strong>学号：</strong>{{ studentInfo.uid }}</p>
         <p><strong>年级：</strong>{{ studentInfo.grade }}</p>
+        <p><strong>意向研究方向：</strong>{{ studentInfo.research_direction }}</p>
         <p><strong>班级：</strong>{{ studentInfo.class }}</p>
         <p><strong>邮箱：</strong>{{ studentInfo.email }}</p>
         <p><strong>个人简介：</strong>{{ studentInfo.resume }}</p>
