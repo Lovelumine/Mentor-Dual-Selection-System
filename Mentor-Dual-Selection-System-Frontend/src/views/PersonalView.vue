@@ -128,7 +128,7 @@ watch(() => userStore.userInfo, (newValue) => {
           权限：{{userInfoComp.role}}
         </li>
       </ul>
-      <button class="button" @click="startChangeInfoClicked">{{ isStartChangeInfo? '取消修改': '修改资料' }}</button>
+      <button class="button" @click="startChangeInfoClicked">{{ isStartChangeInfo? '取消修改': '修改' }}</button>
     </div>
     <div class="change_info_box" v-if="isStartChangeInfo">
       <form @submit.prevent="changeInfoClicked">
