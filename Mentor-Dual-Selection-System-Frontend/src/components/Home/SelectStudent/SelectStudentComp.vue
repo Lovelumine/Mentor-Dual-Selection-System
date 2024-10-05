@@ -264,13 +264,7 @@ watch(
         <p><strong>个人简介：</strong>{{ studentInfo.resume }}</p>
       </div>
     </div>
-    <template #footer>
-      <div class="dialog-footer">
-        <button class="button" @click="studentInfoVisible.value = false">
-          关闭
-        </button>
-      </div>
-    </template>
+
   </el-dialog>
 
   <div class="title">
