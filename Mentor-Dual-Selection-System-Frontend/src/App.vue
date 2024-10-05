@@ -29,7 +29,10 @@ watch([
   <router-view/>
 </template>
 
-<style scoped lang="sass">
+<style  lang="sass">
+html, body
+  overflow: hidden  // 禁止页面出现滚动条
+  height: 100%      // 设置页面高度为 100%
 
-
+// 其他样式
 </style>

@@ -1,6 +1,5 @@
 <script setup lang="ts">
-
-import {Avatar, BellFilled, CircleClose, Connection, Lock, Position, User, UserFilled} from "@element-plus/icons-vue";
+import { Avatar, BellFilled, CircleClose, Connection, Lock, Position, User, UserFilled } from "@element-plus/icons-vue";
 import { onMounted, ref, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 const router = useRouter();
@@ -10,9 +9,7 @@ const userInfoStore = useUserInfoStore();
 import { useStuListGrade } from "@/stores/StudentListGrade";
 const stuListGrade = useStuListGrade();
 
-const sidemenuDet = ref(
-  { bacc: '#003c1a', atcolor: '#ffc832', baccsub: '#002912' }
-);
+const sidemenuDet = ref({ bacc: '#003c1a', atcolor: '#ffc832', baccsub: '#002912' });
 const isSelectStudentShow = ref(false);
 const isSelectTeacherShow = ref(false);
 const isStudentListShow = ref(false);
@@ -50,7 +47,6 @@ watch(() => userInfoStore.userInfo, (newValue) => {
 watch(route, (newRoute) => {
   activeMenu.value = newRoute.path; // 路由变化时高亮相应菜单项
 });
-
 </script>
 
 <template>
@@ -120,9 +116,17 @@ watch(route, (newRoute) => {
 
 <style scoped lang="sass">
 .sidemenu_box
+  position: fixed
+  top: 60px
+  left: 0
+  width: 200px
+  height: 100vh
+  background-color: #003c1a
+
   .el-menu-vertical-demo
-    min-height: calc(100vh - 60px)
-    width: 200px
+    height: 100%
+    width: 100%
+    border-right: none
     .sub_menu
       background-color: #002912
 </style>
