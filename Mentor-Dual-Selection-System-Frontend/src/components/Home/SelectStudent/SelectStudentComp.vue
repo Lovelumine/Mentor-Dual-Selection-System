@@ -49,8 +49,9 @@ function handleAccept(index: number, row) {
     params: pendingUtilForm.value,
   })
     .then((res) => {
-      if (res.status === 200) {
+      if (res.status === 200 || res.data.code === 200) {
         alert("该申请处理完成！");
+        fetchApplicationList(); // 刷新申请列表
       } else {
         alert(res.data.error);
       }
@@ -67,7 +68,6 @@ function handleReject(index: number, row) {
 }
 
 function checkReject() {
-  dialogVisible.value = false;
   if (
     pendingUtilForm.value.rejectionReason === null ||
     pendingUtilForm.value.rejectionReason === ""
@@ -85,8 +85,10 @@ function checkReject() {
     params: pendingUtilForm.value,
   })
     .then((res) => {
-      if (res.status === 200) {
+      if (res.status === 200 || res.data.code === 200) {
         alert("该申请处理完成！");
+        dialogVisible.value = false;
+        fetchApplicationList(); // 刷新申请列表
       } else {
         alert(res.data.error);
       }
@@ -129,8 +131,9 @@ function getStudentInfo(uid: number) {
   });
 }
 
-onMounted(() => {
-  userStore.fetchUserInfo();
+// 新增：获取申请列表的函数
+function fetchApplicationList() {
+  // 首先，获取所有用户
   http({
     url: "/user/all",
     method: "POST",
@@ -142,13 +145,10 @@ onMounted(() => {
     .then((res) => {
       if (res.data.code === 200) {
         allUser.value = res.data.data;
-        for (let i = 0; i < allUser.value.length; i++) {
-          if (allUser.value[i].role == "STUDENT") {
-            allStudent.value.push(allUser.value[i]);
-          } else if (allUser.value[i].role == "TEACHER") {
-            allTeacher.value.push(allUser.value[i]);
-          }
-        }
+        allStudent.value = allUser.value.filter((user) => user.role === "STUDENT");
+        allTeacher.value = allUser.value.filter((user) => user.role === "TEACHER");
+
+        // 然后，获取待审核的申请列表
         http({
           url: "/application/pending",
           method: "GET",
@@ -177,42 +177,43 @@ onMounted(() => {
                   default:
                     break;
                 }
-                for (let j = 0; j < allStudent.value.length; j++) {
-                  if (
-                    pendingList.value[i].studentId === allStudent.value[j].uid
-                  ) {
-                    pendingList.value[i].studentName =
-                      allStudent.value[j].fullName;
-                  }
+                const student = allStudent.value.find(
+                  (stu) => stu.uid === pendingList.value[i].studentId
+                );
+                if (student) {
+                  pendingList.value[i].studentName = student.fullName;
                 }
-                for (let k = 0; k < allTeacher.value.length; k++) {
-                  if (
-                    pendingList.value[i].mentorId === allTeacher.value[k].uid
-                  ) {
-                    pendingList.value[i].teacherName =
-                      allTeacher.value[k].fullName;
-                  }
+                const teacher = allTeacher.value.find(
+                  (tea) => tea.uid === pendingList.value[i].mentorId
+                );
+                if (teacher) {
+                  pendingList.value[i].teacherName = teacher.fullName;
                 }
               }
             } else {
-              alert("获取学生列表失败，若您有学生申请，请联系管理员修复系统！");
+              alert("获取申请列表失败，请联系管理员！");
             }
           })
           .catch((err) => {
             console.error(err);
-            alert("出现错误，或请重新登录！");
+            alert("出现错误，请重新登录！");
           });
       } else {
-        alert("身份验证出错！请重新登入");
+        alert("身份验证出错！请重新登录");
         localStorage.removeItem("token");
         window.location.reload();
       }
     })
     .catch((err) => {
       console.error(err);
-      alert("请求学生信息出错！");
+      alert("请求用户信息出错！");
       router.back();
     });
+}
+
+onMounted(() => {
+  userStore.fetchUserInfo();
+  fetchApplicationList(); // 组件挂载时获取申请列表
 });
 
 watch(
@@ -239,7 +240,7 @@ watch(
     />
     <template #footer>
       <div class="dialog-footer">
-        <button class="button" @click="dialogVisible = false">关闭</button>
+        <button class="button" @click="dialogVisible.value = false">关闭</button>
         <button class="button" type="submit" @click="checkReject">提交</button>
       </div>
     </template>
@@ -264,7 +265,6 @@ watch(
         <p><strong>个人简介：</strong>{{ studentInfo.resume }}</p>
       </div>
     </div>
-
   </el-dialog>
 
   <div class="title">
