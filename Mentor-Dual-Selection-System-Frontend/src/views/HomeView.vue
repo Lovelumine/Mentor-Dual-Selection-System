@@ -5,6 +5,7 @@ import SideMenuComp from "@/components/HeaderFooterMenu/SideMenuComp.vue";
 import { useUserInfoStore } from "@/stores/user/UserBasicInformation";
 const userStore = useUserInfoStore();
 import { useRouter } from "vue-router";
+import FooterComp from "@/components/HeaderFooterMenu/FooterComp.vue";
 const router = useRouter();
 
 const isSignin = ref(false);
@@ -30,6 +31,7 @@ onMounted(() => {
     <h1>您好！请先登录</h1>
     <h2>农业与生物技术学院</h2>
     <SigninComp/>
+    <FooterComp/>
   </div>
 </template>
 

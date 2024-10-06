@@ -7,6 +7,7 @@ const route = useRoute();
 import { useUserInfoStore } from "@/stores/user/UserBasicInformation";
 const userInfoStore = useUserInfoStore();
 import { useStuListGrade } from "@/stores/StudentListGrade";
+import SideFooterComp from "@/components/HeaderFooterMenu/SideFooterComp.vue";
 const stuListGrade = useStuListGrade();
 
 const sidemenuDet = ref({ bacc: '#003c1a', atcolor: '#ffc832', baccsub: '#002912' });
@@ -15,12 +16,14 @@ const isSelectTeacherShow = ref(false);
 const isStudentListShow = ref(false);
 const isTeacherResumeShow = ref(false);
 
+
 // 用于高亮选中的菜单项
 const activeMenu = ref(route.path);
 
 onMounted(() => {
   if (userInfoStore.userInfo) handleIsShowFunction(userInfoStore.userInfo.role);
   activeMenu.value = route.path; // 初始化当前高亮菜单项
+
 });
 
 function studentListClicked(grade: number) {
@@ -110,6 +113,7 @@ watch(route, (newRoute) => {
             <el-icon><CircleClose /></el-icon>
             <span>退出登录</span>
           </el-menu-item>
+          <SideFooterComp/>
         </el-menu>
       </el-col>
     </el-row>
