@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import {onMounted, ref, watch} from "vue";
-import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
+import { onMounted, ref, watch } from "vue";
+import { useUserInfoStore } from "@/stores/user/UserBasicInformation";
+import { useRouter } from "vue-router";
+import { http } from "@/utils/http";
+import axios from 'axios';  // 这里导入 axios
+
 const userInfoStore = useUserInfoStore();
-import {useRouter} from "vue-router";
-import {http} from "@/utils/http";
 const router = useRouter();
 
 const userRole = ref(null);
@@ -11,17 +13,22 @@ const uploadForm = ref({
   role: 'TEACHER',
   fullName: null,
   email: null,
-  username: null
-})
+  username: null,
+  teacherPosition: '', // 职位信息
+  researchDirection: '', // 研究方向
+  resume: '', // 简历
+  studentGrade: '' // 空的年级信息，必传
+});
 
-function uploadClicked () {
+function uploadClicked() {
   if (uploadForm.value.fullName === null || uploadForm.value.fullName === '') {
     alert('请填写姓名！');
   } else if (uploadForm.value.username === null || uploadForm.value.username === '') {
-    alert('请填写学号！');
-  } else if (uploadForm.value.grade === null || uploadForm.value.grade === '') {
-    alert('请填写年级！');
+    alert('请填写工号！');
+  } else if (uploadForm.value.email === null || uploadForm.value.email === '') {
+    alert('请填写电子邮箱！');
   } else {
+    // 先上传基本信息
     http({
       url: '/user/update',
       method: 'POST',
@@ -29,32 +36,94 @@ function uploadClicked () {
         Accept: '*/*',
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
-      data: uploadForm.value
+      data: {
+        fullName: uploadForm.value.fullName,
+        username: uploadForm.value.username,
+        email: uploadForm.value.email,
+        role: uploadForm.value.role,
+      }
     }).then(res => {
       if (res.data.code === 200){
-        alert('添加成功！');
-        window.location.reload();
+        alert('基本信息添加成功！');
+        // 获取所有老师信息，筛选出刚添加的老师的uid
+        getTeacherUid();
       } else {
-        alert('添加失败！');
+        alert('添加基本信息失败！');
       }
     }).catch(err => {
       alert('添加失败！');
-      alert(JSON.parse(err.request.responseText).data.error);
-    })
+      console.error('错误信息:', err);
+    });
   }
 }
 
-function resettingClicked () {
+// 获取所有教师信息，并筛选出刚添加的教师
+function getTeacherUid() {
+  http({
+    url: '/search/teachers',
+    method: 'GET',
+    headers: {
+      Accept: '*/*',
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  }).then(res => {
+    if (res.data.code === 200) {
+      // 在返回的教师列表中查找匹配的教师
+      const teacher = res.data.data.find(t => t.username === uploadForm.value.username && t.fullName === uploadForm.value.fullName);
+      if (teacher && teacher.uid) {
+        // 找到教师，进行额外信息上传
+        uploadAdditionalInfo(teacher.uid);
+      } else {
+        alert('未找到匹配的教师，请检查输入信息');
+      }
+    } else {
+      alert('获取教师信息失败！');
+    }
+  }).catch(err => {
+    alert('获取教师信息失败！');
+    console.error('错误信息:', err);
+  });
+}
+
+// 上传职位、研究方向、简历和空的年级信息
+function uploadAdditionalInfo(uid) {
+  axios({
+    url: `/admin/update/${uid}`,
+    method: 'PUT',
+    headers: {
+      Accept: '*/*',
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+    data: {
+      teacherPosition: uploadForm.value.teacherPosition,
+      researchDirection: uploadForm.value.researchDirection,
+      resume: uploadForm.value.resume,
+      studentGrade: uploadForm.value.studentGrade // 传递空的年级信息
+    }
+  }).then(res => {
+    if (res.data.code === 200) {
+      alert('职位信息、研究方向、简历添加成功！');
+      window.location.reload();
+    } else {
+      alert('职位信息、研究方向、简历添加失败！');
+    }
+  }).catch(err => {
+    alert('职位信息、研究方向、简历添加失败！');
+    console.error('错误信息:', err);
+  });
+}
+
+function resettingClicked() {
   window.location.reload();
 }
 
 onMounted(() => {
   if (userRole.value === 'STUDENT') router.push('/');
-})
+});
 
 watch(() => userInfoStore.userInfo, (newVal) => {
   if (newVal.role === 'STUDENT') router.push('/');
-})
+});
 </script>
 
 <template>
@@ -64,13 +133,23 @@ watch(() => userInfoStore.userInfo, (newVal) => {
   <div class="container">
     <el-form label-width="auto" style="max-width: 400px" @submit.prevent="uploadClicked">
       <el-form-item label="姓名：">
-        <el-input v-model="uploadForm.fullName"/>
+        <el-input v-model="uploadForm.fullName" />
       </el-form-item>
       <el-form-item label="工号：">
-        <el-input v-model="uploadForm.username"/>
+        <el-input v-model="uploadForm.username" />
       </el-form-item>
       <el-form-item label="电子邮箱：">
-        <el-input v-model="uploadForm.email"/>
+        <el-input v-model="uploadForm.email" />
+      </el-form-item>
+      <!-- 新增职位信息、研究方向和简历的输入框 -->
+      <el-form-item label="职位信息：">
+        <el-input v-model="uploadForm.teacherPosition" />
+      </el-form-item>
+      <el-form-item label="研究方向：">
+        <el-input v-model="uploadForm.researchDirection" />
+      </el-form-item>
+      <el-form-item label="简历：">
+        <el-input type="textarea" v-model="uploadForm.resume" />
       </el-form-item>
       <button class="button" type="submit">上传</button>
       <button class="button" @click="resettingClicked" type="button">重置</button>
@@ -86,6 +165,7 @@ watch(() => userInfoStore.userInfo, (newVal) => {
   line-height: 60px
   padding-left: 20px
   font-size: 20px
+
 .container
   width: 50%
   padding-top: 20px
