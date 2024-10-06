@@ -153,6 +153,7 @@ watch([
   border-radius: 5px
   transition: .3s ease
   max-height: calc(100vh - 60px - 60px - 260px)
+  overflow: auto
 .table:hover
   box-shadow: #005826 0 0 10px
 </style>
