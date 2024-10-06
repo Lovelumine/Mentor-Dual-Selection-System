@@ -87,6 +87,8 @@ watch([
 .table
   margin: 0 auto
   width: 98%
+  max-height: calc(100vh - 60px - 60px - 80px)
+  overflow-y: auto
   border: 1px solid #005826
   border-radius: 5px
   transition: .3s ease
