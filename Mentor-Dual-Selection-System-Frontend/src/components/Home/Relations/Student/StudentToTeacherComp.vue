@@ -278,7 +278,6 @@ onMounted(() => {
         transform: translateY(-5px)
         box-shadow: 0px 15px 25px rgba(0, 0, 0, 0.15)
       .avatar
-        height: 60px
         margin-bottom: 10px
       .info
         flex: 1
