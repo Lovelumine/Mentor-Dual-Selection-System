@@ -11,7 +11,7 @@ import { http, httpStudent } from "@/utils/http";
 
 const allTeacherDetailsList = ref([]);
 const currentPage = ref(1);
-const pageSize = ref(4);
+const pageSize = ref(6);
 
 const positions = [
   "教授",
@@ -249,6 +249,7 @@ const handlePageChange = (page) => {
 
 .container
   display: flex
+  padding-left: 10vw
   flex-wrap: wrap
   gap: 100px
   row-gap: 50px

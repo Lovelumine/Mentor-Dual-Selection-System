@@ -11,7 +11,7 @@ import { http, httpStudent } from "@/utils/http";
 
 const allTeacherDetailsList = ref([]);
 const currentPage = ref(1);
-const pageSize = ref(4);
+const pageSize = ref(6);
 
 const positions = [
   "教授",
@@ -207,14 +207,16 @@ const handlePageChange = (page) => {
           </div>
           <div class="item_box">
             <span class="fullname">{{
-                `${item.teacherposition}：${item.fullName}`
+                `${item.fullName}`
               }}</span>
-            <span class="email">电子邮箱：{{ item.email }}</span>
             <span class="professional">
-              研究方向：{{ item.research_direction }}
+              职位：{{ item.teacherposition }}
             </span>
+            <span class="email">电子邮箱：{{ item.email }}</span>
+
             <hr class="hea_con_hr" />
             <div class="detail_box">
+              <div class="resume">研究方向：{{ item.research_direction }}</div>
               <div class="resume">简历：{{ item.resume }}</div>
               <!-- 显示详情按钮 -->
               <el-button type="primary" size="small" @click="showDetails(item)">了解更多</el-button>
@@ -292,6 +294,7 @@ const handlePageChange = (page) => {
 .container
   display: flex
   flex-wrap: wrap
+  padding-left: 10vw
   gap: 100px
   row-gap: 50px
   padding-top: 20px
