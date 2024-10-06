@@ -1,24 +1,31 @@
 {
     "rewrites": [
       {
-        "source": "/api/:path*",
+        "source": "/api/:path*", 
         "destination": "http://223.82.75.76:50000/api/:path*"
       },
       {
-        "source": "/admin/:path*",
+        "source": "/admin/:path*", 
         "destination": "http://223.82.75.76:50000/admin/:path*"
       },
       {
-        "source": "/teacher/:path*",
+        "source": "/teacher/:path*", 
         "destination": "http://223.82.75.76:50000/teacher/:path*"
       },
       {
-        "source": "/student/:path*",
+        "source": "/student/:path*", 
         "destination": "http://223.82.75.76:50000/student/:path*"
       },
       {
-        "source": "/upload/:path*",
+        "source": "/upload/:path*", 
         "destination": "http://223.82.75.76:50000/upload/:path*"
+      }
+    ],
+    "redirects": [
+      {
+        "source": "/(.*)", 
+        "destination": "/index.html",
+        "statusCode": 200
       }
     ]
   }
