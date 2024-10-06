@@ -1,0 +1,25 @@
+{
+    "rewrites": [
+      {
+        "source": "/api/:path*",
+        "destination": "http://223.82.75.76:50000/api/:path*"
+      },
+      {
+        "source": "/admin/:path*",
+        "destination": "http://223.82.75.76:50000/admin/:path*"
+      },
+      {
+        "source": "/teacher/:path*",
+        "destination": "http://223.82.75.76:50000/teacher/:path*"
+      },
+      {
+        "source": "/student/:path*",
+        "destination": "http://223.82.75.76:50000/student/:path*"
+      },
+      {
+        "source": "/upload/:path*",
+        "destination": "http://223.82.75.76:50000/upload/:path*"
+      }
+    ]
+  }
+  
