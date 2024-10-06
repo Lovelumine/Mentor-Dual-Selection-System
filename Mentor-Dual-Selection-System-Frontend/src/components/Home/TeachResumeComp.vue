@@ -183,7 +183,10 @@ const handlePageChange = (page) => {
             <hr class="hea_con_hr" />
             <div class="detail_box">
               <div class="resume">研究方向：{{ item.research_direction }}</div>
-              <div class="resume">简历：{{ item.resume }}</div>
+              <div class="resume">
+  简历：{{ item.resume.length > 50 ? item.resume.slice(0, 50) + '...' : item.resume }}
+</div>
+
               <!-- 显示详情按钮 -->
               <el-button type="primary" size="small" @click="showDetails(item)">了解更多</el-button>
             </div>
