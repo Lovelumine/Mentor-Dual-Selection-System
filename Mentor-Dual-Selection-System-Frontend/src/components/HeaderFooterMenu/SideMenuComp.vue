@@ -7,12 +7,15 @@ const route = useRoute();
 import { useUserInfoStore } from "@/stores/user/UserBasicInformation";
 const userInfoStore = useUserInfoStore();
 import { useStuListGrade } from "@/stores/StudentListGrade";
+import SideFooterComp from "@/components/HeaderFooterMenu/SideFooterComp.vue";
 const stuListGrade = useStuListGrade();
 
 const sidemenuDet = ref({ bacc: '#003c1a', atcolor: '#ffc832', baccsub: '#002912' });
 const isSelectStudentShow = ref(false);
 const isSelectTeacherShow = ref(false);
 const isStudentListShow = ref(false);
+const isTeacherResumeShow = ref(false);
+
 
 // 用于高亮选中的菜单项
 const activeMenu = ref(route.path);
@@ -20,6 +23,7 @@ const activeMenu = ref(route.path);
 onMounted(() => {
   if (userInfoStore.userInfo) handleIsShowFunction(userInfoStore.userInfo.role);
   activeMenu.value = route.path; // 初始化当前高亮菜单项
+
 });
 
 function studentListClicked(grade: number) {
@@ -33,6 +37,7 @@ function handleIsShowFunction(target: string) {
   isSelectStudentShow.value = ['TEACHER', 'ADMIN'].includes(target);
   isStudentListShow.value = ['TEACHER', 'ADMIN'].includes(target);
   isSelectTeacherShow.value = target === 'STUDENT';
+  isTeacherResumeShow.value = ['TEACHER', 'ADMIN'].includes(target);
 }
 
 function SignoutClicked() {
@@ -92,7 +97,7 @@ watch(route, (newRoute) => {
             <el-icon><BellFilled /></el-icon>
             <span>通知公告</span>
           </el-menu-item>
-          <el-menu-item index="/teach_resume" @click="activeMenu = '/teach_resume'; router.push('/teach_resume')">
+          <el-menu-item index="/teach_resume" @click="activeMenu = '/teach_resume'; router.push('/teach_resume')" v-if="isTeacherResumeShow">
             <el-icon><Position /></el-icon>
             <span>导师简历</span>
           </el-menu-item>
@@ -111,6 +116,7 @@ watch(route, (newRoute) => {
         </el-menu>
       </el-col>
     </el-row>
+    <SideFooterComp/>
   </div>
 </template>
 
@@ -122,7 +128,7 @@ watch(route, (newRoute) => {
   width: 200px
   height: 100vh
   background-color: #003c1a
-
+  //position: relative
   .el-menu-vertical-demo
     height: 100%
     width: 100%

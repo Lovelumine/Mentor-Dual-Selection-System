@@ -7,6 +7,7 @@ import {ref, watch} from "vue";
 import UploadFileComp from "@/components/App/UploadFileComp.vue";
 const uploadCoverStore = useUploadCoverStore();
 import {useUploadFileStore} from "@/stores/UploadFileStore";
+import FooterComp from "@/components/HeaderFooterMenu/FooterComp.vue";
 const uploadFileStore = useUploadFileStore();
 
 const isCoverShowComp = ref(false);
@@ -33,6 +34,5 @@ watch([
 html, body
   overflow: hidden  // 禁止页面出现滚动条
   height: 100%      // 设置页面高度为 100%
-
 // 其他样式
 </style>
