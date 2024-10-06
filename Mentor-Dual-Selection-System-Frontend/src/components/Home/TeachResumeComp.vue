@@ -168,24 +168,24 @@ const handlePageChange = (page) => {
           v-for="(item, index) in paginatedTeachers"
           :key="index"
         >
-          <div class="photo">
+        <div class="photo">
             <img :src="item.photourl" alt="photo" />
           </div>
           <div class="item_box">
             <span class="fullname">{{
-              `${item.teacherposition}：${item.fullName}`
-            }}</span>
-            <span class="email">电子邮箱：{{ item.email }}</span>
+                `${item.fullName}`
+              }}</span>
             <span class="professional">
-              研究方向：{{ item.research_direction }}
+              职位：{{ item.teacherposition }}
             </span>
+            <span class="email">电子邮箱：{{ item.email }}</span>
+
             <hr class="hea_con_hr" />
             <div class="detail_box">
+              <div class="resume">研究方向：{{ item.research_direction }}</div>
               <div class="resume">简历：{{ item.resume }}</div>
               <!-- 显示详情按钮 -->
-              <el-button type="primary" size="small" @click="showDetails(item)"
-                >了解更多</el-button
-              >
+              <el-button type="primary" size="small" @click="showDetails(item)">了解更多</el-button>
             </div>
             <div class="avatar">
               <img :src="item.avatarUrl" alt="avatar" />
@@ -264,7 +264,7 @@ const handlePageChange = (page) => {
     height: 250px
     bottom: 0
     position: absolute
-    box-shadow: #00582680 0 0 5px
+    box-shadow: #00582680 0 0 0px
     border-radius: 10px
     .hea_con_hr
       position: absolute
@@ -312,7 +312,7 @@ const handlePageChange = (page) => {
     z-index: 1
     left: 5%
     width: 75px
-    height: 105px
+    height: 99px
     overflow: hidden
     position: absolute
     img

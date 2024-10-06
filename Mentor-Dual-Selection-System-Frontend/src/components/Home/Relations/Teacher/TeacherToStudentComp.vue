@@ -136,7 +136,7 @@ function viewDetail(student) {
       <img :src="selectedStudent.photourl || 'https://via.placeholder.com/100'" alt="头像" class="avatar" />
       <div class="info">
         <div><strong>姓名：</strong>{{ selectedStudent.fullName }}</div>
-        <div><strong>学号：</strong>{{ selectedStudent.netid }}</div>
+        <div><strong>学号：</strong>{{ selectedStudent.username }}</div>
         <div><strong>邮箱：</strong>{{ selectedStudent.email }}</div>
         <div><strong>年级：</strong>{{ selectedStudent.grade || '未提供' }}</div>
         <div><strong>班级：</strong>{{ selectedStudent.class || '未提供' }}</div>

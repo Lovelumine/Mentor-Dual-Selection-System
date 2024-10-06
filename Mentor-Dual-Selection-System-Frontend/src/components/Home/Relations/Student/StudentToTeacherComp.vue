@@ -169,8 +169,8 @@ onMounted(() => {
         <div class="item">
           <img
             class="avatar"
-            :src="userInfoComp.avatarUrl || 'https://via.placeholder.com/100'"
-            :key="userInfoComp.avatarUrl" 
+            :src="userInfoComp.avatarUrl"
+
             @error="handleImageError" 
             alt="avatar"
           />
@@ -278,6 +278,7 @@ onMounted(() => {
         transform: translateY(-5px)
         box-shadow: 0px 15px 25px rgba(0, 0, 0, 0.15)
       .avatar
+        height: 100px
         margin-bottom: 10px
       .info
         flex: 1

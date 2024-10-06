@@ -247,7 +247,7 @@ const handlePageChange = (page) => {
   <!-- 申请导师对话框 -->
   <el-dialog v-model="applicationDialogVisible" :title="`选择导师：${selectedTeacher?.fullName}`">
     <el-form @submit.prevent="checkApplication">
-      <el-form-item label="您选择该导师的理由（必填）：">
+      <el-form-item label="申请理由（必填）：">
         <el-input type="text" placeholder="请简述" required v-model="selectReason"/>
       </el-form-item>
       <el-button type="primary" native-type="submit">提交申请</el-button>
@@ -308,7 +308,7 @@ const handlePageChange = (page) => {
     height: 250px
     bottom: 0
     position: absolute
-    box-shadow: #00582680 0 0 5px
+    box-shadow: #00582680 0 0 0px
     border-radius: 10px
     .hea_con_hr
       position: absolute
@@ -356,7 +356,7 @@ const handlePageChange = (page) => {
     z-index: 1
     left: 5%
     width: 75px
-    height: 105px
+    height: 99px
     overflow: hidden
     position: absolute
     img

@@ -257,7 +257,7 @@ watch(
       <img :src="studentInfo.photourl" alt="头像" class="avatar" />
       <div class="info">
         <p><strong>姓名：</strong>{{ studentInfo.fullName }}</p>
-        <p><strong>学号：</strong>{{ studentInfo.uid }}</p>
+        <p><strong>学号：</strong>{{ studentInfo.username }}</p>
         <p><strong>年级：</strong>{{ studentInfo.grade }}</p>
         <p><strong>意向研究方向：</strong>{{ studentInfo.research_direction }}</p>
         <p><strong>班级：</strong>{{ studentInfo.class }}</p>

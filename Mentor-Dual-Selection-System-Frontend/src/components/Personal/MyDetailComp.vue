@@ -233,7 +233,7 @@ watch(
   text-align: center
   .photo_box
     width: 75px
-    height: 105px
+    height: 99px
     overflow: hidden
     img
       width: 100%
