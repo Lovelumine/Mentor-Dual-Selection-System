@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
-import {onMounted, ref, watch} from "vue";
+import { useUserInfoStore } from "@/stores/user/UserBasicInformation";
+import { onMounted, ref, watch } from "vue";
 const userStore = useUserInfoStore();
-import {useRouter} from "vue-router";
+import { useRouter } from "vue-router";
 import PersonalTitleComp from "@/components/Personal/PersonalTitleComp.vue";
 import MyDetailComp from "@/components/Personal/MyDetailComp.vue";
 import axios from "axios";
-import {http} from "@/utils/http";
+import { http } from "@/utils/http";
 const router = useRouter();
-import {useUploadFileStore} from "@/stores/UploadFileStore";
+import { useUploadFileStore } from "@/stores/UploadFileStore";
 const uploadFileStore = useUploadFileStore();
 
 const userInfoComp = ref({
@@ -106,66 +106,65 @@ watch(() => userStore.userInfo, (newValue) => {
 
 <template>
   <div class="container">
-  <PersonalTitleComp/>
+    <PersonalTitleComp />
 
-  <div class="personal_box">
-
-    <div class="user_info_box">
-
-      <div class="avatar_box">
-        <img class="avatar" :src="userInfoComp.avatarUrl" alt="avatar"/>
-      </div>
-      <ul>
-        <li>
-          姓名：{{userInfoComp.fullName}}
-        </li>
-        <li v-if="userInfoComp.role === 'TEACHER'">
-          工号：{{userInfoComp.username}}
-        </li>
-        <li v-else-if="userInfoComp.role === 'STUDENT'">
-          学号：{{userInfoComp.username}}
-        </li>
-        <li>
-          电子邮箱：{{userInfoComp.email}}
-        </li>
-        <li>
-          角色：{{userInfoComp.role === 'TEACHER' ? '教师' : '学生'}}
-        </li>
-      </ul>
-      <button class="button" @click="startChangeInfoClicked">{{ isStartChangeInfo ? '取消修改' : '修改信息' }}</button>
-    </div>
-    <div class="change_info_box" v-if="isStartChangeInfo">
-      <form @submit.prevent="changeInfoClicked">
+    <div class="personal_box">
+      <div class="user_info_box">
+        <!-- 卡片背景图仅展示给教师角色 -->
+        <div class="avatar_box" v-if="userInfoComp.role === 'TEACHER'">
+          <img class="avatar" :src="userInfoComp.avatarUrl" alt="卡片背景图" />
+        </div>
         <ul>
-          <li>
-            姓名：<input type="text" required placeholder="请输入姓名" v-model="userInfoChange.fullName" />
-          </li>
+          <li>姓名：{{ userInfoComp.fullName }}</li>
           <li v-if="userInfoComp.role === 'TEACHER'">
-            工号：<input type="text" required placeholder="请输入工号" v-model="userInfoChange.username" />
+            工号：{{ userInfoComp.username }}
           </li>
           <li v-else-if="userInfoComp.role === 'STUDENT'">
-            学号：<input type="text" required placeholder="请输入学号" v-model="userInfoChange.username" />
+            学号：{{ userInfoComp.username }}
           </li>
+          <li>电子邮箱：{{ userInfoComp.email }}</li>
           <li>
-            电子邮箱：<input type="text" required placeholder="请输入邮箱" v-model="userInfoChange.email" />
-          </li>
-          <li class="avatar_list">
-            用户头像：<div class="avatar_box">
-            <img :src="userInfoComp.avatarUrl" alt="avatar"/>
-          </div>
-            <input style="display: none" type="file" @change="handleFileChange" ref="fileInput" :accept="['.jpg', '.jpeg', '.png']"/>
-            <button type="button" @click="triggerUploadFile">选择图片</button>
+            角色：
+            {{ userInfoComp.role === 'TEACHER' ? '教师' : (userInfoComp.role === 'STUDENT' ? '学生' : '管理员') }}
           </li>
         </ul>
-        <button class="button" type="submit">确认修改</button>
-      </form>
+        <button class="button" @click="startChangeInfoClicked">{{ isStartChangeInfo ? '取消修改' : '修改信息' }}</button>
+      </div>
+
+      <div class="change_info_box" v-if="isStartChangeInfo">
+        <form @submit.prevent="changeInfoClicked">
+          <ul>
+            <li>
+              姓名：<input type="text" required placeholder="请输入姓名" v-model="userInfoChange.fullName" />
+            </li>
+            <li v-if="userInfoComp.role === 'TEACHER'">
+              工号：<input type="text" required placeholder="请输入工号" v-model="userInfoChange.username" />
+            </li>
+            <li v-else-if="userInfoComp.role === 'STUDENT'">
+              学号：<input type="text" required placeholder="请输入学号" v-model="userInfoChange.username" />
+            </li>
+            <li>
+              电子邮箱：<input type="text" required placeholder="请输入邮箱" v-model="userInfoChange.email" />
+            </li>
+            <!-- 仅教师角色可设置卡片背景图 -->
+            <li class="avatar_list" v-if="userInfoComp.role === 'TEACHER'">
+              卡片背景图：
+              <div class="avatar_box">
+                <img :src="userInfoComp.avatarUrl" alt="卡片背景图" />
+              </div>
+              <input style="display: none" type="file" @change="handleFileChange" ref="fileInput" :accept="['.jpg', '.jpeg', '.png']" />
+              <button type="button" @click="triggerUploadFile">选择图片</button>
+            </li>
+          </ul>
+          <button class="button" type="submit">确认修改</button>
+        </form>
+      </div>
+      <MyDetailComp />
     </div>
-    <MyDetailComp/>
-  </div></div>
+  </div>
 </template>
 
 <style scoped lang="sass">
-
 .personal_box
   width: 80%
   margin: 0 auto
@@ -186,13 +185,13 @@ watch(() => userStore.userInfo, (newValue) => {
   display: flex
   align-items: center
   .avatar_box
-    width: 100px
-    height: 100px
+    width: 200px   // 设置图片框宽度
+    height: 100px  // 设置图片框高度，宽高比为2:1
     overflow: hidden
     margin-left: 50px
-    border-radius: 50%
+    border-radius: 10px  // 设置为圆角
     .avatar
-      width: 100%
+      width: 100%  // 确保图片适应框宽度
   ul
     padding: 20px 0 20px 0
     margin-left: 50px
@@ -232,11 +231,11 @@ watch(() => userStore.userInfo, (newValue) => {
         list-style: none
         margin-top: 20px
         .avatar_box
-          width: 64px
-          height: 64px
+          width: 200px  // 调整为宽高比2:1
+          height: 100px
           overflow: hidden
           img
-            width: 100%
+            width: 100%  // 确保图片适应框宽度
         input
           width: 300px
           height: 36px
@@ -275,6 +274,4 @@ watch(() => userStore.userInfo, (newValue) => {
   margin-top: 60px  /* 向下移动60px */
   overflow-y: auto   /* 当内容超出页面范围时，显示滚动条 */
   height: calc(100vh - 120px)  /* 计算容器高度，减去顶部的60px */
-
-
 </style>

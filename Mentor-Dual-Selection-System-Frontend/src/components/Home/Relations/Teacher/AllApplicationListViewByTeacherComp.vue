@@ -46,11 +46,7 @@ const drawProgressPieChart = () => {
           radius: ['40%', '70%'],
           avoidLabelOverlap: false,
           label: {
-            show: true,
-            position: 'center',
-            formatter: '{d}%',
-            fontSize: 24,
-            fontWeight: 'bold'
+            show: false // 不显示数字
           },
           emphasis: {
             label: {
