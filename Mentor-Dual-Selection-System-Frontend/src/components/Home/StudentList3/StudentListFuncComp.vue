@@ -40,6 +40,7 @@ function checkUpload() {
         fullName: excelData.value[i][1],
         email: excelData.value[i][2],
         username: excelData.value[i][3],
+        grade: excelData.value[i][4]
       }
     }).then(res => {
       if (res.data.code !== 200){
