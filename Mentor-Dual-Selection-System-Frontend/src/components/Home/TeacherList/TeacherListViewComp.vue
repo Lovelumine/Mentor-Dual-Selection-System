@@ -73,6 +73,8 @@ watch([
 <!--      </template>-->
 <!--    </el-table-column>-->
   </el-table>
+    <!-- 空白行 -->
+  <div class="spacer"></div>
 </template>
 
 <style scoped lang="sass">
@@ -87,7 +89,7 @@ watch([
 .table
   margin: 0 auto
   width: 98%
-  max-height: calc(100vh - 60px - 60px - 80px)
+  max-height: calc(100vh - 60px - 60px - 150px)
   overflow-y: auto
   border: 1px solid #005826
   border-radius: 5px
@@ -115,4 +117,6 @@ watch([
   //  color: white
 .table:hover
   box-shadow: #005826 0 0 10px
+.spacer
+  height: 50px // 每个空白行的高度，可以根据需要调整
 </style>
