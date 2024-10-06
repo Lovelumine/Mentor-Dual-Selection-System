@@ -13,8 +13,7 @@ onMounted(() => {
 <template>
   <div class="footer_box">
     <p>Copyright ©{{copyrightYear}}</p>
-    <p>By 永新县爱荧科技有限责任公司</p>
-    <a href="#">赣ICP备：xxxxxxxxxxx号-1</a>
+    <p>永新县爱荧科技有限责任公司</p>
   </div>
 </template>
 

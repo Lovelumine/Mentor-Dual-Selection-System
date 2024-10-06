@@ -173,10 +173,6 @@ watch(
         <el-input v-if="!isChangeDetailDisabled" v-model="userDetailTemp.researchDirection"/>
         <span v-else class="form-text">{{ userDetail.researchDirection }}</span>
       </el-form-item>
-      <el-form-item label="专业方向：" class="form-label">
-        <el-input v-if="!isChangeDetailDisabled" v-model="userDetailTemp.professionalDirection"/>
-        <span v-else class="form-text">{{ userDetail.professionalDirection }}</span>
-      </el-form-item>
       <el-form-item label="简介：" class="form-label">
         <el-input v-if="!isChangeDetailDisabled" type="textarea" :rows="4" v-model="userDetailTemp.resume"/>
         <span v-else class="form-text">{{ userDetail.resume }}</span>
