@@ -113,10 +113,10 @@ watch(route, (newRoute) => {
             <el-icon><CircleClose /></el-icon>
             <span>退出登录</span>
           </el-menu-item>
-          <SideFooterComp/>
         </el-menu>
       </el-col>
     </el-row>
+    <SideFooterComp/>
   </div>
 </template>
 
@@ -128,7 +128,7 @@ watch(route, (newRoute) => {
   width: 200px
   height: 100vh
   background-color: #003c1a
-
+  //position: relative
   .el-menu-vertical-demo
     height: 100%
     width: 100%

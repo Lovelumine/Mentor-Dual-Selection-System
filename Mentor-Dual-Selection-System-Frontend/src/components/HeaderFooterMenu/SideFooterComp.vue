@@ -20,8 +20,13 @@ onMounted(() => {
 
 <style scoped lang="sass">
 .footer_box
-  margin: 25% auto 0 auto
+  width: 100%
+  height: 150px
+  position: absolute
   text-align: center
+  bottom: 0
+  left: 50%
+  transform: translateX(-50%)
   p
     font-size: 12px
     color: white
