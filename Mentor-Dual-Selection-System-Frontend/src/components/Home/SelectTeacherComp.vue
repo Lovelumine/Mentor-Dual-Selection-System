@@ -6,30 +6,90 @@ import {
   ElOption,
   ElButton,
   ElDialog,
+  ElForm,
+  ElFormItem,
+  ElInput,
 } from "element-plus";
 import { http, httpStudent } from "@/utils/http";
+import axios from "axios";
 
+// 学生和教师的信息
+const studentInfo = ref(null);
 const allTeacherDetailsList = ref([]);
 const currentPage = ref(1);
 const pageSize = ref(6);
-
-const positions = [
-  "教授",
-  "副教授",
-  "助理教授",
-  "博士后",
-  "学术顾问",
-  "客座/兼职教授",
-];
+const positions = ["教授", "副教授", "助理教授", "博士后", "学术顾问", "客座/兼职教授"];
 const selectedPosition = ref("");
-
 const dialogVisible = ref(false);
 const applicationDialogVisible = ref(false);
 const selectReason = ref(null);
 const selectTeacherUid = ref(null);
 const selectedTeacher = ref(null);
+const isGeneratingReason = ref(false);
 
+// 获取学生信息
+const fetchStudentInfo = () => {
+  httpStudent({
+    url: "/my-detail",
+    method: "GET",
+    headers: {
+      Accept: "*/*",
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  }).then((res) => {
+    if (res.data.code === 200) {
+      studentInfo.value = res.data.data;
+    }
+  });
+};
+
+// 生成AI申请理由功能
+const generateAIReason = async () => {
+  if (!studentInfo.value || !selectedTeacher.value) {
+    alert("无法获取学生或导师信息！");
+    return;
+  }
+  isGeneratingReason.value = true;
+  try {
+    const prompt = `根据以下信息生成申请理由：
+    学生年级: ${studentInfo.value.studentGrade}
+    学生班级: ${studentInfo.value.studentClass}
+    学生简介: ${studentInfo.value.resume}
+    导师姓名: ${selectedTeacher.value.fullName}
+    导师职称: ${selectedTeacher.value.teacherposition}
+    导师研究方向: ${selectedTeacher.value.research_direction}`;
+
+    const response = await axios.post(
+      "https://api.lqqq.ltd/v1/chat/completions",
+      {
+        model: "gpt-3.5-turbo-0125",
+        prompt: prompt,
+        max_tokens: 2000,
+        temperature: 0.7,
+      },
+      {
+        headers: {
+          Authorization: `Bearer sk-F0G0uD0m1tVmk5OUAa7bF90e0d824d44Ad65CdC9286aFc2a`,
+        },
+      }
+    );
+
+    if (response.status === 200 && response.data.choices) {
+      selectReason.value = response.data.choices[0].message.content.trim();
+    } else {
+      alert("生成申请理由失败，请重试！");
+    }
+  } catch (error) {
+    console.error(error);
+    alert("生成申请理由失败，请重试！");
+  } finally {
+    isGeneratingReason.value = false;
+  }
+};
+
+// 获取导师信息
 onMounted(() => {
+  fetchStudentInfo();
   http({
     url: "/search/teachers",
     method: "GET",
@@ -38,47 +98,36 @@ onMounted(() => {
       Authorization: `Bearer ${localStorage.getItem("token")}`,
     },
   })
-      .then((res) => {
-        if (res.data.code === 200) {
-          allTeacherDetailsList.value = res.data.data;
-
-          // 获取所有教师的额外详细信息
-          httpStudent({
-            url: "/teachers",
-            method: "GET",
-            headers: {
-              Accept: "*/*",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          })
-              .then((res2) => {
-                if (res2.data.code === 200) {
-                  const tdl = res2.data.data;
-                  allTeacherDetailsList.value.forEach((teacher) => {
-                    const match = tdl.find((t) => t.uid === teacher.uid);
-                    if (match) {
-                      Object.assign(teacher, match);
-                    }
-                  });
-                  console.log("All Teachers Data:", allTeacherDetailsList.value);
-                }
-              })
-              .catch((err) => {
-                console.error(err);
-              });
-        } else {
-          alert("导师信息获取失败！");
-        }
-      })
-      .catch((err) => {
+    .then((res) => {
+      if (res.data.code === 200) {
+        allTeacherDetailsList.value = res.data.data;
+        // 获取所有教师的额外详细信息
+        httpStudent({
+          url: "/teachers",
+          method: "GET",
+          headers: {
+            Accept: "*/*",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }).then((res2) => {
+          if (res2.data.code === 200) {
+            const tdl = res2.data.data;
+            allTeacherDetailsList.value.forEach((teacher) => {
+              const match = tdl.find((t) => t.uid === teacher.uid);
+              if (match) {
+                Object.assign(teacher, match);
+              }
+            });
+          }
+        });
+      } else {
         alert("导师信息获取失败！");
-        console.error(err);
-      });
+      }
+    });
 });
 
+// 处理筛选条件
 const onPositionChange = () => {
-  console.log("Selected Position:", selectedPosition.value);
-  // 当筛选条件改变时，重置当前页码为1
   currentPage.value = 1;
 };
 
@@ -87,29 +136,21 @@ const resetFilter = () => {
   currentPage.value = 1;
 };
 
+// 过滤导师
 const filteredTeachers = computed(() => {
-  console.log("Computing filteredTeachers");
   if (!selectedPosition.value) {
-    console.log("No position selected, returning all teachers");
     return allTeacherDetailsList.value;
   }
-  const filtered = allTeacherDetailsList.value.filter(
-      (teacher) => teacher.teacherposition === selectedPosition.value
+  return allTeacherDetailsList.value.filter(
+    (teacher) => teacher.teacherposition === selectedPosition.value
   );
-  console.log("Filtered Teachers:", filtered);
-  return filtered;
 });
 
+// 分页处理
 const paginatedTeachers = computed(() => {
-  console.log("Computing paginatedTeachers");
   const start = (currentPage.value - 1) * pageSize.value;
   const end = start + pageSize.value;
-  const paginated = filteredTeachers.value.slice(start, end);
-  console.log(
-      `Page ${currentPage.value}, showing items ${start} to ${end}`
-  );
-  console.log("Paginated Teachers:", paginated);
-  return paginated;
+  return filteredTeachers.value.slice(start, end);
 });
 
 const showDetails = (teacher) => {
@@ -121,32 +162,34 @@ const showApplicationDialog = (teacher) => {
   selectedTeacher.value = teacher;
   selectTeacherUid.value = teacher.uid;
   applicationDialogVisible.value = true;
-}
+};
 
+// 提交申请
 const checkApplication = () => {
-  if (selectReason.value === null || selectReason.value === '' || !selectReason.value) alert('请填写您的理由！');
+  if (!selectReason.value) {
+    alert("请填写您的理由！");
+    return;
+  }
   http({
-    url: '/application/submit',
-    method: 'POST',
+    url: "/application/submit",
+    method: "POST",
     headers: {
-      Accept: '*/*',
+      Accept: "*/*",
       Authorization: `Bearer ${localStorage.getItem("token")}`,
     },
     params: {
       mentorId: selectTeacherUid.value,
-      reason: selectReason.value
-    }
-  }).then(res => {
-    if (res.data.code === 200){
-      alert('您成功提交申请，请等待导师处理！\n期间你不可以选择其他导师！');
+      reason: selectReason.value,
+    },
+  }).then((res) => {
+    if (res.data.code === 200) {
+      alert("您成功提交申请，请等待导师处理！\n期间你不可以选择其他导师！");
       applicationDialogVisible.value = false;
     } else {
       alert(res.data.data.error);
     }
-  }).catch(err => {
-    alert(JSON.parse(err.request.response).data.error);
-  })
-}
+  });
+};
 
 // 处理分页页码变化
 const handlePageChange = (page) => {
@@ -251,9 +294,18 @@ const handlePageChange = (page) => {
   <el-dialog v-model="applicationDialogVisible" :title="`选择导师：${selectedTeacher?.fullName}`">
     <el-form @submit.prevent="checkApplication">
       <el-form-item label="申请理由（必填）：">
-        <el-input type="text" placeholder="请简述" required v-model="selectReason"/>
-      </el-form-item>
+  <el-input
+    type="textarea"
+    v-model="selectReason"
+    placeholder="请简述"
+    :autosize="{ minRows: 2, maxRows: 10 }"  
+  />
+</el-form-item>
+
       <el-button type="primary" native-type="submit">提交申请</el-button>
+      <el-button v-if="!isGeneratingReason" type="primary" @click="generateAIReason">AI生成申请理由</el-button>
+      <el-button v-if="isGeneratingReason" type="primary" disabled>生成中...</el-button>
+    
     </el-form>
   </el-dialog>
   <div style="height: 100px;"></div>
