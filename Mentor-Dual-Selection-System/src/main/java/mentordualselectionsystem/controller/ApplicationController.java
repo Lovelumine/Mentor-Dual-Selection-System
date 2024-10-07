@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import mentordualselectionsystem.dto.ApplicationSubmitRequest;
 import mentordualselectionsystem.mysql.Application;
 import mentordualselectionsystem.mysql.User;
 import mentordualselectionsystem.services.ApplicationService;
@@ -36,13 +37,10 @@ public class ApplicationController {
         this.jwtUtils = jwtUtils;
     }
 
+    @PostMapping("/submit")
     @Operation(
             summary = "提交学生申请",
-            description = "学生通过 token 提交申请，提供申请理由以及导师 ID。该接口仅供学生用户使用，系统会通过 JWT Token 确认用户身份。",
-            parameters = {
-                    @Parameter(name = "mentorId", description = "导师的ID", required = true),
-                    @Parameter(name = "reason", description = "申请理由", required = true)
-            }
+            description = "学生通过 token 提交申请，提供申请理由以及导师 ID。该接口仅供学生用户使用，系统会通过 JWT Token 确认用户身份。"
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "成功提交申请"),
@@ -50,9 +48,7 @@ public class ApplicationController {
             @ApiResponse(responseCode = "401", description = "token无效或已过期"),
             @ApiResponse(responseCode = "500", description = "服务器内部错误")
     })
-    @PostMapping("/submit")
-    public ResponseEntity<Map<String, Object>> submitApplication(@RequestParam Long mentorId,
-                                                                 @RequestParam String reason) {
+    public ResponseEntity<Map<String, Object>> submitApplication(@RequestBody ApplicationSubmitRequest request) {
         try {
             // 获取当前用户 token
             String token = SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
@@ -62,7 +58,7 @@ public class ApplicationController {
             Long studentId = jwtUtils.validateTokenAndGetUid(jwtToken);
 
             // 提交申请
-            Application application = applicationService.submitApplication(studentId, mentorId, reason);
+            Application application = applicationService.submitApplication(studentId, request.getMentorId(), request.getReason());
 
             // 构建返回结果
             return buildSuccessResponse(200, application);
@@ -73,6 +69,7 @@ public class ApplicationController {
             return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
         }
     }
+
 
     @Operation(
             summary = "导师审批学生申请",
