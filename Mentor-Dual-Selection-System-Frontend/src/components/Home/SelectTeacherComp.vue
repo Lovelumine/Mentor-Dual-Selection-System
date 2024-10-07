@@ -177,19 +177,30 @@ const checkApplication = () => {
       Accept: "*/*",
       Authorization: `Bearer ${localStorage.getItem("token")}`,
     },
-    params: {
+    data: {
       mentorId: selectTeacherUid.value,
       reason: selectReason.value,
     },
-  }).then((res) => {
-    if (res.data.code === 200) {
-      alert("您成功提交申请，请等待导师处理！\n期间你不可以选择其他导师！");
-      applicationDialogVisible.value = false;
-    } else {
-      alert(res.data.data.error);
-    }
-  });
+  })
+    .then((res) => {
+      if (res.data.code === 200) {
+        alert("您成功提交申请，请等待导师处理！\n期间你不可以选择其他导师！");
+        applicationDialogVisible.value = false;
+      } else {
+        alert(res.data.data.error);
+      }
+    })
+    .catch((error) => {
+      if (error.response && error.response.data && error.response.data.data) {
+        // 处理服务器返回的错误信息
+        alert(error.response.data.data.error);
+      } else {
+        // 其他未捕获的错误
+        alert("提交申请时出现未知错误，请稍后重试！");
+      }
+    });
 };
+
 
 // 处理分页页码变化
 const handlePageChange = (page) => {
