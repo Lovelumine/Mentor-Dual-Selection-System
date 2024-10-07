@@ -184,7 +184,7 @@ const checkApplication = () => {
   })
     .then((res) => {
       if (res.data.code === 200) {
-        alert("您成功提交申请，请等待导师处理！\n期间你不可以选择其他导师！");
+        alert("申请提交成功，请等待导师处理！\n期间您不可选择其他导师！");
         applicationDialogVisible.value = false;
       } else {
         alert(res.data.data.error);

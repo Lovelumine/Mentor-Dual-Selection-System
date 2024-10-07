@@ -50,7 +50,11 @@ function handleAccept(index: number, row) {
       Accept: "*/*",
       Authorization: `Bearer ${localStorage.getItem("token")}`,
     },
-    params: pendingUtilForm.value,
+    data: {
+      applicationId: pendingUtilForm.value.applicationId,
+      approved: pendingUtilForm.value.approved,
+      rejectionReason: pendingUtilForm.value.rejectionReason || null,  // 确保提交拒绝理由字段，哪怕是 null
+    },
   })
     .then((res) => {
       if (res.status === 200 || res.data.code === 200) {
@@ -64,6 +68,7 @@ function handleAccept(index: number, row) {
       alert(JSON.parse(err.request.responseText).data.error);
     });
 }
+
 
 function handleReject(index: number, row) {
   pendingUtilForm.value.applicationId = row.id;
@@ -86,7 +91,11 @@ function checkReject() {
       Accept: "*/*",
       Authorization: `Bearer ${localStorage.getItem("token")}`,
     },
-    params: pendingUtilForm.value,
+    data: {
+      applicationId: pendingUtilForm.value.applicationId,
+      approved: pendingUtilForm.value.approved,
+      rejectionReason: pendingUtilForm.value.rejectionReason,
+    },
   })
     .then((res) => {
       if (res.status === 200 || res.data.code === 200) {
@@ -101,6 +110,7 @@ function checkReject() {
       alert(JSON.parse(err.request.responseText).data.error);
     });
 }
+
 
 function scopeIndexGetStatus(index: number) {
   return pendingList.value[index].status === "PENDING";
