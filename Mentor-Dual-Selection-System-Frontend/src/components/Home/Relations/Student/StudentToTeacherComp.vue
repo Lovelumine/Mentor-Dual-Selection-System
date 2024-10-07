@@ -66,6 +66,7 @@ function handleImageError(event) {
 }
 
 onMounted(() => {
+  userStore.fetchUserInfo();
   // 获取学生的基本信息 (姓名、邮箱等)
   axios({
     url: "/api/user/me",
@@ -80,6 +81,30 @@ onMounted(() => {
           fullName: res.data.data.fullName || "",
           email: res.data.data.email || "",
         };
+        // 获取学生的详细信息 (照片、意向研究方向、简历等)
+        axios({
+          url: "/student/my-detail",
+          method: "GET",
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("token"),
+          },
+        }).then((res) => {
+          if (res.data.code === 200) {
+            userInfoComp.value = {
+              ...userInfoComp.value,
+              avatarUrl: res.data.data.photoUrl ? `${res.data.data.photoUrl}?t=${new Date().getTime()}` : "",  // 强制刷新图片
+              researchDirection: res.data.data.researchDirection || "未提供",  // 学生意向研究方向
+              resume: res.data.data.resume || "未提供",
+              grade: res.data.data.studentGrade || "",  // 正确映射年级
+              class: res.data.data.studentClass || "",  // 正确映射班级
+            };
+          } else {
+            alert("获取学生详细信息失败，请检查网络和登录状态！");
+          }
+        }).catch((err) => {
+            console.error(err);
+            errorShow.value = err.response ? err.response.status : 500;
+          })
       } else {
         alert("获取学生基本信息失败，请检查网络和登录状态！");
       }
@@ -89,32 +114,32 @@ onMounted(() => {
       errorShow.value = err.response ? err.response.status : 500;
     });
 
-  // 获取学生的详细信息 (照片、意向研究方向、简历等)
-  axios({
-    url: "/student/my-detail",
-    method: "GET",
-    headers: {
-      Authorization: "Bearer " + localStorage.getItem("token"),
-    },
-  })
-    .then((res) => {
-      if (res.data.code === 200) {
-        userInfoComp.value = {
-          ...userInfoComp.value,
-          avatarUrl: res.data.data.photoUrl ? `${res.data.data.photoUrl}?t=${new Date().getTime()}` : "",  // 强制刷新图片
-          researchDirection: res.data.data.researchDirection || "未提供",  // 学生意向研究方向
-          resume: res.data.data.resume || "未提供",
-          grade: res.data.data.studentGrade || "",  // 正确映射年级
-          class: res.data.data.studentClass || "",  // 正确映射班级
-        };
-      } else {
-        alert("获取学生详细信息失败，请检查网络和登录状态！");
-      }
-    })
-    .catch((err) => {
-      console.error(err);
-      errorShow.value = err.response ? err.response.status : 500;
-    });
+  // // 获取学生的详细信息 (照片、意向研究方向、简历等)
+  // axios({
+  //   url: "/student/my-detail",
+  //   method: "GET",
+  //   headers: {
+  //     Authorization: "Bearer " + localStorage.getItem("token"),
+  //   },
+  // })
+  //   .then((res) => {
+  //     if (res.data.code === 200) {
+  //       userInfoComp.value = {
+  //         ...userInfoComp.value,
+  //         avatarUrl: res.data.data.photoUrl ? `${res.data.data.photoUrl}?t=${new Date().getTime()}` : "",  // 强制刷新图片
+  //         researchDirection: res.data.data.researchDirection || "未提供",  // 学生意向研究方向
+  //         resume: res.data.data.resume || "未提供",
+  //         grade: res.data.data.studentGrade || "",  // 正确映射年级
+  //         class: res.data.data.studentClass || "",  // 正确映射班级
+  //       };
+  //     } else {
+  //       alert("获取学生详细信息失败，请检查网络和登录状态！");
+  //     }
+  //   })
+  //   .catch((err) => {
+  //     console.error(err);
+  //     errorShow.value = err.response ? err.response.status : 500;
+  //   });
 
   // 获取导师信息 (通过 mentor-student-relations 获取导师uid，再获取详细信息)
   http({
