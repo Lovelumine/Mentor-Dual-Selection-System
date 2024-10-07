@@ -184,8 +184,8 @@ const handlePageChange = (page) => {
             <div class="detail_box">
               <div class="resume">研究方向：{{ item.research_direction }}</div>
               <div class="resume">
-  简历：{{ item.resume.length > 50 ? item.resume.slice(0, 50) + '...' : item.resume }}
-</div>
+                 简历：{{ item.resume.length > 50 ? item.resume.slice(0, 50) + '...' : item.resume }}
+              </div>
 
               <!-- 显示详情按钮 -->
               <el-button type="primary" size="small" @click="showDetails(item)">了解更多</el-button>
@@ -206,7 +206,6 @@ const handlePageChange = (page) => {
       <p>电子邮箱：{{ selectedTeacher.email }}</p>
       <p>研究方向：{{ selectedTeacher.research_direction }}</p>
       <p>简历：{{ selectedTeacher.resume }}</p>
-      <!-- 可以添加更多详细信息 -->
     </div>
     <template #footer>
       <el-button @click="dialogVisible = false">关闭</el-button>

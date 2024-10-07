@@ -318,6 +318,7 @@ watch(
       </el-table-column>
     </el-table>
   </div>
+  <div class="spacer"></div>
 </template>
 
 <style scoped lang="sass">
@@ -341,6 +342,8 @@ watch(
     width: 98%
     margin: 0 auto
     border: 1px solid #005826
+    max-height:calc(100vh-60px-60px-6000px)
+    overflow-y:auto
     .button
       margin: 0
     .button:last-child
@@ -387,4 +390,7 @@ input:focus
     p
       font-size: 16px
       margin: 5px 0
+
+.spacer
+  height: 100px // 每个空白行的高度，可以根据需要调整
 </style>
