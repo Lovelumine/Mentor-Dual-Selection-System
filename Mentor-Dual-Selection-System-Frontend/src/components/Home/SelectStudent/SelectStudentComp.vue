@@ -282,7 +282,7 @@ watch(
         label="导师姓名"
         v-if="userRole === 'ADMIN'"
       />
-      <el-table-column prop="applicationReason" label="申请理由" />
+      <el-table-column prop="applicationReason" label="申请理由" show-overflow-tooltip/>
       <el-table-column prop="statusCN" label="当前状态" />
       <!-- 查看学生详情按钮列 -->
       <el-table-column label="详细信息">
