@@ -21,6 +21,10 @@ const pendingUtilForm = ref({
   rejectionReason: null,
 });
 
+// 添加：用于存储学生的申请信息
+const studentApplicationInfo = ref({});
+
+// 定义关闭弹窗处理函数
 const handleClose = (done: () => void) => {
   ElMessageBox.confirm("您输入的信息将会保留，直到您下次点开该弹窗！")
     .then(() => {
@@ -102,12 +106,13 @@ function scopeIndexGetStatus(index: number) {
   return pendingList.value[index].status === "PENDING";
 }
 
-// 获取学生详情
+// 获取学生详情及申请信息
 function handleViewStudentInfo(row) {
   getStudentInfo(row.studentId)
     .then((res) => {
       if (res.data.code === 200) {
         studentInfo.value = res.data.data;
+        studentApplicationInfo.value = row; // 保存学生的申请信息
         studentInfoVisible.value = true; // 注意这里使用 .value
       } else {
         alert("获取学生详情失败！");
@@ -131,9 +136,8 @@ function getStudentInfo(uid: number) {
   });
 }
 
-// 新增：获取申请列表的函数
+// 获取申请列表
 function fetchApplicationList() {
-  // 首先，获取所有用户
   http({
     url: "/user/all",
     method: "POST",
@@ -148,7 +152,7 @@ function fetchApplicationList() {
         allStudent.value = allUser.value.filter((user) => user.role === "STUDENT");
         allTeacher.value = allUser.value.filter((user) => user.role === "TEACHER");
 
-        // 然后，获取待审核的申请列表
+        // 获取待审核的申请列表
         http({
           url: "/application/pending",
           method: "GET",
@@ -263,6 +267,10 @@ watch(
         <p><strong>班级：</strong>{{ studentInfo.class }}</p>
         <p><strong>邮箱：</strong>{{ studentInfo.email }}</p>
         <p><strong>个人简介：</strong>{{ studentInfo.resume }}</p>
+        <!-- 新增：学生的申请信息展示 -->
+        <p><strong>申请理由：</strong>{{ studentApplicationInfo.applicationReason }}</p>
+        <p><strong>申请状态：</strong>{{ studentApplicationInfo.statusCN }}</p>
+        <p><strong>拒绝理由：</strong>{{ studentApplicationInfo.rejectionReason || '无' }}</p>
       </div>
     </div>
   </el-dialog>
