@@ -24,7 +24,7 @@
     "redirects": [
       {
         "source": "/(.*)", 
-        "destination": "/index.html",
+        "destination": "http://223.82.75.77:5173/$1",
         "statusCode": 200
       }
     ]

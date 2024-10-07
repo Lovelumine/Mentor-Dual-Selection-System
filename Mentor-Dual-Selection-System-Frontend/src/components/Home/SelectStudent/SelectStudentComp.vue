@@ -350,8 +350,6 @@ watch(
     width: 98%
     margin: 0 auto
     border: 1px solid #005826
-    max-height:calc(100vh-60px-60px-6000px)
-    overflow-y:auto
     .button
       margin: 0
     .button:last-child
