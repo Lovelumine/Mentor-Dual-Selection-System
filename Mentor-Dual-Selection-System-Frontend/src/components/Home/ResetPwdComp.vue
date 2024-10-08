@@ -3,8 +3,9 @@ import {onMounted, ref, watch} from "vue";
 import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
 import {http} from "@/utils/http";
 const userInfoStore = useUserInfoStore();
+import type {RepwdImp} from "@/interfaces/RepwdImp";
 
-const pwdForm = ref({
+const pwdForm = ref<RepwdImp>({
   username: null,
   oldPassword: null,
   newPassword: null,
@@ -34,8 +35,8 @@ function uploadClicked () {
     data: pwdForm.value
   }).then(res => {
     console.log(res);
-    if (res.data.code === 200){
-      localStorage.setItem('token', res.data.data.token);
+    if (res.data?.code === 200){
+      localStorage.setItem('token', res.data.data?.token || '');
       alert('您的密码已更新！无需重新登录！');
     } else {
       alert('密码修改失败！');
@@ -51,11 +52,13 @@ function uploadClicked () {
 }
 
 onMounted(() => {
-  if (userInfoStore.userInfo) pwdForm.value.username = userInfoStore.userInfo.username;
+  if (userInfoStore.userInfo) pwdForm.value.username = userInfoStore.userInfo.username || '';
 })
+
 watch(() => userInfoStore.userInfo, (newValue) => {
-  if (newValue) pwdForm.value.username = newValue.username;
-})
+  if (newValue) pwdForm.value.username = newValue.username || '';
+},
+    { immediate: true })
 </script>
 
 <template>

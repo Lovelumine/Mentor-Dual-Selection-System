@@ -41,7 +41,7 @@ public class ApplicationService {
         // 检查是否存在待审批的申请
         List<Application> pendingApplications = applicationRepository.findByStudentIdAndStatus(studentId, "PENDING");
         if (!pendingApplications.isEmpty()) {
-            throw new RuntimeException("你已经有一个等待审批的申请，请等待导师处理后再提交新的申请");
+            throw new RuntimeException("您已经有一个等待审批的申请，请等待导师处理后再提交新的申请");
         }
 
         // 检查导师是否存在
@@ -60,7 +60,7 @@ public class ApplicationService {
 
         // 检查学生是否已经有导师
         if (student.getMentorId() != null) {
-            throw new RuntimeException("你已经选择了导师，无法再次申请");
+            throw new RuntimeException("您已经选择了导师，无法再次申请");
         }
 
         // 创建申请

@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import mentordualselectionsystem.dto.ApplicationApprovalRequest;
+import mentordualselectionsystem.dto.ApplicationSubmitRequest;
 import mentordualselectionsystem.mysql.Application;
 import mentordualselectionsystem.mysql.User;
 import mentordualselectionsystem.services.ApplicationService;
@@ -36,13 +38,10 @@ public class ApplicationController {
         this.jwtUtils = jwtUtils;
     }
 
+    @PostMapping("/submit")
     @Operation(
             summary = "提交学生申请",
-            description = "学生通过 token 提交申请，提供申请理由以及导师 ID。该接口仅供学生用户使用，系统会通过 JWT Token 确认用户身份。",
-            parameters = {
-                    @Parameter(name = "mentorId", description = "导师的ID", required = true),
-                    @Parameter(name = "reason", description = "申请理由", required = true)
-            }
+            description = "学生通过 token 提交申请，提供申请理由以及导师 ID。该接口仅供学生用户使用，系统会通过 JWT Token 确认用户身份。"
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "成功提交申请"),
@@ -50,9 +49,7 @@ public class ApplicationController {
             @ApiResponse(responseCode = "401", description = "token无效或已过期"),
             @ApiResponse(responseCode = "500", description = "服务器内部错误")
     })
-    @PostMapping("/submit")
-    public ResponseEntity<Map<String, Object>> submitApplication(@RequestParam Long mentorId,
-                                                                 @RequestParam String reason) {
+    public ResponseEntity<Map<String, Object>> submitApplication(@RequestBody ApplicationSubmitRequest request) {
         try {
             // 获取当前用户 token
             String token = SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
@@ -62,7 +59,7 @@ public class ApplicationController {
             Long studentId = jwtUtils.validateTokenAndGetUid(jwtToken);
 
             // 提交申请
-            Application application = applicationService.submitApplication(studentId, mentorId, reason);
+            Application application = applicationService.submitApplication(studentId, request.getMentorId(), request.getReason());
 
             // 构建返回结果
             return buildSuccessResponse(200, application);
@@ -74,19 +71,11 @@ public class ApplicationController {
         }
     }
 
+
+    @PostMapping("/approve")
     @Operation(
             summary = "导师审批学生申请",
-            description = "导师通过或拒绝学生的申请。**注意：导师拒绝申请时，必须填写拒绝理由；同意申请时，拒绝理由可选。**",
-            parameters = {
-                    @Parameter(name = "applicationId", description = "申请的ID", required = true),
-                    @Parameter(name = "approved", description = "是否同意", required = true),
-                    @Parameter(
-                            name = "rejectionReason",
-                            description = "拒绝理由，**拒绝申请时必填，同意时可选**",
-                            required = false,
-                            schema = @Schema(type = "string")
-                    )
-            }
+            description = "导师通过或拒绝学生的申请。**注意：导师拒绝申请时，必须填写拒绝理由；同意申请时可选。**"
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "成功审批申请"),
@@ -94,10 +83,7 @@ public class ApplicationController {
             @ApiResponse(responseCode = "401", description = "token无效或已过期"),
             @ApiResponse(responseCode = "500", description = "服务器内部错误")
     })
-    @PostMapping("/approve")
-    public ResponseEntity<Map<String, Object>> approveApplication(@RequestParam Long applicationId,
-                                                                  @RequestParam boolean approved,
-                                                                  @RequestParam(required = false) String rejectionReason) {
+    public ResponseEntity<Map<String, Object>> approveApplication(@RequestBody ApplicationApprovalRequest request) {
         try {
             // 获取当前用户 token
             String token = SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
@@ -107,7 +93,7 @@ public class ApplicationController {
             Long mentorId = jwtUtils.validateTokenAndGetUid(jwtToken);
 
             // 获取申请
-            Application application = applicationService.getApplicationById(applicationId);
+            Application application = applicationService.getApplicationById(request.getApplicationId());
 
             // 检查申请是否存在
             if (application == null) {
@@ -125,12 +111,16 @@ public class ApplicationController {
             }
 
             // **新增检查：拒绝申请时必须填写拒绝理由**
-            if (!approved && (rejectionReason == null || rejectionReason.trim().isEmpty())) {
+            if (!request.isApproved() && (request.getRejectionReason() == null || request.getRejectionReason().trim().isEmpty())) {
                 return buildErrorResponse(400, "拒绝申请时必须填写拒绝理由");
             }
 
             // 审批申请
-            application = applicationService.approveApplication(applicationId, approved, rejectionReason);
+            application = applicationService.approveApplication(
+                    request.getApplicationId(),
+                    request.isApproved(),
+                    request.getRejectionReason()
+            );
 
             // 构建返回结果
             return buildSuccessResponse(200, application);
@@ -141,6 +131,7 @@ public class ApplicationController {
             return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
         }
     }
+
 
     @Operation(
             summary = "获取所有已存在的导师与学生关系",

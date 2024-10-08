@@ -28,15 +28,15 @@ public class Application {
     private String status;
 
     @Lob
-    @Column(name = "application_reason")
+    @Column(name = "application_reason", columnDefinition = "LONGTEXT")
     private String applicationReason;
 
     @Lob
-    @Column(name = "rejection_reason")
+    @Column(name = "rejection_reason", columnDefinition = "LONGTEXT")
     private String rejectionReason;
 
     @NotNull
-    @Column(name = "application_date", nullable = false, updatable = false, insertable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    @Column(name = "application_date", nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private Instant applicationDate;
 
     @Column(name = "decision_date")

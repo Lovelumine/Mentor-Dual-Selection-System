@@ -1,121 +1,228 @@
+<!--<script setup lang="ts">-->
+<!--import { onMounted, ref, computed } from "vue";-->
+<!--import {-->
+<!--  ElPagination,-->
+<!--  ElSelect,-->
+<!--  ElOption,-->
+<!--  ElButton,-->
+<!--  ElDialog,-->
+<!--} from "element-plus";-->
+<!--import { http, httpStudent } from "@/utils/http";-->
+
+<!--const allTeacherDetailsList = ref([]);-->
+<!--const currentPage = ref(1);-->
+<!--const pageSize = ref(6);-->
+
+<!--const positions = [-->
+<!--  "教授",-->
+<!--  "副教授",-->
+<!--  "助理教授",-->
+<!--  "博士后",-->
+<!--  "学术顾问",-->
+<!--  "客座/兼职教授",-->
+<!--];-->
+<!--const selectedPosition = ref("");-->
+
+<!--const dialogVisible = ref(false);-->
+<!--const selectedTeacher = ref(null);-->
+
+<!--onMounted(() => {-->
+<!--  http({-->
+<!--    url: "/search/teachers",-->
+<!--    method: "GET",-->
+<!--    headers: {-->
+<!--      Accept: "*/*",-->
+<!--      Authorization: `Bearer ${localStorage.getItem("token")}`,-->
+<!--    },-->
+<!--  })-->
+<!--    .then((res) => {-->
+<!--      if (res.data.code === 200) {-->
+<!--        allTeacherDetailsList.value = res.data.data;-->
+
+<!--        // 获取所有教师的额外详细信息-->
+<!--        httpStudent({-->
+<!--          url: "/teachers",-->
+<!--          method: "GET",-->
+<!--          headers: {-->
+<!--            Accept: "*/*",-->
+<!--            Authorization: `Bearer ${localStorage.getItem("token")}`,-->
+<!--          },-->
+<!--        })-->
+<!--          .then((res2) => {-->
+<!--            if (res2.data.code === 200) {-->
+<!--              const tdl = res2.data.data;-->
+<!--              allTeacherDetailsList.value.forEach((teacher) => {-->
+<!--                const match = tdl.find((t) => t.uid === teacher.uid);-->
+<!--                if (match) {-->
+<!--                  Object.assign(teacher, match);-->
+<!--                }-->
+<!--              });-->
+<!--              console.log("All Teachers Data:", allTeacherDetailsList.value);-->
+<!--            }-->
+<!--          })-->
+<!--          .catch((err) => {-->
+<!--            console.error(err);-->
+<!--          });-->
+<!--      } else {-->
+<!--        alert("导师信息获取失败！");-->
+<!--      }-->
+<!--    })-->
+<!--    .catch((err) => {-->
+<!--      alert("导师信息获取失败！");-->
+<!--      console.error(err);-->
+<!--    });-->
+<!--});-->
+
+<!--const onPositionChange = () => {-->
+<!--  console.log("Selected Position:", selectedPosition.value);-->
+<!--  // 当筛选条件改变时，重置当前页码为1-->
+<!--  currentPage.value = 1;-->
+<!--};-->
+
+<!--const resetFilter = () => {-->
+<!--  selectedPosition.value = "";-->
+<!--  currentPage.value = 1;-->
+<!--};-->
+
+<!--const filteredTeachers = computed(() => {-->
+<!--  console.log("Computing filteredTeachers");-->
+<!--  if (!selectedPosition.value) {-->
+<!--    console.log("No position selected, returning all teachers");-->
+<!--    return allTeacherDetailsList.value;-->
+<!--  }-->
+<!--  const filtered = allTeacherDetailsList.value.filter(-->
+<!--    (teacher) => teacher.teacherposition === selectedPosition.value-->
+<!--  );-->
+<!--  console.log("Filtered Teachers:", filtered);-->
+<!--  return filtered;-->
+<!--});-->
+
+<!--const paginatedTeachers = computed(() => {-->
+<!--  console.log("Computing paginatedTeachers");-->
+<!--  const start = (currentPage.value - 1) * pageSize.value;-->
+<!--  const end = start + pageSize.value;-->
+<!--  const paginated = filteredTeachers.value.slice(start, end);-->
+<!--  console.log(-->
+<!--    `Page ${currentPage.value}, showing items ${start} to ${end}`-->
+<!--  );-->
+<!--  console.log("Paginated Teachers:", paginated);-->
+<!--  return paginated;-->
+<!--});-->
+
+<!--const showDetails = (teacher) => {-->
+<!--  selectedTeacher.value = teacher;-->
+<!--  dialogVisible.value = true;-->
+<!--};-->
+
+<!--// 处理分页页码变化-->
+<!--const handlePageChange = (page) => {-->
+<!--  currentPage.value = page;-->
+<!--};-->
+<!--</script>-->
 <script setup lang="ts">
-import { onMounted, ref, computed } from "vue";
+import { onMounted, ref, computed } from 'vue';
 import {
   ElPagination,
   ElSelect,
   ElOption,
   ElButton,
-  ElDialog,
-} from "element-plus";
-import { http, httpStudent } from "@/utils/http";
+  ElDialog
+} from 'element-plus';
+import { http, httpStudent } from '@/utils/http';
+import type {TeacherDetail} from "@/interfaces/TeachDetailsImp";
 
-const allTeacherDetailsList = ref([]);
-const currentPage = ref(1);
-const pageSize = ref(6);
 
-const positions = [
-  "教授",
-  "副教授",
-  "助理教授",
-  "博士后",
-  "学术顾问",
-  "客座/兼职教授",
-];
-const selectedPosition = ref("");
+// 状态变量
+const allTeacherDetailsList = ref<TeacherDetail[]>([]);
+const currentPage = ref<number>(1);
+const pageSize = ref<number>(6);
+const positions = ['教授', '副教授', '助理教授', '博士后', '学术顾问', '客座/兼职教授'];
+const selectedPosition = ref<string>('');
+const dialogVisible = ref<boolean>(false);
+const selectedTeacher = ref<TeacherDetail | null>(null);
 
-const dialogVisible = ref(false);
-const selectedTeacher = ref(null);
-
-onMounted(() => {
-  http({
-    url: "/search/teachers",
-    method: "GET",
-    headers: {
-      Accept: "*/*",
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
-  })
-    .then((res) => {
-      if (res.data.code === 200) {
-        allTeacherDetailsList.value = res.data.data;
-
-        // 获取所有教师的额外详细信息
-        httpStudent({
-          url: "/teachers",
-          method: "GET",
-          headers: {
-            Accept: "*/*",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        })
-          .then((res2) => {
-            if (res2.data.code === 200) {
-              const tdl = res2.data.data;
-              allTeacherDetailsList.value.forEach((teacher) => {
-                const match = tdl.find((t) => t.uid === teacher.uid);
-                if (match) {
-                  Object.assign(teacher, match);
-                }
-              });
-              console.log("All Teachers Data:", allTeacherDetailsList.value);
-            }
-          })
-          .catch((err) => {
-            console.error(err);
-          });
-      } else {
-        alert("导师信息获取失败！");
+// 挂载时获取教师数据
+onMounted(async () => {
+  try {
+    const response = await http({
+      url: '/search/teachers',
+      method: 'GET',
+      headers: {
+        Accept: '*/*',
+        Authorization: `Bearer ${localStorage.getItem('token')}`
       }
-    })
-    .catch((err) => {
-      alert("导师信息获取失败！");
-      console.error(err);
     });
+
+    if (response.data.code === 200) {
+      allTeacherDetailsList.value = response.data.data;
+
+      // 获取额外详细信息
+      const extraDetailsResponse = await httpStudent({
+        url: '/teachers',
+        method: 'GET',
+        headers: {
+          Accept: '*/*',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (extraDetailsResponse.data.code === 200) {
+        const extraDetails = extraDetailsResponse.data.data;
+        allTeacherDetailsList.value.forEach(teacher => {
+          const match = extraDetails.find((t: TeacherDetail) => t.uid === teacher.uid);
+          if (match) {
+            Object.assign(teacher, match);
+          }
+        });
+        console.log('All Teachers Data:', allTeacherDetailsList.value);
+      }
+    } else {
+      alert('导师信息获取失败！');
+    }
+  } catch (error) {
+    alert('导师信息获取失败！');
+    console.error('Error fetching teacher data:', error);
+  }
 });
 
+// 位置筛选变化处理
 const onPositionChange = () => {
-  console.log("Selected Position:", selectedPosition.value);
-  // 当筛选条件改变时，重置当前页码为1
+  console.log('Selected Position:', selectedPosition.value);
   currentPage.value = 1;
 };
 
+// 重置筛选条件
 const resetFilter = () => {
-  selectedPosition.value = "";
+  selectedPosition.value = '';
   currentPage.value = 1;
 };
 
-const filteredTeachers = computed(() => {
-  console.log("Computing filteredTeachers");
+// 过滤后的教师列表
+const filteredTeachers = computed<TeacherDetail[]>(() => {
+  console.log('Computing filteredTeachers');
   if (!selectedPosition.value) {
-    console.log("No position selected, returning all teachers");
+    console.log('No position selected, returning all teachers');
     return allTeacherDetailsList.value;
   }
-  const filtered = allTeacherDetailsList.value.filter(
-    (teacher) => teacher.teacherposition === selectedPosition.value
-  );
-  console.log("Filtered Teachers:", filtered);
-  return filtered;
+  return allTeacherDetailsList.value.filter(teacher => teacher.teacherposition === selectedPosition.value);
 });
 
-const paginatedTeachers = computed(() => {
-  console.log("Computing paginatedTeachers");
+// 分页后的教师列表
+const paginatedTeachers = computed<TeacherDetail[]>(() => {
+  console.log('Computing paginatedTeachers');
   const start = (currentPage.value - 1) * pageSize.value;
   const end = start + pageSize.value;
-  const paginated = filteredTeachers.value.slice(start, end);
-  console.log(
-    `Page ${currentPage.value}, showing items ${start} to ${end}`
-  );
-  console.log("Paginated Teachers:", paginated);
-  return paginated;
+  return filteredTeachers.value.slice(start, end);
 });
 
-const showDetails = (teacher) => {
+// 显示教师详情对话框
+const showDetails = (teacher: TeacherDetail) => {
   selectedTeacher.value = teacher;
   dialogVisible.value = true;
 };
 
 // 处理分页页码变化
-const handlePageChange = (page) => {
+const handlePageChange = (page: number) => {
   currentPage.value = page;
 };
 </script>
@@ -169,7 +276,7 @@ const handlePageChange = (page) => {
           :key="index"
         >
         <div class="photo">
-            <img :src="item.photourl" alt="photo" />
+            <img :src="item.photoUrl" alt="photo" />
           </div>
           <div class="item_box">
             <span class="fullname">{{
@@ -202,10 +309,10 @@ const handlePageChange = (page) => {
   <!-- 详情对话框 -->
   <el-dialog v-model="dialogVisible" :title="selectedTeacher?.fullName">
     <div v-if="selectedTeacher">
-      <p>职称：{{ selectedTeacher.teacherposition }}</p>
-      <p>电子邮箱：{{ selectedTeacher.email }}</p>
-      <p>研究方向：{{ selectedTeacher.research_direction }}</p>
-      <p>简历：{{ selectedTeacher.resume }}</p>
+      <p>职称：{{ selectedTeacher?.teacherposition }}</p>
+      <p>电子邮箱：{{ selectedTeacher?.email }}</p>
+      <p>研究方向：{{ selectedTeacher?.research_direction }}</p>
+      <p>简历：{{ selectedTeacher?.resume }}</p>
     </div>
     <template #footer>
       <el-button @click="dialogVisible = false">关闭</el-button>

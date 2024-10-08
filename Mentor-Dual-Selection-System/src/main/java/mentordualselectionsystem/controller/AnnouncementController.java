@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import mentordualselectionsystem.mysql.Announcement;
 import mentordualselectionsystem.mysql.User;
 import mentordualselectionsystem.services.AnnouncementService;
-import mentordualselectionsystem.security.JwtUtils; // 假设你有一个JwtUtils类来处理JWT
+import mentordualselectionsystem.security.JwtUtils;
 import mentordualselectionsystem.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

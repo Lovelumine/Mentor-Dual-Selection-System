@@ -50,7 +50,11 @@ function handleAccept(index: number, row) {
       Accept: "*/*",
       Authorization: `Bearer ${localStorage.getItem("token")}`,
     },
-    params: pendingUtilForm.value,
+    data: {
+      applicationId: pendingUtilForm.value.applicationId,
+      approved: pendingUtilForm.value.approved,
+      rejectionReason: pendingUtilForm.value.rejectionReason || null,  // 确保提交拒绝理由字段，哪怕是 null
+    },
   })
     .then((res) => {
       if (res.status === 200 || res.data.code === 200) {
@@ -64,6 +68,7 @@ function handleAccept(index: number, row) {
       alert(JSON.parse(err.request.responseText).data.error);
     });
 }
+
 
 function handleReject(index: number, row) {
   pendingUtilForm.value.applicationId = row.id;
@@ -86,7 +91,11 @@ function checkReject() {
       Accept: "*/*",
       Authorization: `Bearer ${localStorage.getItem("token")}`,
     },
-    params: pendingUtilForm.value,
+    data: {
+      applicationId: pendingUtilForm.value.applicationId,
+      approved: pendingUtilForm.value.approved,
+      rejectionReason: pendingUtilForm.value.rejectionReason,
+    },
   })
     .then((res) => {
       if (res.status === 200 || res.data.code === 200) {
@@ -101,6 +110,7 @@ function checkReject() {
       alert(JSON.parse(err.request.responseText).data.error);
     });
 }
+
 
 function scopeIndexGetStatus(index: number) {
   return pendingList.value[index].status === "PENDING";
@@ -231,24 +241,26 @@ watch(
 <template>
   <!-- 拒绝理由弹窗 -->
   <el-dialog
-    v-model="dialogVisible"
-    title="拒绝理由"
-    width="500"
-    :before-close="handleClose"
-  >
-    <input
-      type="text"
-      placeholder="拒绝理由（必填）"
-      required
-      v-model="pendingUtilForm.rejectionReason"
-    />
-    <template #footer>
-      <div class="dialog-footer">
-        <button class="button" @click="dialogVisible.value = false">关闭</button>
-        <button class="button" type="submit" @click="checkReject">提交</button>
-      </div>
-    </template>
-  </el-dialog>
+  v-model="dialogVisible"
+  title="拒绝理由"
+  width="500"
+  :before-close="handleClose"
+>
+  <el-input
+    type="textarea"
+    v-model="pendingUtilForm.rejectionReason"
+    placeholder="拒绝理由（必填）"
+    :autosize="{ minRows: 2, maxRows: 5 }"
+    style="width: 100%;"
+  />
+  <template #footer>
+    <div class="dialog-footer">
+      <button class="button" @click="dialogVisible.value = false">关闭</button>
+      <button class="button" type="submit" @click="checkReject">提交</button>
+    </div>
+  </template>
+</el-dialog>
+
 
   <!-- 学生详情弹窗 -->
   <el-dialog

@@ -1,12 +1,28 @@
 import {defineStore} from "pinia";
 import {http} from "@/utils/http";
 
+// interface UserInfo {
+//     uid: number,
+//     role: string
+//     avatarUrl: string,
+//     fullName: string,
+//     email: string,
+//     username: string,
+// }
+
 export const useUserInfoStore = defineStore('userInfoStore', {
     state: () => ({
-        userInfo: null
+        userInfo: {
+            uid: -1 as undefined | number,
+            role: null as null | string,
+            avatarUrl: null as null | string,
+            fullName: null as null | string,
+            email: null as null | string,
+            username: null as null | string,
+        }
     }),
     actions: {
-        async fetchUserInfo() {
+         fetchUserInfo() {
             http({
                 url: '/user/me',
                 method: "GET",
