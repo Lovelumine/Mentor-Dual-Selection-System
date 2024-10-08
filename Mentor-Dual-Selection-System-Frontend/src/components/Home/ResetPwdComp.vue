@@ -63,7 +63,7 @@ watch(() => userInfoStore.userInfo, (newValue) => {
 
 <template>
   <div class="title">
-    <span>重置密码（{{pwdForm.username}}）</span>
+    <span>修改密码（{{pwdForm.username}}）</span>
   </div>
   <div class="container">
     <el-form :model="pwdForm" label-width="auto" style="max-width: 400px" @submit.prevent="uploadClicked">

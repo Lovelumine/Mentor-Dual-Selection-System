@@ -107,7 +107,7 @@ watch(route, (newRoute) => {
           </el-menu-item>
           <el-menu-item index="/reset_pwd" @click="activeMenu = '/reset_pwd'; router.push('/reset_pwd')">
             <el-icon><Lock /></el-icon>
-            <span>重置密码</span>
+            <span>修改密码</span>
           </el-menu-item>
           <el-menu-item @click="SignoutClicked">
             <el-icon><CircleClose /></el-icon>
