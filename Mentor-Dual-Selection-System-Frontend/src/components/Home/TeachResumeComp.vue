@@ -230,7 +230,7 @@ const handlePageChange = (page: number) => {
 <template>
   <!-- 固定的标题 -->
   <div class="title">
-    <span>本院导师简历</span>
+    <span>本院导师卡片</span>
   </div>
 
   <!-- 主内容 -->

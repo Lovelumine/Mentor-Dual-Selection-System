@@ -99,7 +99,7 @@ watch(route, (newRoute) => {
           </el-menu-item>
           <el-menu-item index="/teach_resume" @click="activeMenu = '/teach_resume'; router.push('/teach_resume')" v-if="isTeacherResumeShow">
             <el-icon><Position /></el-icon>
-            <span>导师简历</span>
+            <span>导师卡片</span>
           </el-menu-item>
           <el-menu-item index="/personal" @click="activeMenu = '/personal'; router.push('/personal')">
             <el-icon><User /></el-icon>
