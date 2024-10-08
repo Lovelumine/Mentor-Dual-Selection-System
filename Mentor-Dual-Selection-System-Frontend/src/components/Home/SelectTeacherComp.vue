@@ -360,7 +360,7 @@ const handlePageChange = (page) => {
 .container
   display: flex
   flex-wrap: wrap
-  padding-left: 10vw
+  padding-left: 0vw
   gap: 100px
   row-gap: 50px
   padding-top: 20px
