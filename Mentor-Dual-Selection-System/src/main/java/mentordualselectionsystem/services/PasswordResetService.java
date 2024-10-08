@@ -32,8 +32,8 @@ public class PasswordResetService {
         // 清除之前的令牌
         passwordResetTokenRepository.deleteByUid(user.getUid());
 
-        // 生成新的密码重置令牌
-        String token = UUID.randomUUID().toString();
+        // 生成新的验证码
+        String token = UUID.randomUUID().toString().substring(0, 6);  // 生成6位验证码
         PasswordResetToken passwordResetToken = new PasswordResetToken();
         passwordResetToken.setToken(token);
         passwordResetToken.setUid(user.getUid());
@@ -44,17 +44,21 @@ public class PasswordResetService {
         // 保存令牌到数据库
         passwordResetTokenRepository.save(passwordResetToken);
 
-        // 构建重置链接并发送邮件
-        String resetUrl = "http://127.0.0.1:50000/api/auth/reset-password-via-token?token=" + token;
-        String subject = "密码重置请求";
-        String body = "您好，" + user.getFullName() + "，\n\n"
-                + "您请求了密码重置。请点击以下链接重置您的密码：\n"
-                + resetUrl + "\n\n"
-                + "该链接将在30分钟后过期。\n\n"
-                + "如果您没有请求密码重置，请忽略此邮件。\n";
+        // 构建HTML邮件内容并发送邮件
+        String subject = "密码重置请求 - 中山大学导师双选系统";
+        String body = "<html><body>"
+                + "<p>您好，" + user.getFullName() + "，</p>"
+                + "<p>您请求了密码重置。请使用以下验证码来重置您的密码：</p>"
+                + "<h3 style='color: blue;'>" + token + "</h3>"
+                + "<p>该验证码将在30分钟后过期。</p>"
+                + "<p>如果您没有请求密码重置，请忽略此邮件。</p>"
+                + "<hr>"
+                + "<p>中山大学导师双选系统</p>"
+                + "<p style='font-size: small; color: gray;'>由永新县爱荧科技有限责任公司提供技术支持</p>"
+                + "</body></html>";
 
-        // 使用 EmailService 发送邮件
-        emailService.sendSimpleEmail(user.getEmail(), subject, body);
+        // 使用 EmailService 发送HTML邮件
+        emailService.sendHtmlEmail(user.getEmail(), subject, body);
     }
 
     public boolean validatePasswordResetToken(String token) {
