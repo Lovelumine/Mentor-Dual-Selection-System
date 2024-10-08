@@ -72,8 +72,10 @@ onMounted(() => {
   })
 })
 watch(() => userStore.userInfo, (newValue) => {
-  if (newValue.role != 'STUDENT') {
-    router.push('/');
+  if (newValue){
+    if (newValue.role != 'STUDENT') {
+      router.push('/');
+    }
   }
 })
 </script>

@@ -3,9 +3,10 @@ import {ref} from "vue";
 import {http} from "@/utils/http";
 
 const pendingUtilForm = ref({
-  applicationId: null,
-  approved: null,
-  rejectionReason: null
+  applicationId: null as null | number,
+  approved: null as null | boolean,
+  rejectionReason: null as null | string,
+  reason: null as null | string,
 });
 
 function approveClicked (){

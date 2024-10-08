@@ -202,10 +202,10 @@ const handlePageChange = (page) => {
   <!-- 详情对话框 -->
   <el-dialog v-model="dialogVisible" :title="selectedTeacher?.fullName">
     <div v-if="selectedTeacher">
-      <p>职称：{{ selectedTeacher.teacherposition }}</p>
-      <p>电子邮箱：{{ selectedTeacher.email }}</p>
-      <p>研究方向：{{ selectedTeacher.research_direction }}</p>
-      <p>简历：{{ selectedTeacher.resume }}</p>
+      <p>职称：{{ selectedTeacher?.teacherposition }}</p>
+      <p>电子邮箱：{{ selectedTeacher?.email }}</p>
+      <p>研究方向：{{ selectedTeacher?.research_direction }}</p>
+      <p>简历：{{ selectedTeacher?.resume }}</p>
     </div>
     <template #footer>
       <el-button @click="dialogVisible = false">关闭</el-button>
