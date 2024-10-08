@@ -45,7 +45,7 @@ public class PasswordResetService {
         passwordResetTokenRepository.save(passwordResetToken);
 
         // 构建HTML邮件内容并发送邮件
-        String subject = "密码重置请求 - 中山大学导师双选系统";
+        String subject = "密码重置请求 - 中山大学农业与生物技术学院导师双选系统";
         String body = "<html><body>"
                 + "<p>您好，" + user.getFullName() + "，</p>"
                 + "<p>您请求了密码重置。请使用以下验证码来重置您的密码：</p>"
@@ -53,7 +53,7 @@ public class PasswordResetService {
                 + "<p>该验证码将在30分钟后过期。</p>"
                 + "<p>如果您没有请求密码重置，请忽略此邮件。</p>"
                 + "<hr>"
-                + "<p>中山大学导师双选系统</p>"
+                + "<p>中山大学农业与生物技术学院导师双选系统</p>"
                 + "<p style='font-size: small; color: gray;'>由永新县爱荧科技有限责任公司提供技术支持</p>"
                 + "</body></html>";
 
