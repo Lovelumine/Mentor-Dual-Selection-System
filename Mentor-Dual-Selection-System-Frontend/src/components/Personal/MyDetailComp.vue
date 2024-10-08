@@ -6,7 +6,7 @@ import axios from "axios";
 
 const userInfoStore = useUserInfoStore();
 import { useUploadFileStore } from "@/stores/UploadFileStore";
-import type {UserInfo} from "@/interfaces/UserInfoImp";
+import type {UserInfo} from "@/interfaces/UserInfoImpl";
 const uploadFileStore = useUploadFileStore();
 
 const userRole = ref<string | null>(null);

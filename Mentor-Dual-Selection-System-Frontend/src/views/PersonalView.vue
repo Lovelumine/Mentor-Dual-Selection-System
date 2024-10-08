@@ -9,7 +9,7 @@ import axios from "axios";
 import { http } from "@/utils/http";
 const router = useRouter();
 import { useUploadFileStore } from "@/stores/UploadFileStore";
-import type {UserInfo} from "@/interfaces/UserInfoImp";
+import type {UserInfo} from "@/interfaces/UserInfoImpl";
 const uploadFileStore = useUploadFileStore();
 
 const userInfoComp = ref<UserInfo>({

@@ -1,4 +1,4 @@
-export interface RepwdImp {
+export interface RepwdImpl {
     username: string | null;
     oldPassword: string | null;
     newPassword: string | null;

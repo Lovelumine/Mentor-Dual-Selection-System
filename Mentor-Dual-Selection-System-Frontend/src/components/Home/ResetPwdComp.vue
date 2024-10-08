@@ -3,9 +3,9 @@ import {onMounted, ref, watch} from "vue";
 import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
 import {http} from "@/utils/http";
 const userInfoStore = useUserInfoStore();
-import type {RepwdImp} from "@/interfaces/RepwdImp";
+import type {RepwdImpl} from "@/interfaces/RepwdImpl";
 
-const pwdForm = ref<RepwdImp>({
+const pwdForm = ref<RepwdImpl>({
   username: null,
   oldPassword: null,
   newPassword: null,
