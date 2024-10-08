@@ -5,8 +5,11 @@ import mentordualselectionsystem.mysql.User;
 import mentordualselectionsystem.repositories.ApplicationRepository;
 import mentordualselectionsystem.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
 
@@ -21,6 +24,27 @@ public class ApplicationService {
         this.applicationRepository = applicationRepository;
         this.userRepository = userRepository;
     }
+
+    // 每分钟执行一次任务，检查超时的申请
+    @Scheduled(cron = "0 * * * * ?")
+    public void autoRejectExpiredApplications() {
+        // 获取所有状态为 PENDING 的申请
+        List<Application> pendingApplications = applicationRepository.findByStatus("PENDING");
+
+        for (Application application : pendingApplications) {
+            // 检查是否超时（超过7天未处理）
+            if (ChronoUnit.DAYS.between(application.getApplicationDate(), Instant.now()) > 7) {
+                // 超时自动拒绝申请，并记录拒绝理由
+                application.setStatus("REJECTED");
+                application.setRejectionReason("导师超时未处理");
+                application.setDecisionDate(Instant.now());
+
+                // 更新申请状态
+                applicationRepository.save(application);
+            }
+        }
+    }
+
 
     // 添加 getApplicationById 方法
     public Application getApplicationById(Long applicationId) {
