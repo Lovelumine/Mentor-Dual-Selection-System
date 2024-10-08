@@ -1,22 +1,30 @@
 <script setup lang="ts">
 import {onMounted, ref, computed} from "vue";
 import {http} from "@/utils/http";
-
-// 定义 Mentor-Student 关系的类型
-interface Student {
+//Mentor接口
+interface MentorImpl {
+  uid: number;
+  fullName: string;
+  email: string;
+}
+//Students接口
+interface StudentsImpl {
+  uid: number;
   fullName: string;
 }
-
-interface MentorInfo {
-  fullName: string;
+// 定义接口来描述从服务器返回的数据结构
+interface MentorStudentRelation {
+  mentor: MentorImpl;
+  students: StudentsImpl[];
+}
+interface ApiResponse {
+  code: number;
+  data: MentorStudentRelation[];
+  error?: string; // 可选错误字段，用于非 200 响应
 }
 
-interface Mentor {
-  mentor: MentorInfo; // Mentor 包含 mentor 对象
-  students: Student[];
-}
-
-const allRelations = ref<Mentor[]>([]);  // 明确定义类型为 Mentor 数组
+// 使用 ref 来存储从服务器获取的关系数据
+const allRelations = ref<MentorStudentRelation[]>([]);
 
 // 统计信息
 const totalMentors = computed(() => allRelations.value.length);
