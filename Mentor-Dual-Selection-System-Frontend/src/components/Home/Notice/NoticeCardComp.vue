@@ -138,6 +138,24 @@ onMounted(() => {
   }).then(res => {
     if (res.data.code === 200) {
       allNotice.value = res.data.data;
+      for (let i = 0; i < allNotice.value.length; i++) {
+        const date = new Date(allNotice.value[i].lastModified);
+        const options: Intl.DateTimeFormatOptions = {
+          timeZone: 'Asia/Shanghai',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false,
+        };
+        const formatter = new Intl.DateTimeFormat('zh-CN', options);
+        const formattedParts = formatter.formatToParts(date);
+        const formattedDate = `${formattedParts.find(p => p.type === 'year')?.value}-${formattedParts.find(p => p.type === 'month')?.value}-${formattedParts.find(p => p.type === 'day')?.value} `
+            + `${formattedParts.find(p => p.type === 'hour')?.value}:${formattedParts.find(p => p.type === 'minute')?.value}:${formattedParts.find(p => p.type === 'second')?.value}`;
+        allNotice.value[i].lastModifiedCN = formattedDate;
+      }
     } else {
       alert('公告获取异常！');
     }
@@ -178,7 +196,7 @@ watch(() => userStore.userInfo, (newValue) => {
           {{item.title}}
         </h3>
         <span class="release_date">
-        发布时间：{{item.lastModified}}
+        发布时间：{{item.lastModifiedCN}}
       </span>
       </div>
       <hr/>
