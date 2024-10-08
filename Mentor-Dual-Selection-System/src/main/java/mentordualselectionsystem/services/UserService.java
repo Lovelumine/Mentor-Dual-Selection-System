@@ -2,7 +2,6 @@ package mentordualselectionsystem.services;
 
 import mentordualselectionsystem.mysql.Role;
 import mentordualselectionsystem.mysql.User;
-import mentordualselectionsystem.mysql.UserDetail;
 import mentordualselectionsystem.repositories.RoleRepository;
 import mentordualselectionsystem.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +39,12 @@ public class UserService implements UserDetailsService {
     public User getUserByUsername(String username) throws UsernameNotFoundException {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    }
+
+    // 新增通过邮箱查找用户的方法
+    public User getUserByEmail(String email) throws UsernameNotFoundException {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
     }
 
     public User getUserByUid(Long uid) throws UsernameNotFoundException {
@@ -104,24 +109,24 @@ public class UserService implements UserDetailsService {
         userRepository.save(user);
     }
 
-    // 新增方法：获取所有学生
+    // 获取所有学生
     public List<User> getAllStudents() {
         return userRepository.findAllByRole_RoleName("STUDENT");
     }
 
-    // 新增方法：根据名字模糊搜索学生
+    // 根据名字模糊搜索学生
     public List<User> searchStudentsByName(String fullName) {
         return userRepository.findAll().stream()
                 .filter(student -> student.getFullName().contains(fullName))
                 .collect(Collectors.toList());
     }
-    // 新增方法：获取所有老师
+
+    // 获取所有老师
     public List<User> getAllTeachers() {
         return userRepository.findAllByRole_RoleName("TEACHER");
     }
 
-
-    // 新增方法：根据名字模糊搜索学生
+    // 根据名字模糊搜索老师
     public List<User> searchTeachersByName(String fullName) {
         return userRepository.findAll().stream()
                 .filter(teacher -> teacher.getFullName().contains(fullName))
