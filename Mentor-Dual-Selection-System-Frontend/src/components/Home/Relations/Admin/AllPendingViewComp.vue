@@ -2,7 +2,21 @@
 import {onMounted, ref, computed} from "vue";
 import {http} from "@/utils/http";
 
-const allRelations = ref([]);
+// 定义 Mentor-Student 关系的类型
+interface Student {
+  fullName: string;
+}
+
+interface MentorInfo {
+  fullName: string;
+}
+
+interface Mentor {
+  mentor: MentorInfo; // Mentor 包含 mentor 对象
+  students: Student[];
+}
+
+const allRelations = ref<Mentor[]>([]);  // 明确定义类型为 Mentor 数组
 
 // 统计信息
 const totalMentors = computed(() => allRelations.value.length);
@@ -31,9 +45,11 @@ onMounted(() => {
     }
   }).catch(err => {
     alert(JSON.parse(err.requests.responseText).data.error);
-  })
+  });
 });
 </script>
+
+
 
 <template>
   <div class="all_pending_box">
