@@ -11,7 +11,6 @@ const registerForm = ref({
 });
 
 function signupClicked(){
-  console.log(signinForm.value);
   http({
     url: '/auth/register',
     method: 'POST',

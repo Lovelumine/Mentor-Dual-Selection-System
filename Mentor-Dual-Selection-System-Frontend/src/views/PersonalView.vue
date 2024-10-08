@@ -9,21 +9,34 @@ import axios from "axios";
 import { http } from "@/utils/http";
 const router = useRouter();
 import { useUploadFileStore } from "@/stores/UploadFileStore";
+import type { UserInfo } from "@/interfaces/UserInfoImpl";
 const uploadFileStore = useUploadFileStore();
 
-const userInfoComp = ref({
+const userInfoComp = ref<UserInfo>({
   fullName: '',
   email: '',
   username: '',
   role: '',
-  avatarUrl: ''
+  avatarUrl: '',
+  uid: -1
 });
-const userInfoChange = ref({...userInfoComp.value});
+const userInfoChange = ref<UserInfo>({
+  fullName: '',
+  email: '',
+  username: '',
+  role: '',
+  avatarUrl: '',
+  uid: -1
+});
 const isStartChangeInfo = ref(false);
-const fileInput = ref(null);
+const fileInput = ref<HTMLInputElement | null>(null);
 
-function handleFileChange(event) {
-  const file = event.target.files[0];
+function handleFileChange(event: Event) {
+  const inputElement = event.target as HTMLInputElement | null;
+  let file: any;
+  if (inputElement && inputElement.files) {
+    file = inputElement.files[0];
+  }
   if (!file) return;
   const formData = new FormData();
   formData.append("file", file);
@@ -34,7 +47,7 @@ function handleFileChange(event) {
     headers: {
       Accept: "*/*",
       "Authorization": `Bearer ${localStorage.getItem("token")}`,
-      "Content-Type": "multipart/form-data", 
+      "Content-Type": "multipart/form-data",
     },
     data: formData,
   }).then((res) => {
@@ -55,14 +68,14 @@ function handleFileChange(event) {
 }
 
 function triggerUploadFile() {
-  fileInput.value.click();
+  if (fileInput.value) fileInput.value.click();
 }
 
-function startChangeInfoClicked () {
+function startChangeInfoClicked() {
   isStartChangeInfo.value = !isStartChangeInfo.value;
 }
 
-function changeInfoClicked () {
+function changeInfoClicked() {
   startChangeInfoClicked();
   http({
     url: '/user/update',
@@ -84,7 +97,7 @@ function changeInfoClicked () {
     } else {
       alert(JSON.parse(err.request.responseText).data.error);
     }
-  })
+  });
 }
 
 onMounted(() => {
@@ -97,11 +110,14 @@ onMounted(() => {
     userInfoComp.value = userStore.userInfo;
     userInfoChange.value = userStore.userInfo;
   }
-})
+});
 watch(() => userStore.userInfo, (newValue) => {
-  userInfoComp.value = newValue;
-  userInfoChange.value = newValue;
-})
+  if (newValue) {
+    console.log(newValue);
+    userInfoComp.value = newValue;
+    userInfoChange.value = newValue;
+  }
+});
 </script>
 
 <template>
@@ -111,22 +127,19 @@ watch(() => userStore.userInfo, (newValue) => {
     <div class="personal_box">
       <div class="user_info_box">
         <!-- 卡片背景图仅展示给教师角色 -->
-        <div class="avatar_box" v-if="userInfoComp.role === 'TEACHER'">
-          <img class="avatar" :src="userInfoComp.avatarUrl" alt="卡片背景图" />
+        <div class="avatar_box" v-if="userInfoComp?.role === 'TEACHER'">
+          <img class="avatar" :src="userInfoComp?.avatarUrl || '卡片背景图错误'" alt="卡片背景图" />
         </div>
         <ul>
-          <li>姓名：{{ userInfoComp.fullName }}</li>
-          <li v-if="userInfoComp.role === 'TEACHER'">
-            工号：{{ userInfoComp.username }}
+          <li>姓名：{{ userInfoComp?.fullName }}</li>
+          <li v-if="userInfoComp?.role === 'TEACHER'">
+            工号：{{ userInfoComp?.username }}
           </li>
-          <li v-else-if="userInfoComp.role === 'STUDENT'">
-            学号：{{ userInfoComp.username }}
+          <li v-else-if="userInfoComp?.role === 'STUDENT'">
+            学号：{{ userInfoComp?.username }}
           </li>
-          <li>电子邮箱：{{ userInfoComp.email }}</li>
-          <li>
-            角色：
-            {{ userInfoComp.role === 'TEACHER' ? '教师' : (userInfoComp.role === 'STUDENT' ? '学生' : '管理员') }}
-          </li>
+          <li>电子邮箱：{{ userInfoComp?.email }}</li>
+          <li>角色：{{ userInfoComp?.role === 'TEACHER' ? '教师' : (userInfoComp?.role === 'STUDENT' ? '学生' : '管理员') }}</li>
         </ul>
         <button class="button" @click="startChangeInfoClicked">{{ isStartChangeInfo ? '取消修改' : '修改信息' }}</button>
       </div>
@@ -137,22 +150,22 @@ watch(() => userStore.userInfo, (newValue) => {
             <li>
               姓名：<input type="text" required placeholder="请输入姓名" v-model="userInfoChange.fullName" />
             </li>
-            <li v-if="userInfoComp.role === 'TEACHER'">
+            <li v-if="userInfoComp?.role === 'TEACHER'">
               工号：<input type="text" required placeholder="请输入工号" v-model="userInfoChange.username" />
             </li>
-            <li v-else-if="userInfoComp.role === 'STUDENT'">
+            <li v-else-if="userInfoComp?.role === 'STUDENT'">
               学号：<input type="text" required placeholder="请输入学号" v-model="userInfoChange.username" />
             </li>
             <li>
               电子邮箱：<input type="text" required placeholder="请输入邮箱" v-model="userInfoChange.email" />
             </li>
             <!-- 仅教师角色可设置卡片背景图 -->
-            <li class="avatar_list" v-if="userInfoComp.role === 'TEACHER'">
+            <li class="avatar_list" v-if="userInfoComp?.role === 'TEACHER'">
               卡片背景图：
               <div class="avatar_box">
-                <img :src="userInfoComp.avatarUrl" alt="卡片背景图" />
+                <img :src="userInfoComp?.avatarUrl || '卡片背景图错误'" alt="卡片背景图" />
               </div>
-              <input style="display: none" type="file" @change="handleFileChange" ref="fileInput" :accept="['.jpg', '.jpeg', '.png']" />
+              <input style="display: none" type="file" @change="handleFileChange" ref="fileInput" :accept="'.jpg,.jpeg,.png'" />
               <button type="button" @click="triggerUploadFile">选择图片</button>
             </li>
           </ul>

@@ -241,24 +241,26 @@ watch(
 <template>
   <!-- 拒绝理由弹窗 -->
   <el-dialog
-    v-model="dialogVisible"
-    title="拒绝理由"
-    width="500"
-    :before-close="handleClose"
-  >
-    <input
-      type="text"
-      placeholder="拒绝理由（必填）"
-      required
-      v-model="pendingUtilForm.rejectionReason"
-    />
-    <template #footer>
-      <div class="dialog-footer">
-        <button class="button" @click="dialogVisible.value = false">关闭</button>
-        <button class="button" type="submit" @click="checkReject">提交</button>
-      </div>
-    </template>
-  </el-dialog>
+  v-model="dialogVisible"
+  title="拒绝理由"
+  width="500"
+  :before-close="handleClose"
+>
+  <el-input
+    type="textarea"
+    v-model="pendingUtilForm.rejectionReason"
+    placeholder="拒绝理由（必填）"
+    :autosize="{ minRows: 2, maxRows: 5 }"
+    style="width: 100%;"
+  />
+  <template #footer>
+    <div class="dialog-footer">
+      <button class="button" @click="dialogVisible.value = false">关闭</button>
+      <button class="button" type="submit" @click="checkReject">提交</button>
+    </div>
+  </template>
+</el-dialog>
+
 
   <!-- 学生详情弹窗 -->
   <el-dialog

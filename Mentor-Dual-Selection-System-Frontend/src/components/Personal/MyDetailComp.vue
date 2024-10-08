@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
 import { useUserInfoStore } from "@/stores/user/UserBasicInformation";
-import { http, httpStudent, httpTeacher } from "@/utils/http";
+import { httpStudent, httpTeacher } from "@/utils/http";
 import axios from "axios";
 
 const userInfoStore = useUserInfoStore();
 import { useUploadFileStore } from "@/stores/UploadFileStore";
+import type {UserInfo} from "@/interfaces/UserInfoImpl";
 const uploadFileStore = useUploadFileStore();
 
-const userRole = ref(null);
+const userRole = ref<string | null>(null);
 const userDetail = ref({
   uid: -1,
   photoUrl: '',
@@ -32,15 +33,19 @@ const userDetailTemp = ref({
   studentGrade: null,
 });
 const isChangeDetailDisabled = ref(true);
-const fileInput = ref(null);
+const fileInput = ref<HTMLInputElement | null>(null);
 const fileName = ref('未选择');
 
 function triggerUploadFile() {
-  fileInput.value.click();
+  if (fileInput.value) fileInput.value.click();
 }
 
-function handleFileChange(event) {
-  const file = event.target.files[0];
+function handleFileChange(event: Event) {
+  const inputElement = event.target as HTMLInputElement | null;
+  let file: any;
+  if (inputElement && inputElement.files){
+    file = inputElement.files[0];
+  }
   if (!file) return;
   fileName.value = file.name;
   const formData = new FormData();
@@ -115,8 +120,8 @@ onMounted(() => {
   if (userInfoStore.userInfo) getUserDetail(userInfoStore.userInfo.role);
 });
 
-function getUserDetail(targetInfo) {
-  const fetchDetailApi = targetInfo.role === 'TEACHER' ? httpTeacher : httpStudent;
+function getUserDetail(targetInfo: any) {
+  const fetchDetailApi = targetInfo?.role === 'TEACHER' ? httpTeacher : httpStudent;
 
   fetchDetailApi({
     url: '/my-detail',
@@ -146,8 +151,10 @@ function getUserDetail(targetInfo) {
 watch(
   () => userInfoStore.userInfo,
   (newValue) => {
-    userRole.value = newValue.role;
-    getUserDetail(newValue);
+    if (newValue){
+      userRole.value = newValue.role;
+      getUserDetail(newValue);
+    }
   }
 );
 </script>

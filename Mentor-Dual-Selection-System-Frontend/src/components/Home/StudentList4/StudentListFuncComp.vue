@@ -67,7 +67,7 @@ function handleFileChange(event) {
   console.log('file', file);
   excelName.value = file.name;
   if (!['xlsx', 'xls'].includes(file.name.toString().split('.').pop())){
-    alert('你选择的不是Excel表格文档！');
+    alert('您选择的不是Excel表格文档！');
     return;
   }
   const reader = new FileReader();
