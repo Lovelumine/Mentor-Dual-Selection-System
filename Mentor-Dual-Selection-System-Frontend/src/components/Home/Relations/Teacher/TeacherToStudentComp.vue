@@ -1,13 +1,22 @@
-<script setup lang="ts"> 
+<script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { http } from "@/utils/http";
 import { ElDialog, ElButton } from 'element-plus';
 
 const router = useRouter();
-const studentList = ref([]);
+const studentList = ref<any[]>([]); // 使用 any[] 来定义数组类型
 const dialogVisible = ref(false); // 控制对话框的显示
-const selectedStudent = ref({});  // 存储选中的学生信息
+const selectedStudent = ref<{
+  photourl?: string,
+  fullName?: string,
+  email?: string,
+  grade?: string,
+  class?: string,
+  resume?: string,
+  research_direction?: string,
+  netid?: string
+}>({});  // 存储选中的学生信息
 
 function getStudentInfo(uid: number) {
   return http({
@@ -21,7 +30,7 @@ function getStudentInfo(uid: number) {
 }
 
 async function fetchStudentDetails() {
-  const detailedStudents = [];
+  const detailedStudents: any[] = [];
 
   // 使用 Promise.all 并行获取所有学生的详细信息
   await Promise.all(
@@ -33,7 +42,7 @@ async function fetchStudentDetails() {
           detailedStudents.push(res.data.data);
         } else {
           detailedStudents.push({
-            ...student,
+            ...student, // 这里确保 student 是对象类型
             photourl: '',
             grade: '',
             class: '',
@@ -44,7 +53,7 @@ async function fetchStudentDetails() {
       } catch (error) {
         console.error(error);
         detailedStudents.push({
-          ...student,
+          ...student, // 这里确保 student 是对象类型
           photourl: '',
           grade: '',
           class: '',
@@ -87,7 +96,7 @@ onMounted(async () => {
 });
 
 // 定义查看详细信息的函数
-function viewDetail(student) {
+function viewDetail(student: any) { // 给 student 显式添加 any 类型
   if (student) {
     selectedStudent.value = {
       photourl: student.photourl || '',
@@ -127,16 +136,16 @@ function viewDetail(student) {
 
   <!-- 学生详细信息对话框 -->
   <el-dialog
-    v-model="dialogVisible"
+    v-model="dialogVisible"  <!-- 修正这里，直接绑定 dialogVisible -->
     title="学生详细信息"
     width="600px"
-    :before-close="() => (dialogVisible = false)"
+    :before-close="() => (dialogVisible.value = false)" 
   >
     <div class="student-detail">
       <img :src="selectedStudent.photourl || 'https://via.placeholder.com/100'" alt="头像" class="avatar" />
       <div class="info">
         <div><strong>姓名：</strong>{{ selectedStudent.fullName }}</div>
-        <div><strong>学号：</strong>{{ selectedStudent.username }}</div>
+        <div><strong>学号：</strong>{{ selectedStudent.netid }}</div>
         <div><strong>邮箱：</strong>{{ selectedStudent.email }}</div>
         <div><strong>年级：</strong>{{ selectedStudent.grade || '未提供' }}</div>
         <div><strong>班级：</strong>{{ selectedStudent.class || '未提供' }}</div>
@@ -146,12 +155,11 @@ function viewDetail(student) {
     </div>
     <template #footer>
       <span class="dialog-footer">
-        <el-button @click="dialogVisible = false">关闭</el-button>
+        <el-button @click="dialogVisible = false">关闭</el-button> <!-- 修正这里 -->
       </span>
     </template>
   </el-dialog>
 </template>
-
 
 <style scoped lang="sass">
 .teacher_to_student_box
