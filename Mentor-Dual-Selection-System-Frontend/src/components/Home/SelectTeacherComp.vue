@@ -13,18 +13,36 @@ import {
 import { http, httpStudent } from "@/utils/http";
 import axios from "axios";
 
+// 定义学生和导师的信息类型
+interface StudentInfo {
+  studentGrade: string;
+  studentClass: string;
+  resume: string;
+}
+
+interface TeacherInfo {
+  uid: number;
+  fullName: string;
+  teacherposition: string;
+  research_direction: string;
+  email: string;
+  photourl: string;
+  resume: string;
+  avatarUrl: string;
+}
+
 // 学生和教师的信息
-const studentInfo = ref(null);
-const allTeacherDetailsList = ref([]);
+const studentInfo = ref<StudentInfo | null>(null); // 类型为 StudentInfo 或 null
+const allTeacherDetailsList = ref<TeacherInfo[]>([]); // 类型为 TeacherInfo 数组
 const currentPage = ref(1);
 const pageSize = ref(6);
 const positions = ["教授", "副教授", "助理教授", "博士后", "学术顾问", "客座/兼职教授"];
 const selectedPosition = ref("");
 const dialogVisible = ref(false);
 const applicationDialogVisible = ref(false);
-const selectReason = ref(null);
-const selectTeacherUid = ref(null);
-const selectedTeacher = ref(null);
+const selectReason = ref<string | null>(null);
+const selectTeacherUid = ref<number | null>(null);
+const selectedTeacher = ref<TeacherInfo | null>(null); // 类型为 TeacherInfo 或 null
 const isGeneratingReason = ref(false);
 
 // 获取学生信息
@@ -101,7 +119,6 @@ onMounted(() => {
     .then((res) => {
       if (res.data.code === 200) {
         allTeacherDetailsList.value = res.data.data;
-        // 获取所有教师的额外详细信息
         httpStudent({
           url: "/teachers",
           method: "GET",
@@ -113,7 +130,7 @@ onMounted(() => {
           if (res2.data.code === 200) {
             const tdl = res2.data.data;
             allTeacherDetailsList.value.forEach((teacher) => {
-              const match = tdl.find((t) => t.uid === teacher.uid);
+              const match = tdl.find((t: TeacherInfo) => t.uid === teacher.uid);
               if (match) {
                 Object.assign(teacher, match);
               }
@@ -153,12 +170,12 @@ const paginatedTeachers = computed(() => {
   return filteredTeachers.value.slice(start, end);
 });
 
-const showDetails = (teacher) => {
+const showDetails = (teacher: TeacherInfo) => {
   selectedTeacher.value = teacher;
   dialogVisible.value = true;
 };
 
-const showApplicationDialog = (teacher) => {
+const showApplicationDialog = (teacher: TeacherInfo) => {
   selectedTeacher.value = teacher;
   selectTeacherUid.value = teacher.uid;
   applicationDialogVisible.value = true;
@@ -192,18 +209,15 @@ const checkApplication = () => {
     })
     .catch((error) => {
       if (error.response && error.response.data && error.response.data.data) {
-        // 处理服务器返回的错误信息
         alert(error.response.data.data.error);
       } else {
-        // 其他未捕获的错误
         alert("提交申请时出现未知错误，请稍后重试！");
       }
     });
 };
 
-
 // 处理分页页码变化
-const handlePageChange = (page) => {
+const handlePageChange = (page: number) => {
   currentPage.value = page;
 };
 </script>
@@ -260,12 +274,8 @@ const handlePageChange = (page) => {
             <img :src="item.photourl" alt="photo" />
           </div>
           <div class="item_box">
-            <span class="fullname">{{
-                `${item.fullName}`
-              }}</span>
-            <span class="professional">
-              职位：{{ item.teacherposition }}
-            </span>
+            <span class="fullname">{{ item.fullName }}</span>
+            <span class="professional">职位：{{ item.teacherposition }}</span>
             <span class="email">电子邮箱：{{ item.email }}</span>
 
             <hr class="hea_con_hr" />
@@ -295,32 +305,34 @@ const handlePageChange = (page) => {
       <p>电子邮箱：{{ selectedTeacher.email }}</p>
       <p>研究方向：{{ selectedTeacher.research_direction }}</p>
       <p>简历：{{ selectedTeacher.resume }}</p>
-      <!-- 可以添加更多详细信息 -->
     </div>
     <template #footer>
       <el-button @click="dialogVisible = false">关闭</el-button>
     </template>
   </el-dialog>
+
   <!-- 申请导师对话框 -->
   <el-dialog v-model="applicationDialogVisible" :title="`选择导师：${selectedTeacher?.fullName}`">
     <el-form @submit.prevent="checkApplication">
       <el-form-item label="申请理由（必填）：">
-  <el-input
-    type="textarea"
-    v-model="selectReason"
-    placeholder="请简述"
-    :autosize="{ minRows: 2, maxRows: 10 }"  
-  />
-</el-form-item>
+        <el-input
+          type="textarea"
+          v-model="selectReason"
+          placeholder="请简述"
+          :autosize="{ minRows: 2, maxRows: 10 }"
+        />
+      </el-form-item>
 
       <el-button type="primary" native-type="submit">提交申请</el-button>
       <el-button v-if="!isGeneratingReason" type="primary" @click="generateAIReason">AI生成申请理由</el-button>
       <el-button v-if="isGeneratingReason" type="primary" disabled>生成中...</el-button>
-    
     </el-form>
   </el-dialog>
+
   <div style="height: 100px;"></div>
 </template>
+
+
 
 <style scoped lang="sass">
 .title
