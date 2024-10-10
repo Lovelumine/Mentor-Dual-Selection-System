@@ -4,35 +4,67 @@ import { useUserInfoStore } from "@/stores/user/UserBasicInformation";
 import { Right } from "@element-plus/icons-vue";
 import { ElDialog, ElButton } from "element-plus";
 import { http } from "@/utils/http";
-import { useRouter } from "vue-router";
+
 import axios from "axios";
 
 const userStore = useUserInfoStore();
-const router = useRouter();
 
-const userInfoComp = ref({
+interface UserInfo {
+  fullName: string;
+  email: string;
+  avatarUrl: string;
+  grade: string;
+  class: string;
+  researchDirection: string;
+  resume: string;
+}
+
+interface TeacherInfo {
+  fullName: string;
+  teacher_position: string;
+  email: string;
+  avatarUrl: string;
+  research_direction: string;
+  resume: string;
+}
+
+interface SelectedPerson {
+  fullName: string;
+  email: string;
+  avatarUrl: string;
+  teacher_position?: string; // 导师特有属性
+  research_direction?: string; // 导师特有属性
+  grade?: string; // 学生特有属性
+  class?: string; // 学生特有属性
+  researchDirection?: string; // 学生特有属性
+  resume: string;
+}
+
+const userInfoComp = ref<UserInfo>({
   fullName: "",
-  email: "",
-  avatarUrl: "", // 对应 photoUrl
-  grade: "",
-  class: "",
-  researchDirection: "",  // 学生的意向研究方向
-  resume: "",
-});
-const targetTeacher = ref({
-  fullName: "",
-  teacher_position: "",  // 导师职称
   email: "",
   avatarUrl: "",
-  research_direction: "",  // 导师的研究方向
+  grade: "",
+  class: "",
+  researchDirection: "",
   resume: "",
 });
+
+const targetTeacher = ref<TeacherInfo>({
+  fullName: "",
+  teacher_position: "",
+  email: "",
+  avatarUrl: "",
+  research_direction: "",
+  resume: "",
+});
+
 const errorShow = ref(0);
 const dialogVisible = ref(false); // 控制对话框的显示
-const selectedPerson = ref({}); // 存储选中的导师或学生信息
+const selectedPerson = ref<SelectedPerson>({} as SelectedPerson); // 存储选中的导师或学生信息
 
 // 打开详细信息弹窗
-function viewDetail(person, role) {
+function viewDetail(person: any, role: string) {
   if (person) {
     if (role === 'teacher') {
       // 导师详细信息
@@ -61,8 +93,8 @@ function viewDetail(person, role) {
 }
 
 // 头像加载失败处理函数
-function handleImageError(event) {
-  event.target.src = "https://via.placeholder.com/100";  // 设置默认图片
+function handleImageError(event: Event) {
+  (event.target as HTMLImageElement).src = "https://via.placeholder.com/100";  // 设置默认图片
 }
 
 onMounted(() => {
@@ -78,6 +110,7 @@ onMounted(() => {
     .then((res) => {
       if (res.data.code === 200) {
         userInfoComp.value = {
+          ...userInfoComp.value,
           fullName: res.data.data.fullName || "",
           email: res.data.data.email || "",
         };
@@ -113,33 +146,6 @@ onMounted(() => {
       console.error(err);
       errorShow.value = err.response ? err.response.status : 500;
     });
-
-  // // 获取学生的详细信息 (照片、意向研究方向、简历等)
-  // axios({
-  //   url: "/student/my-detail",
-  //   method: "GET",
-  //   headers: {
-  //     Authorization: "Bearer " + localStorage.getItem("token"),
-  //   },
-  // })
-  //   .then((res) => {
-  //     if (res.data.code === 200) {
-  //       userInfoComp.value = {
-  //         ...userInfoComp.value,
-  //         avatarUrl: res.data.data.photoUrl ? `${res.data.data.photoUrl}?t=${new Date().getTime()}` : "",  // 强制刷新图片
-  //         researchDirection: res.data.data.researchDirection || "未提供",  // 学生意向研究方向
-  //         resume: res.data.data.resume || "未提供",
-  //         grade: res.data.data.studentGrade || "",  // 正确映射年级
-  //         class: res.data.data.studentClass || "",  // 正确映射班级
-  //       };
-  //     } else {
-  //       alert("获取学生详细信息失败，请检查网络和登录状态！");
-  //     }
-  //   })
-  //   .catch((err) => {
-  //     console.error(err);
-  //     errorShow.value = err.response ? err.response.status : 500;
-  //   });
 
   // 获取导师信息 (通过 mentor-student-relations 获取导师uid，再获取详细信息)
   http({
@@ -195,7 +201,6 @@ onMounted(() => {
           <img
             class="avatar"
             :src="userInfoComp.avatarUrl"
-
             @error="handleImageError" 
             alt="avatar"
           />
@@ -253,7 +258,7 @@ onMounted(() => {
           <div v-if="selectedPerson.class"><strong>班级：</strong>{{ selectedPerson.class }}</div>
           <div>
             <strong v-if="selectedPerson.research_direction">研究方向：</strong>
-            <strong v-if="selectedPerson.researchDirection">意向研究方向：</strong>
+            <strong v-else-if="selectedPerson.researchDirection">意向研究方向：</strong>
             {{ selectedPerson.research_direction || selectedPerson.researchDirection }}
           </div>
           <div><strong>个人简介：</strong>{{ selectedPerson.resume }}</div>
