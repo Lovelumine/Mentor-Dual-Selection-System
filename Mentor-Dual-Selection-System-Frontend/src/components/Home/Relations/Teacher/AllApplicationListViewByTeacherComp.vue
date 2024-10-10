@@ -9,10 +9,21 @@ const router = useRouter();
 const userStore = useUserInfoStore();
 const totalSlots = 3;  // 总的可以招收的学生数
 const studentCount = ref(0);  // 已招收的学生数
-const pendingApplications = ref([]);  // 所有的申请数据
+  // 所有的申请数据
 const acceptedCount = ref(0);
 const rejectedCount = ref(0);
 const pendingCount = ref(0);
+
+interface Application {
+  id: number;
+  studentName: string;
+  status: 'ACCEPTED' | 'REJECTED' | 'PENDING';
+  // 其他字段可以根据你的数据结构定义
+}
+
+
+const pendingApplications = ref<Application[]>([]);
+
 
 const updateChartData = () => {
   acceptedCount.value = pendingApplications.value.filter(app => app.status === 'ACCEPTED').length;
