@@ -1,12 +1,24 @@
-<!--大四列表-->
 <script setup lang="ts">
-import {onMounted, ref, watch} from "vue";
-import {http} from "@/utils/http";
-import {useStudentListStore} from "@/stores/StudentListStore";
-const studentListStore = useStudentListStore();
+import { onMounted, ref, watch } from "vue";
+import { http } from "@/utils/http";
+import { useStudentListStore } from "@/stores/StudentListStore";
 
-const grade = ref(null);
-const tableData = ref([]);
+// 定义学生对象类型
+interface Student {
+  fullName: string;
+  username: string;
+  grade: string;
+  class: string;
+  email: string;
+  mentor_id: number | null;
+  isMentor: string;
+  teacherName?: string;
+  resume: string;
+}
+
+const studentListStore = useStudentListStore();
+const grade = ref<string | null>(null); // 允许 null 类型
+const tableData = ref<Student[]>([]); // 定义为 Student 类型的数组
 
 function getCurrentYearMonth(): string {
   const now = new Date();
@@ -14,25 +26,28 @@ function getCurrentYearMonth(): string {
   const month = (now.getMonth() + 1).toString().padStart(2, '0');
   return `${year}-${month}`;
 }
-function isStudentGradeFourth(): string{
+
+function isStudentGradeFourth(): string {
   const currentYearMonth = getCurrentYearMonth();
   const [currentYear, currentMonth] = currentYearMonth.split('-').map(Number);
   let entryYear = new Date().getFullYear() - 3;
-  if (entryYear === (currentYear - 3) && 9 <= currentMonth) { // 获取年和当前年相等，但月份九月以后，就是获取年的学年
+  if (entryYear === (currentYear - 3) && 9 <= currentMonth) {
     console.log(1, entryYear);
     return entryYear.toString().padStart(4, '0');
-  } else if ((entryYear + 1) === (currentYear - 2) && currentMonth <= 8) { // 获取年和当前年相等，但月份八月以前，就是获取年-1的学年
+  } else if ((entryYear + 1) === (currentYear - 2) && currentMonth <= 8) {
     console.log(2, entryYear - 1);
     return (entryYear - 1).toString().padStart(4, '0');
   }
+  return ''; // 添加默认返回值，防止 TypeScript 错误
 }
 
-function selectStudentByName(targetStudentList, targetIsSelectTeacher){
+// 定义函数参数的类型
+function selectStudentByName(targetStudentList: Student[], targetIsSelectTeacher: string | null) {
   const grade = isStudentGradeFourth();
-  let tempList = [];
+  let tempList: Student[] = [];
   for (let i = 0; i < targetStudentList.length; i++) {
     if (targetStudentList[i].grade === grade) {
-      if (targetStudentList[i].mentor_id !== null){
+      if (targetStudentList[i].mentor_id !== null) {
         targetStudentList[i].isMentor = '已通过';
         http({
           url: '/search/teacher',
@@ -53,14 +68,21 @@ function selectStudentByName(targetStudentList, targetIsSelectTeacher){
         targetStudentList[i].isMentor = '未选择';
       }
       switch (targetIsSelectTeacher) {
-        case null: tempList.push(targetStudentList[i]); break;
-        case 'no': if (targetStudentList[i].mentor_id === null) tempList.push(targetStudentList[i]); break;
-        case 'accepted': if (targetStudentList[i].mentor_id !== null) tempList.push(targetStudentList[i]); break;
-        default: break;
+        case null:
+          tempList.push(targetStudentList[i]);
+          break;
+        case 'no':
+          if (targetStudentList[i].mentor_id === null) tempList.push(targetStudentList[i]);
+          break;
+        case 'accepted':
+          if (targetStudentList[i].mentor_id !== null) tempList.push(targetStudentList[i]);
+          break;
+        default:
+          break;
       }
     }
   }
-  tableData.value = tempList;
+  tableData.value = tempList; // 确保 tempList 具有正确的类型
 }
 
 onMounted(() => {
@@ -77,7 +99,7 @@ onMounted(() => {
     }
   }).then(res => {
     if (res.data.code === 200) {
-      tableData.value = res.data.data;
+      tableData.value = res.data.data; // 保证返回的数据符合 Student[] 类型
       for (let i = 0; i < tableData.value.length; i++) {
         if (tableData.value[i].mentor_id !== null) {
           tableData.value[i].isMentor = '已通过';
@@ -105,16 +127,14 @@ onMounted(() => {
     }
   }).catch(err => {
     alert(JSON.parse(err.requests.responseText).data.error);
-  })
+  });
 })
 
-watch([
-  () => studentListStore.isSelectTeacher,
-  () => studentListStore.studentListSt,
-], ([newIsSelectTeacherValue, newStudentList]) => {
+watch([() => studentListStore.isSelectTeacher, () => studentListStore.studentListSt], ([newIsSelectTeacherValue, newStudentList]) => {
   if (newStudentList) selectStudentByName(newStudentList, newIsSelectTeacherValue);
-})
+});
 </script>
+
 
 <template>
   <div class="title">
