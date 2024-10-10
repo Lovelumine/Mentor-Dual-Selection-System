@@ -136,10 +136,10 @@ function viewDetail(student: any) { // 给 student 显式添加 any 类型
 
   <!-- 学生详细信息对话框 -->
   <el-dialog
-    v-model="dialogVisible"  <!-- 修正这里，直接绑定 dialogVisible -->
+    v-model="dialogVisible"  
     title="学生详细信息"
     width="600px"
-    :before-close="() => (dialogVisible.value = false)" 
+    :before-close="() => (dialogVisible = false)" 
   >
     <div class="student-detail">
       <img :src="selectedStudent.photourl || 'https://via.placeholder.com/100'" alt="头像" class="avatar" />
@@ -155,7 +155,7 @@ function viewDetail(student: any) { // 给 student 显式添加 any 类型
     </div>
     <template #footer>
       <span class="dialog-footer">
-        <el-button @click="dialogVisible = false">关闭</el-button> <!-- 修正这里 -->
+        <el-button @click="dialogVisible = false">关闭</el-button> 
       </span>
     </template>
   </el-dialog>

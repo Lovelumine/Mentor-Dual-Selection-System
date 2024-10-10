@@ -4,12 +4,14 @@ import { http } from "@/utils/http";
 import { useRouter } from "vue-router";
 import * as echarts from 'echarts';
 import { useUserInfoStore } from "@/stores/user/UserBasicInformation";
+import type { EChartsOption } from 'echarts';
 
 const router = useRouter();
 const userStore = useUserInfoStore();
 const totalSlots = 3;  // 总的可以招收的学生数
 const studentCount = ref(0);  // 已招收的学生数
-  // 所有的申请数据
+
+// 所有的申请数据
 const acceptedCount = ref(0);
 const rejectedCount = ref(0);
 const pendingCount = ref(0);
@@ -21,9 +23,13 @@ interface Application {
   // 其他字段可以根据你的数据结构定义
 }
 
+// 定义 Params 接口，包含 dataIndex 属性
+interface Params {
+  dataIndex: number;
+  // 根据需要添加其他属性
+}
 
 const pendingApplications = ref<Application[]>([]);
-
 
 const updateChartData = () => {
   acceptedCount.value = pendingApplications.value.filter(app => app.status === 'ACCEPTED').length;
@@ -37,7 +43,7 @@ const drawProgressPieChart = () => {
     const myChart = echarts.init(chartDom);
     const filledSlots = studentCount.value;
     const emptySlots = totalSlots - studentCount.value;
-    const option = {
+    const option: EChartsOption = {
       title: {
         text: '导师招生进度',
         left: 'center',
@@ -89,7 +95,7 @@ const drawBarChart = () => {
   const chartDom = document.getElementById('barChart');
   if (chartDom) {
     const myChart = echarts.init(chartDom);
-    const option = {
+    const option: EChartsOption = {
       title: {
         text: '申请处理情况',
         left: 'center',
@@ -139,7 +145,7 @@ const drawBarChart = () => {
           barWidth: '60%',
           data: [acceptedCount.value, rejectedCount.value, pendingCount.value],
           itemStyle: {
-            color: function(params) {
+            color: function(params: Params) {
               const colorList = ['#67C23A', '#F56C6C', '#E6A23C'];
               return colorList[params.dataIndex];
             }
