@@ -1,12 +1,30 @@
 <script setup lang="ts">
-import {onMounted, ref} from "vue";
-import {http} from "@/utils/http";
-import {useRouter} from "vue-router";
+import { onMounted, ref } from "vue";
+import { http } from "@/utils/http";
+import { useRouter } from "vue-router";
+
 const router = useRouter();
 
-const allUser = ref([]);
-const allTeacher = ref([]);
-const pendingList = ref([]);
+// 定义用户和申请的接口类型
+interface User {
+  uid: number;
+  fullName: string;
+  role: string; // 用户角色，例如 'TEACHER'
+}
+
+interface Application {
+  id: number;
+  mentorId: number;
+  applicationReason: string;
+  status: string;
+  statusCN?: string; // 增加一个中文状态字段
+  teacherName?: string; // 增加一个导师姓名字段
+  rejectionReason?: string;
+}
+
+const allUser = ref<User[]>([]);
+const allTeacher = ref<User[]>([]);
+const pendingList = ref<Application[]>([]);
 const nowStatus = ref('未选择');
 
 onMounted(() => {
@@ -21,7 +39,7 @@ onMounted(() => {
     if (res.data.code === 200) {
       allUser.value = res.data.data;
       for (let i = 0; i < allUser.value.length; i++) {
-        if (allUser.value[i].role == 'TEACHER') {
+        if (allUser.value[i].role === 'TEACHER') {
           allTeacher.value.push(allUser.value[i]);
         }
       }
@@ -169,4 +187,3 @@ function statusClass(statusCN: string) {
       border-radius: 4px
       font-family: 'Microsoft YaHei', sans-serif // 确保状态文本的字体统一
 </style>
-
