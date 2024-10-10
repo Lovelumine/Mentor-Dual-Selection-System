@@ -2,6 +2,8 @@
 import FooterComp from "@/components/HeaderFooterMenu/FooterComp.vue";
 import {ref} from "vue";
 import {http} from "@/utils/http";
+import {useRouter} from "vue-router";
+const router = useRouter();
 
 interface RepwdImpl {
   email: string | null;
@@ -71,6 +73,9 @@ const repwdClicked = () => {
     alert('密码修改失败！');
   })
 }
+const returnClicked = () => {
+  router.push('/');
+}
 </script>
 
 <template>
@@ -78,7 +83,7 @@ const repwdClicked = () => {
   <el-form label-width="auto" style="width: 500px; margin: 5% auto 0 auto;" :model="repwdForm" @submit.prevent="repwdClicked">
     <el-form-item label="电子邮箱：">
       <el-input type="text" placeholder="请输入" v-model="repwdForm.email"/>
-      <el-button type="primary" native-type="button" @click="getEmailToken">发送验证码</el-button>
+      <el-button type="primary" native-type="button" @click="getEmailToken" style="margin-top: 10px">发送验证码</el-button>
     </el-form-item>
     <el-form-item label="邮箱令牌：">
       <el-input type="text" placeholder="请输入" v-model="repwdForm.token" required/>
@@ -86,7 +91,8 @@ const repwdClicked = () => {
     <el-form-item label="新密码：">
       <el-input type="password" placeholder="请输入" v-model="repwdForm.password" required/>
     </el-form-item>
-    <el-button native-type="submit" type="primary">重置密码</el-button>
+    <el-button native-type="submit" type="danger">重置密码</el-button>
+    <el-button native-type="button" type="primary" @click="returnClicked">返回登录</el-button>
   </el-form>
   <FooterComp/>
 </template>
