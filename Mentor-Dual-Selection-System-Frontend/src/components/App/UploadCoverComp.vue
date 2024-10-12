@@ -1,42 +1,38 @@
 <script setup lang="ts">
-
-import {Loading} from "@element-plus/icons-vue";
-import {useUploadCoverStore} from "@/stores/UploadCoverStore";
-import {onMounted, ref, watch} from "vue";
+import { Loading } from "@element-plus/icons-vue";
+import { useUploadCoverStore } from "@/stores/UploadCoverStore";
+import { onMounted, ref, watch } from "vue";
 const uploadCoverStore = useUploadCoverStore();
 
-const numberOfPeopleComp = ref();
-const nowNumberOfPeopleComp = ref();
-const nowPeopleNameComp = ref();
-const updateFalStatusComp = ref(0);
+// 确定类型，避免null和undefined导致的类型问题
+
 const allStatus = ref({
-  numberOfPeopleComp: null,
-  nowNumberOfPeopleComp: null,
-  nowPeopleNameComp: null,
-  updateFalStatusComp: null
+  numberOfPeopleComp: null as number | null,
+  nowNumberOfPeopleComp: null as number | null,
+  nowPeopleNameComp: null as string | null,
+  updateFalStatusComp: null as number | null
 })
 
 function finishClicked() {
   uploadCoverStore.triggerCoverShow(false);
   uploadCoverStore.statusStore.numberOfPeople = -1;
   uploadCoverStore.statusStore.nowNumberOfPeople = -2;
-  uploadCoverStore.statusStore.nowPeopleName = undefined;
+  uploadCoverStore.statusStore.nowPeopleName = ""; // 将undefined替换为空字符串
   uploadCoverStore.statusStore.updateFalStatus = 0;
 }
 
 onMounted(() => {
   allStatus.value.numberOfPeopleComp = uploadCoverStore.statusStore.numberOfPeople;
   allStatus.value.nowNumberOfPeopleComp = uploadCoverStore.statusStore.nowNumberOfPeople;
-  allStatus.value.nowPeopleNameComp = uploadCoverStore.statusStore.nowPeopleName;
+  allStatus.value.nowPeopleNameComp = uploadCoverStore.statusStore.nowPeopleName || ""; // 处理空值
   allStatus.value.updateFalStatusComp = uploadCoverStore.statusStore.updateFalStatus;
 })
 
 watch(() => uploadCoverStore.statusStore, (newVal) => {
   allStatus.value.numberOfPeopleComp = newVal.numberOfPeople;
   allStatus.value.nowNumberOfPeopleComp = newVal.nowNumberOfPeople;
-  allStatus.value.nowPeopleNameComp = newVal.nowPeopleName;
+  allStatus.value.nowPeopleNameComp = newVal.nowPeopleName || ""; // 处理空值
   allStatus.value.updateFalStatusComp = newVal.updateFalStatus;
-  console.log('监听');
 })
 </script>
 
@@ -46,10 +42,9 @@ watch(() => uploadCoverStore.statusStore, (newVal) => {
     <div class="icon_text_box">
       <el-icon size="128" color="#005826"><Loading /></el-icon>
       <div>
-        <span>{{ '期间禁止关闭网页，请保持网络畅通' }}</span><br/>
-        <span>{{ allStatus.numberOfPeopleComp >= 0? `解析到您的Excel存有 ${allStatus.numberOfPeopleComp} 条信息`: '正在解析……' }}</span><br/>
-        <span>{{ allStatus.nowNumberOfPeopleComp >= 0? `当前 ${allStatus.nowNumberOfPeopleComp} / 共有 ${allStatus.numberOfPeopleComp}`: '正在解析……' }}</span><br/>
-        <span>{{ allStatus.nowPeopleNameComp !== '' && allStatus.nowPeopleNameComp !== undefined? `姓名：${allStatus.nowPeopleNameComp}`: '正在解析……'}}</span><br/>
+        <span>{{ allStatus.numberOfPeopleComp !== null && allStatus.numberOfPeopleComp >= 0 ? `解析到您的Excel存有 ${allStatus.numberOfPeopleComp} 条信息` : '正在解析……' }}</span><br/>
+        <span>{{ allStatus.nowNumberOfPeopleComp !== null && allStatus.nowNumberOfPeopleComp >= 0 ? `当前 ${allStatus.nowNumberOfPeopleComp} / 共有 ${allStatus.numberOfPeopleComp}` : '正在解析……' }}</span><br/>
+        <span>{{ allStatus.nowPeopleNameComp !== '' && allStatus.nowPeopleNameComp !== null ? `姓名：${allStatus.nowPeopleNameComp}` : '正在解析……'}}</span><br/>
       </div>
       <button :disabled="allStatus.numberOfPeopleComp !== allStatus.nowNumberOfPeopleComp" @click="finishClicked" class="button">完成</button>
     </div>
