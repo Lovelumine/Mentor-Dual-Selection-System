@@ -36,6 +36,24 @@ spring:
       max-file-size: 100MB  # 设置单个文件上传的最大大小为 100MB
       max-request-size: 100MB  # 设置整个请求的最大大小为 100MB
 
+  mail:
+    host: smtp.exmail.qq.com  # 腾讯企业邮箱 SMTP 服务器地址
+    port: 465                 # SMTP 端口号
+    username: shendekoudai@lovelumine.com  # 你的邮箱账户
+    password: ouyangZHUO088741!            # 你的邮箱密码
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+          starttls:
+            enable: true
+          socketFactory:
+            port: 465
+            class: javax.net.ssl.SSLSocketFactory
+            fallback: false
+
 # Application port
 server:
   port: 50000

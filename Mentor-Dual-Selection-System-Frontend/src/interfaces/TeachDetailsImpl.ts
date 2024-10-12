@@ -1,5 +1,5 @@
 // 定义教师详情类型
-export interface TeacherDetail {
+export interface TeacherDetailImpl {
     uid: number;
     teacherposition: string;
     research_direction: string;

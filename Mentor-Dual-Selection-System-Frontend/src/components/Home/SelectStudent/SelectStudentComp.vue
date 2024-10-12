@@ -7,24 +7,25 @@ import { useUserInfoStore } from "@/stores/user/UserBasicInformation";
 import { ElMessageBox } from "element-plus";
 const userStore = useUserInfoStore();
 
-const pendingList = ref([]);
-const allUser = ref([]);
-const allStudent = ref([]);
-const allTeacher = ref([]);
-const userRole = ref();
-const dialogVisible = ref(false);
-const studentInfoVisible = ref(false); // 控制学生详情卡片的显示
-const studentInfo = ref({}); // 存储学生详细信息
+const pendingList = ref<any[]>([]);
+const allUser = ref<any[]>([]);
+const allStudent = ref<any[]>([]);
+const allTeacher = ref<any[]>([]);
+const userRole = ref<string | null>(null);
+const dialogVisible = ref<boolean>(false);
+const studentInfoVisible = ref<boolean>(false);
+const studentInfo = ref<Record<string, any>>({});
 const pendingUtilForm = ref({
-  applicationId: null,
-  approved: null,
-  rejectionReason: null,
+  applicationId: null as number | null,
+  approved: null as boolean | null,
+  rejectionReason: null as string | null,
 });
 
-// 添加：用于存储学生的申请信息
-const studentApplicationInfo = ref({});
+const studentApplicationInfo = ref<Record<string, any>>({});
 
-// 定义关闭弹窗处理函数
+// Checkbox state to allow skipping rejection reason
+const skipRejectionReason = ref<boolean>(false);
+
 const handleClose = (done: () => void) => {
   ElMessageBox.confirm("您输入的信息将会保留，直到您下次点开该弹窗！")
     .then(() => {
@@ -35,12 +36,11 @@ const handleClose = (done: () => void) => {
     });
 };
 
-// 定义学生详情对话框的关闭处理函数
-const handleStudentInfoClose = (done) => {
+const handleStudentInfoClose = (done: () => void) => {
   done();
 };
 
-function handleAccept(index: number, row) {
+function handleAccept(index: number, row: any) {
   pendingUtilForm.value.applicationId = row.id;
   pendingUtilForm.value.approved = true;
   http({
@@ -53,13 +53,13 @@ function handleAccept(index: number, row) {
     data: {
       applicationId: pendingUtilForm.value.applicationId,
       approved: pendingUtilForm.value.approved,
-      rejectionReason: pendingUtilForm.value.rejectionReason || null,  // 确保提交拒绝理由字段，哪怕是 null
+      rejectionReason: pendingUtilForm.value.rejectionReason || null,
     },
   })
     .then((res) => {
       if (res.status === 200 || res.data.code === 200) {
         alert("该申请处理完成！");
-        fetchApplicationList(); // 刷新申请列表
+        fetchApplicationList();
       } else {
         alert(res.data.error);
       }
@@ -69,21 +69,19 @@ function handleAccept(index: number, row) {
     });
 }
 
-
-function handleReject(index: number, row) {
+function handleReject(index: number, row: any) {
   pendingUtilForm.value.applicationId = row.id;
   pendingUtilForm.value.approved = false;
   dialogVisible.value = true;
 }
 
+// Handle rejection with an optional reason
 function checkReject() {
-  if (
-    pendingUtilForm.value.rejectionReason === null ||
-    pendingUtilForm.value.rejectionReason === ""
-  ) {
-    alert("您需要填写拒绝理由。");
-    return;
+  // If skipRejectionReason is checked or no reason provided, set default reason
+  if (skipRejectionReason.value || !pendingUtilForm.value.rejectionReason) {
+    pendingUtilForm.value.rejectionReason = "导师未填写拒绝理由";
   }
+
   http({
     url: "/application/approve",
     method: "POST",
@@ -101,7 +99,7 @@ function checkReject() {
       if (res.status === 200 || res.data.code === 200) {
         alert("该申请处理完成！");
         dialogVisible.value = false;
-        fetchApplicationList(); // 刷新申请列表
+        fetchApplicationList();
       } else {
         alert(res.data.error);
       }
@@ -111,19 +109,17 @@ function checkReject() {
     });
 }
 
-
 function scopeIndexGetStatus(index: number) {
   return pendingList.value[index].status === "PENDING";
 }
 
-// 获取学生详情及申请信息
-function handleViewStudentInfo(row) {
+function handleViewStudentInfo(row: any) {
   getStudentInfo(row.studentId)
     .then((res) => {
       if (res.data.code === 200) {
         studentInfo.value = res.data.data;
-        studentApplicationInfo.value = row; // 保存学生的申请信息
-        studentInfoVisible.value = true; // 注意这里使用 .value
+        studentApplicationInfo.value = row;
+        studentInfoVisible.value = true;
       } else {
         alert("获取学生详情失败！");
       }
@@ -134,7 +130,6 @@ function handleViewStudentInfo(row) {
     });
 }
 
-// 获取学生信息的API调用函数
 function getStudentInfo(uid: number) {
   return http({
     url: `/search/student?uid=${uid}`,
@@ -146,7 +141,6 @@ function getStudentInfo(uid: number) {
   });
 }
 
-// 获取申请列表
 function fetchApplicationList() {
   http({
     url: "/user/all",
@@ -162,7 +156,6 @@ function fetchApplicationList() {
         allStudent.value = allUser.value.filter((user) => user.role === "STUDENT");
         allTeacher.value = allUser.value.filter((user) => user.role === "TEACHER");
 
-        // 获取待审核的申请列表
         http({
           url: "/application/pending",
           method: "GET",
@@ -227,13 +220,13 @@ function fetchApplicationList() {
 
 onMounted(() => {
   userStore.fetchUserInfo();
-  fetchApplicationList(); // 组件挂载时获取申请列表
+  fetchApplicationList();
 });
 
 watch(
   () => userStore.userInfo,
   (newValue) => {
-    userRole.value = newValue.role;
+    userRole.value = newValue.role || null;
   }
 );
 </script>
@@ -241,26 +234,27 @@ watch(
 <template>
   <!-- 拒绝理由弹窗 -->
   <el-dialog
-  v-model="dialogVisible"
-  title="拒绝理由"
-  width="500"
-  :before-close="handleClose"
->
-  <el-input
-    type="textarea"
-    v-model="pendingUtilForm.rejectionReason"
-    placeholder="拒绝理由（必填）"
-    :autosize="{ minRows: 2, maxRows: 5 }"
-    style="width: 100%;"
-  />
-  <template #footer>
-    <div class="dialog-footer">
-      <button class="button" @click="dialogVisible.value = false">关闭</button>
-      <button class="button" type="submit" @click="checkReject">提交</button>
-    </div>
-  </template>
-</el-dialog>
-
+    v-model="dialogVisible"
+    title="拒绝理由"
+    width="500"
+    :before-close="handleClose"
+  >
+    <el-input
+      type="textarea"
+      v-model="pendingUtilForm.rejectionReason"
+      placeholder="拒绝理由（选填）"
+      :autosize="{ minRows: 2, maxRows: 5 }"
+      style="width: 100%;"
+      :disabled="skipRejectionReason" 
+    />
+    <el-checkbox v-model="skipRejectionReason">不填写拒绝理由</el-checkbox>
+    <template #footer>
+      <div class="dialog-footer">
+        <button class="button" @click="dialogVisible = false">关闭</button>
+        <button class="button" type="submit" @click="checkReject">提交</button>
+      </div>
+    </template>
+  </el-dialog>
 
   <!-- 学生详情弹窗 -->
   <el-dialog
@@ -279,13 +273,13 @@ watch(
         <p><strong>班级：</strong>{{ studentInfo.class }}</p>
         <p><strong>邮箱：</strong>{{ studentInfo.email }}</p>
         <p><strong>个人简介：</strong>{{ studentInfo.resume }}</p>
-        <!-- 新增：学生的申请信息展示 -->
         <p><strong>申请理由：</strong>{{ studentApplicationInfo.applicationReason }}</p>
         <p><strong>申请状态：</strong>{{ studentApplicationInfo.statusCN }}</p>
         <p><strong>拒绝理由：</strong>{{ studentApplicationInfo.rejectionReason || '无' }}</p>
       </div>
     </div>
   </el-dialog>
+
 
   <div class="title">
     <span>学生申请</span>
@@ -302,9 +296,8 @@ watch(
         label="导师姓名"
         v-if="userRole === 'ADMIN'"
       />
-      <el-table-column prop="applicationReason" label="申请理由" show-overflow-tooltip/>
+      <el-table-column prop="applicationReason" label="申请理由" show-overflow-tooltip />
       <el-table-column prop="statusCN" label="当前状态" />
-      <!-- 查看学生详情按钮列 -->
       <el-table-column label="详细信息">
         <template #default="scope">
           <button class="button" @click="handleViewStudentInfo(scope.row)">
@@ -398,7 +391,6 @@ input:focus
   outline: none
   box-shadow: #005826 0 0 5px
   border: 1px #005826 solid
-/* 学生详情卡片样式 */
 .student-info-card
   display: flex
   .avatar
@@ -408,7 +400,6 @@ input:focus
     p
       font-size: 16px
       margin: 5px 0
-
 .spacer
-  height: 100px // 每个空白行的高度，可以根据需要调整
+  height: 100px
 </style>

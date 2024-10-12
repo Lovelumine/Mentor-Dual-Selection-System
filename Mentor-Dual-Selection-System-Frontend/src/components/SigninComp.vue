@@ -2,11 +2,17 @@
 import {Avatar, Menu} from "@element-plus/icons-vue";
 import {ref} from "vue";
 import {http} from "@/utils/http";
+import {useRouter} from "vue-router";
+const router = useRouter();
 
 const signinForm = ref({
   username: '',
   password: ''
 });
+
+const forgetPwdClicked = () => {
+  router.push('/forgetpwd');
+}
 
 function singinClicked(){
   console.log(signinForm.value);
@@ -47,6 +53,7 @@ function singinClicked(){
       </div>
       <button type="submit" class="register_button">登录</button>
     </form>
+    <button type="button" class="forget_button" @click="forgetPwdClicked">忘记密码</button>
   </div>
 </template>
 
@@ -90,6 +97,22 @@ function singinClicked(){
     left: 50%
     transform: translate(-50%)
     transition: .3s ease
-  .register_button:hover
+  .register_button:hover, .forget_button:hover
     background-color: #0f7e3f
+  .forget_button
+    border-radius: 5px
+    border: none
+    background-color: #005826
+    color: white
+    width: 50%
+    height: 35px
+    font-size: 16px
+    font-weight: bold
+    letter-spacing: 5px
+    margin-top: 20px
+    position: absolute
+    left: 50%
+    transform: translate(-50%)
+    bottom: 0
+    transition: .3s ease
 </style>

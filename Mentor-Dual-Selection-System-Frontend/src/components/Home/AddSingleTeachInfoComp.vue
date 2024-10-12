@@ -2,14 +2,27 @@
 import { onMounted, ref, watch } from "vue";
 import { useUserInfoStore } from "@/stores/user/UserBasicInformation";
 import { useRouter } from "vue-router";
-import { http } from "@/utils/http";
-import axios from 'axios';  // 这里导入 axios
-
+import {http, httpAdmin} from "@/utils/http";
+import axios from 'axios';
+import type {TeacherDetailImpl} from "@/interfaces/TeachDetailsImpl";
+import type {TeachDetailsFullImpl} from "@/interfaces/TeachDetailsFullImpl";  // 这里导入 axios
 const userInfoStore = useUserInfoStore();
 const router = useRouter();
 
-const userRole = ref(null);
-const uploadForm = ref({
+// 定义接口
+interface UploadForm {
+  role: string;
+  fullName: string | null;
+  email: string | null;
+  username: string | null;
+  teacherPosition: string;
+  researchDirection: string;
+  resume: string;
+  studentGrade: string;
+}
+
+const userRole = ref<string | null>(null); // 初始化 userRole
+const uploadForm = ref<UploadForm>({
   role: 'TEACHER',
   fullName: null,
   email: null,
@@ -21,40 +34,45 @@ const uploadForm = ref({
 });
 
 function uploadClicked() {
-  if (uploadForm.value.fullName === null || uploadForm.value.fullName === '') {
+  // 验证表单
+  if (!uploadForm.value.fullName) {
     alert('请填写姓名！');
-  } else if (uploadForm.value.username === null || uploadForm.value.username === '') {
-    alert('请填写工号！');
-  } else if (uploadForm.value.email === null || uploadForm.value.email === '') {
-    alert('请填写电子邮箱！');
-  } else {
-    // 先上传基本信息
-    http({
-      url: '/user/update',
-      method: 'POST',
-      headers: {
-        Accept: '*/*',
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      data: {
-        fullName: uploadForm.value.fullName,
-        username: uploadForm.value.username,
-        email: uploadForm.value.email,
-        role: uploadForm.value.role,
-      }
-    }).then(res => {
-      if (res.data.code === 200){
-        alert('基本信息添加成功！');
-        // 获取所有老师信息，筛选出刚添加的老师的uid
-        getTeacherUid();
-      } else {
-        alert('添加基本信息失败！');
-      }
-    }).catch(err => {
-      alert('添加失败！');
-      console.error('错误信息:', err);
-    });
+    return;
   }
+  if (!uploadForm.value.username) {
+    alert('请填写工号！');
+    return;
+  }
+  if (!uploadForm.value.email) {
+    alert('请填写电子邮箱！');
+    return;
+  }
+  // 先上传基本信息
+  http({
+    url: '/user/update',
+    method: 'POST',
+    headers: {
+      Accept: '*/*',
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+    data: {
+      fullName: uploadForm.value.fullName,
+      username: uploadForm.value.username,
+      email: uploadForm.value.email,
+      role: uploadForm.value.role,
+    }
+  }).then(res => {
+    if (res.data.code === 200){
+      alert('基本信息添加成功！');
+      // 获取所有老师信息，筛选出刚添加的老师的uid
+      getTeacherUid();
+    } else {
+      alert('添加基本信息失败！');
+    }
+  }).catch(err => {
+    alert('添加失败！');
+    console.error('错误信息:', err);
+  });
 }
 
 // 获取所有教师信息，并筛选出刚添加的教师
@@ -69,7 +87,7 @@ function getTeacherUid() {
   }).then(res => {
     if (res.data.code === 200) {
       // 在返回的教师列表中查找匹配的教师
-      const teacher = res.data.data.find(t => t.username === uploadForm.value.username && t.fullName === uploadForm.value.fullName);
+      const teacher = res.data.data.find((t: TeachDetailsFullImpl) => t.username === uploadForm.value.username && t.fullName === uploadForm.value.fullName);
       if (teacher && teacher.uid) {
         // 找到教师，进行额外信息上传
         uploadAdditionalInfo(teacher.uid);
@@ -86,9 +104,9 @@ function getTeacherUid() {
 }
 
 // 上传职位、研究方向、简历和空的年级信息
-function uploadAdditionalInfo(uid) {
-  axios({
-    url: `/admin/update/${uid}`,
+function uploadAdditionalInfo(uid: number) {
+  httpAdmin({
+    url: `/update/${uid}`,
     method: 'PUT',
     headers: {
       Accept: '*/*',
@@ -118,11 +136,20 @@ function resettingClicked() {
 }
 
 onMounted(() => {
-  if (userRole.value === 'STUDENT') router.push('/');
+  // 确保 userRole 已经被初始化
+  if (userRole.value === 'STUDENT') {
+    router.push('/');
+  } else {
+    // 从 userInfoStore 获取 userRole 的值
+    userRole.value = userInfoStore.userInfo?.role || null;
+    if (userRole.value === 'STUDENT') {
+      router.push('/');
+    }
+  }
 });
 
 watch(() => userInfoStore.userInfo, (newVal) => {
-  if (newVal.role === 'STUDENT') router.push('/');
+  if (newVal?.role === 'STUDENT') router.push('/');
 });
 </script>
 

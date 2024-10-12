@@ -129,17 +129,17 @@ import {
   ElDialog
 } from 'element-plus';
 import { http, httpStudent } from '@/utils/http';
-import type {TeacherDetail} from "@/interfaces/TeachDetailsImp";
+import type {TeacherDetailImpl} from "@/interfaces/TeachDetailsImpl";
 
 
 // 状态变量
-const allTeacherDetailsList = ref<TeacherDetail[]>([]);
+const allTeacherDetailsList = ref<TeacherDetailImpl[]>([]);
 const currentPage = ref<number>(1);
 const pageSize = ref<number>(6);
 const positions = ['教授', '副教授', '助理教授', '博士后', '学术顾问', '客座/兼职教授'];
 const selectedPosition = ref<string>('');
 const dialogVisible = ref<boolean>(false);
-const selectedTeacher = ref<TeacherDetail | null>(null);
+const selectedTeacher = ref<TeacherDetailImpl | null>(null);
 
 // 挂载时获取教师数据
 onMounted(async () => {
@@ -169,7 +169,7 @@ onMounted(async () => {
       if (extraDetailsResponse.data.code === 200) {
         const extraDetails = extraDetailsResponse.data.data;
         allTeacherDetailsList.value.forEach(teacher => {
-          const match = extraDetails.find((t: TeacherDetail) => t.uid === teacher.uid);
+          const match = extraDetails.find((t: TeacherDetailImpl) => t.uid === teacher.uid);
           if (match) {
             Object.assign(teacher, match);
           }
@@ -198,7 +198,7 @@ const resetFilter = () => {
 };
 
 // 过滤后的教师列表
-const filteredTeachers = computed<TeacherDetail[]>(() => {
+const filteredTeachers = computed<TeacherDetailImpl[]>(() => {
   console.log('Computing filteredTeachers');
   if (!selectedPosition.value) {
     console.log('No position selected, returning all teachers');
@@ -208,7 +208,7 @@ const filteredTeachers = computed<TeacherDetail[]>(() => {
 });
 
 // 分页后的教师列表
-const paginatedTeachers = computed<TeacherDetail[]>(() => {
+const paginatedTeachers = computed<TeacherDetailImpl[]>(() => {
   console.log('Computing paginatedTeachers');
   const start = (currentPage.value - 1) * pageSize.value;
   const end = start + pageSize.value;
@@ -216,7 +216,7 @@ const paginatedTeachers = computed<TeacherDetail[]>(() => {
 });
 
 // 显示教师详情对话框
-const showDetails = (teacher: TeacherDetail) => {
+const showDetails = (teacher: TeacherDetailImpl) => {
   selectedTeacher.value = teacher;
   dialogVisible.value = true;
 };
@@ -230,7 +230,7 @@ const handlePageChange = (page: number) => {
 <template>
   <!-- 固定的标题 -->
   <div class="title">
-    <span>本院导师简历</span>
+    <span>本院导师卡片</span>
   </div>
 
   <!-- 主内容 -->

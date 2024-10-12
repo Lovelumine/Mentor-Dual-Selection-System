@@ -6,7 +6,6 @@ import axios from "axios";
 
 const userInfoStore = useUserInfoStore();
 import { useUploadFileStore } from "@/stores/UploadFileStore";
-import type {UserInfo} from "@/interfaces/UserInfoImp";
 const uploadFileStore = useUploadFileStore();
 
 const userRole = ref<string | null>(null);
@@ -117,7 +116,7 @@ function changeDetailChecked(target: string) {
 }
 
 onMounted(() => {
-  if (userInfoStore.userInfo) getUserDetail(userInfoStore.userInfo.role);
+  userInfoStore.fetchUserInfo();
 });
 
 function getUserDetail(targetInfo: any) {
@@ -143,7 +142,7 @@ function getUserDetail(targetInfo: any) {
       userDetailTemp.value = { ...userDetail.value };
     })
     .catch((err) => {
-      alert(JSON.parse(err.requests.responseText).data.error);
+      alert(JSON.parse(err.request.responseText).data.error);
       console.error(err);
     });
 }

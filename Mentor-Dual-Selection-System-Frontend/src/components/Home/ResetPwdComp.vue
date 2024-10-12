@@ -3,9 +3,9 @@ import {onMounted, ref, watch} from "vue";
 import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
 import {http} from "@/utils/http";
 const userInfoStore = useUserInfoStore();
-import type {RepwdImp} from "@/interfaces/RepwdImp";
+import type {RepwdImpl} from "@/interfaces/RepwdImpl";
 
-const pwdForm = ref<RepwdImp>({
+const pwdForm = ref<RepwdImpl>({
   username: null,
   oldPassword: null,
   newPassword: null,
@@ -63,7 +63,7 @@ watch(() => userInfoStore.userInfo, (newValue) => {
 
 <template>
   <div class="title">
-    <span>重置密码（{{pwdForm.username}}）</span>
+    <span>修改密码（{{pwdForm.username}}）</span>
   </div>
   <div class="container">
     <el-form :model="pwdForm" label-width="auto" style="max-width: 400px" @submit.prevent="uploadClicked">

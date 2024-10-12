@@ -99,7 +99,7 @@ watch(route, (newRoute) => {
           </el-menu-item>
           <el-menu-item index="/teach_resume" @click="activeMenu = '/teach_resume'; router.push('/teach_resume')" v-if="isTeacherResumeShow">
             <el-icon><Position /></el-icon>
-            <span>导师简历</span>
+            <span>导师卡片</span>
           </el-menu-item>
           <el-menu-item index="/personal" @click="activeMenu = '/personal'; router.push('/personal')">
             <el-icon><User /></el-icon>
@@ -107,7 +107,7 @@ watch(route, (newRoute) => {
           </el-menu-item>
           <el-menu-item index="/reset_pwd" @click="activeMenu = '/reset_pwd'; router.push('/reset_pwd')">
             <el-icon><Lock /></el-icon>
-            <span>重置密码</span>
+            <span>修改密码</span>
           </el-menu-item>
           <el-menu-item @click="SignoutClicked">
             <el-icon><CircleClose /></el-icon>
