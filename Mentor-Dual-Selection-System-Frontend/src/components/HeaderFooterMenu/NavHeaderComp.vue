@@ -7,7 +7,11 @@ const userInfoStore = useUserInfoStore();
 const iconProperty = ref({color: '', size: 0});
 const isLogin = ref(false);
 const userInfoComp = ref({
-  fullName: '',
+  fullName: null as string | null,
+  role: null as string | null,
+  avatarUrl: null as string | null,
+  email: null as string | null,
+  username: null as string | null,
 });
 const userRoleCN = ref('');
 
@@ -18,7 +22,13 @@ onMounted(() => {
   iconProperty.value.color = '#fff';
   iconProperty.value.size = 24;
   if (userInfoStore.userInfo) {
-    userInfoComp.value = userInfoStore.userInfo;
+    userInfoComp.value = {
+      fullName: userInfoStore.userInfo.fullName,
+      role: userInfoStore.userInfo.role,
+      avatarUrl: userInfoStore.userInfo.avatarUrl,
+      email: userInfoStore.userInfo.email,
+      username: userInfoStore.userInfo.username
+    };
     switch (userInfoStore.userInfo.role) {
       case 'TEACHER': userRoleCN.value = '导师'; break;
       case 'ADMIN': userRoleCN.value = '管理员'; break;
@@ -26,22 +36,29 @@ onMounted(() => {
       default: break;
     }
   }
-
 })
 
 function logoClicked() {
   window.location.href = "https://www.sysu.edu.cn/";
 }
+
 watch(() => userInfoStore.userInfo, (newValue) => {
-  userInfoComp.value = newValue;
+  userInfoComp.value = {
+    fullName: newValue.fullName,
+    role: newValue.role,
+    avatarUrl: newValue.avatarUrl,
+    email: newValue.email,
+    username: newValue.username
+  };
   switch (newValue.role) {
     case 'TEACHER': userRoleCN.value = '导师'; break;
     case 'ADMIN': userRoleCN.value = '管理员'; break;
     case 'STUDENT': userRoleCN.value = '学生'; break;
     default: break;
   }
-})
+});
 </script>
+
 
 <template>
   <Header class="header_box">
@@ -52,7 +69,7 @@ watch(() => userInfoStore.userInfo, (newValue) => {
     <div class="user_bar" v-if="isLogin">
       欢迎您！{{userRoleCN}}：{{userInfoComp.fullName}}
     </div>
-<!--    <div class="user_bar" v-if="isLogin">-->
+   <!-- <div class="user_bar" v-if="isLogin">-->
 <!--      <a href="/relations" title="师生关系">-->
 <!--        <div class="user_icon_box">-->
 <!--          <el-icon class="user_icon" :size="iconProperty.size" :color="iconProperty.color"><Connection /></el-icon>-->
@@ -68,7 +85,7 @@ watch(() => userInfoStore.userInfo, (newValue) => {
 <!--          <el-icon class="user_icon" :size="iconProperty.size" :color="iconProperty.color"><CircleClose /></el-icon>/-->
 <!--        </div>-->
 <!--      </a>-->
-<!--    </div>-->
+<!--    </div> -->
   </Header>
 </template>
 
