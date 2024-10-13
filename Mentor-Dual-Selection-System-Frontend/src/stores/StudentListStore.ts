@@ -6,7 +6,7 @@ export const useStudentListStore = defineStore('StudentListStore', {
         studentListSt: [] as any[]
     }),
     actions: {
-        updateIsSelectTeacher(target: string) {
+        updateIsSelectTeacher(target: string | null) {
             this.isSelectTeacher = target;
         },
         updateStudentList(target: any[]) {
