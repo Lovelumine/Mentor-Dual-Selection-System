@@ -7,15 +7,15 @@ import {useTeacherListStore} from "@/stores/TeacherListStore";
 const teacherListStore = useTeacherListStore();
 
 const isUtilButtons = ref(false);
-const tableData = ref([]);
+const tableData = ref<any[]>([]);
 
-const handleEdit = (index: number, row) => {
+const handleEdit = (index: number, row: any) => {
   console.log(index, row)
 }
-const handleDelete = (index: number, row) => {
+const handleDelete = (index: number, row: any) => {
   console.log(index, row)
 }
-function handleIsUtilButtons(target: string) {
+function handleIsUtilButtons(target: string | null) {
   isUtilButtons.value = 'ADMIN' === target;
 }
 onMounted(() => {

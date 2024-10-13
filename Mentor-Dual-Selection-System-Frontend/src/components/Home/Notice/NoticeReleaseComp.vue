@@ -15,7 +15,7 @@ const noticeForm = ref({
   attachmentUrl: null,
   published: true,
 });
-const attachmentInput = ref(null);
+const attachmentInput = ref<HTMLInputElement | null>(null);
 const uploadStatus = ref("");
 const fileName = ref('未选择');
 

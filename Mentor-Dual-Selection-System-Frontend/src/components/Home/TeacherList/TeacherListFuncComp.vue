@@ -7,7 +7,7 @@ import axios from "axios";
 import { ElProgress } from 'element-plus';
 const router = useRouter();
 
-const fileInput = ref(null);
+const fileInput = ref<HTMLInputElement | null>(null);
 const excelData = ref<any[]>([]);
 const excelName = ref('');
 const isUploadBoxShow = ref(false);
@@ -61,7 +61,7 @@ async function checkUpload() {
   }, 2000); // 延迟2秒刷新，便于用户查看上传结果
 }
 
-async function uploadBasicInfo(rowData, index) {
+async function uploadBasicInfo(rowData: any, index: number) {
   return http({
     url: '/user/update',
     method: 'POST',
@@ -85,7 +85,7 @@ async function uploadBasicInfo(rowData, index) {
   });
 }
 
-async function updateTeacherDetails(rowData, index) {
+async function updateTeacherDetails(rowData: any, index: number) {
   try {
     // 获取教师列表
     const res = await http({
@@ -119,7 +119,9 @@ async function updateTeacherDetails(rowData, index) {
   }
 }
 
-async function uploadAdditionalInfo(uid, rowData, index) {
+async function uploadAdditionalInfo(uid: number | undefined,
+                                    rowData: any,
+                                    index: number) {
   try {
     const res = await axios({
       url: `/admin/update/${uid}`,
@@ -146,23 +148,27 @@ async function uploadAdditionalInfo(uid, rowData, index) {
 }
 
 const triggerFileInput = () => {
-  fileInput.value.click();
+  if (fileInput.value) fileInput.value.click();
 }
 
 // 处理文件选择后的变化
-function handleFileChange(event) {
-  const files = event.target.files;
-  if (files.length === 0) return;
-
-  const file = files[0];
+function handleFileChange(event: Event) {
+  const inputElement = event.target as HTMLInputElement | null;
+  let file: any;
+  if (inputElement && inputElement.files) {
+    file = inputElement.files[0];
+  }
+  if (!file) return;
   excelName.value = file.name;
   if (!['xlsx', 'xls'].includes(file.name.toString().split('.').pop())) {
     alert('您选择的不是Excel表格文档！');
     return;
   }
   const reader = new FileReader();
-  reader.onload = (e) => {
-    const arrayBuffer = e.target.result;
+  reader.onload = (e: Event) => {
+    const loadEvent = e as ProgressEvent<FileReader>;
+    const arrayBuffer = loadEvent.target?.result as ArrayBuffer;
+    if (!arrayBuffer) return;
     const workbook = XLSX.read(arrayBuffer, { type: 'array' });
     const firstSheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[firstSheetName];

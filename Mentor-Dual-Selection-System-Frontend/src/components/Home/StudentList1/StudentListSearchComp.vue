@@ -3,12 +3,12 @@ import {useStudentListStore} from "@/stores/StudentListStore";
 import {ref} from "vue";
 import {http} from "@/utils/http";
 
-const studentNameValue = ref(null);
-const studentIsSelectTeacher = ref(null);
+const studentNameValue = ref<string | null>(null);
+const studentIsSelectTeacher = ref<string | null>(null);
 
 function selectStudentClicked() {
   const studentListStore = useStudentListStore();
-  studentListStore.updateIsSelectTeacher(studentIsSelectTeacher);
+  studentListStore.updateIsSelectTeacher(studentIsSelectTeacher.value as string | null);
   if (studentNameValue.value === null) studentNameValue.value = "";
   http({
     url: '/search/students/search',

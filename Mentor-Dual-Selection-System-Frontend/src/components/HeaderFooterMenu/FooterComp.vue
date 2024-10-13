@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {onMounted, ref} from "vue";
 
-const copyrightYear = ref(null);
+const copyrightYear = ref<string | null>(null);
 
 onMounted(() => {
   const date = new Date();

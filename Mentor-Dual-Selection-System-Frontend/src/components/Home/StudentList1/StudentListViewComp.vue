@@ -5,8 +5,8 @@ import {http} from "@/utils/http";
 import {useStudentListStore} from "@/stores/StudentListStore";
 const studentListStore = useStudentListStore();
 
-const grade = ref(null);
-const tableData = ref([]);
+const grade = ref<string | null>(null);
+const tableData = ref<any[]>([]);
 
 function getCurrentYearMonth(): string {
   const now = new Date();
@@ -14,7 +14,7 @@ function getCurrentYearMonth(): string {
   const month = (now.getMonth() + 1).toString().padStart(2, '0');
   return `${year}-${month}`;
 }
-function isStudentGradeFirst(): string{
+function isStudentGradeFirst(): string | null{
   const currentYearMonth = getCurrentYearMonth();
   const [currentYear, currentMonth] = currentYearMonth.split('-').map(Number);
   let entryYear = new Date().getFullYear()
@@ -23,9 +23,10 @@ function isStudentGradeFirst(): string{
   } else if (entryYear === currentYear && currentMonth <= 8) { // 获取年和当前年相等，但月份八月以前，就是获取年-1的学年
     return (entryYear - 1).toString().padStart(4, '0');
   }
+  return null;
 }
 
-function selectStudentByName(targetStudentList, targetIsSelectTeacher){
+function selectStudentByName(targetStudentList: any[], targetIsSelectTeacher: any){
   const grade = isStudentGradeFirst();
   let tempList = [];
   for (let i = 0; i < targetStudentList.length; i++) {
