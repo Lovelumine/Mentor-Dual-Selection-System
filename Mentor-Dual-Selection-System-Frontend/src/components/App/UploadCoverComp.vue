@@ -4,6 +4,7 @@ import { useUploadCoverStore } from "@/stores/UploadCoverStore";
 import { onMounted, ref, watch } from "vue";
 const uploadCoverStore = useUploadCoverStore();
 
+<<<<<<< HEAD
 // 确定类型，避免null和undefined导致的类型问题
 
 const allStatus = ref({
@@ -11,14 +12,39 @@ const allStatus = ref({
   nowNumberOfPeopleComp: null as number | null,
   nowPeopleNameComp: null as string | null,
   updateFalStatusComp: null as number | null
+=======
+interface AllStatusImpl {
+  numberOfPeopleComp: number;
+  nowNumberOfPeopleComp: number;
+  nowPeopleNameComp: string | null;
+  updateFalStatusComp: number;
+}
+const numberOfPeopleComp = ref();
+const nowNumberOfPeopleComp = ref();
+const nowPeopleNameComp = ref();
+const updateFalStatusComp = ref(0);
+const allStatus = ref<AllStatusImpl>({
+  numberOfPeopleComp: -1,
+  nowNumberOfPeopleComp: -1,
+  nowPeopleNameComp: '',
+  updateFalStatusComp: 0
+>>>>>>> fe643114aca173d2ceaf54b24572a62f9fcc100f
 })
 
 function finishClicked() {
   uploadCoverStore.triggerCoverShow(false);
+<<<<<<< HEAD
   uploadCoverStore.statusStore.numberOfPeople = -1;
   uploadCoverStore.statusStore.nowNumberOfPeople = -2;
   uploadCoverStore.statusStore.nowPeopleName = ""; // 将undefined替换为空字符串
   uploadCoverStore.statusStore.updateFalStatus = 0;
+=======
+  uploadCoverStore.recordStatus(-1, -1, '', 0);
+  // uploadCoverStore.statusStore.numberOfPeople = -1;
+  // uploadCoverStore.statusStore.nowNumberOfPeople = -2;
+  // uploadCoverStore.statusStore.nowPeopleName = null;
+  // uploadCoverStore.statusStore.updateFalStatus = 0;
+>>>>>>> fe643114aca173d2ceaf54b24572a62f9fcc100f
 }
 
 onMounted(() => {
@@ -42,11 +68,18 @@ watch(() => uploadCoverStore.statusStore, (newVal) => {
     <div class="icon_text_box">
       <el-icon size="128" color="#005826"><Loading /></el-icon>
       <div>
+<<<<<<< HEAD
         <span>{{ allStatus.numberOfPeopleComp !== null && allStatus.numberOfPeopleComp >= 0 ? `解析到您的Excel存有 ${allStatus.numberOfPeopleComp} 条信息` : '正在解析……' }}</span><br/>
         <span>{{ allStatus.nowNumberOfPeopleComp !== null && allStatus.nowNumberOfPeopleComp >= 0 ? `当前 ${allStatus.nowNumberOfPeopleComp} / 共有 ${allStatus.numberOfPeopleComp}` : '正在解析……' }}</span><br/>
         <span>{{ allStatus.nowPeopleNameComp !== '' && allStatus.nowPeopleNameComp !== null ? `姓名：${allStatus.nowPeopleNameComp}` : '正在解析……'}}</span><br/>
+=======
+        <span>{{ '期间禁止关闭网页，请保持网络畅通' }}</span><br/>
+        <span>{{ allStatus?.numberOfPeopleComp >= 0? `解析到您的Excel存有 ${allStatus?.numberOfPeopleComp} 条信息`: '正在解析……' }}</span><br/>
+        <span>{{ allStatus?.nowNumberOfPeopleComp >= 0? `当前 ${allStatus?.nowNumberOfPeopleComp} / 共有 ${allStatus?.numberOfPeopleComp}`: '正在解析……' }}</span><br/>
+        <span>{{ allStatus?.nowPeopleNameComp !== '' && allStatus?.nowPeopleNameComp !== undefined? `姓名：${allStatus?.nowPeopleNameComp}`: '正在解析……'}}</span><br/>
+>>>>>>> fe643114aca173d2ceaf54b24572a62f9fcc100f
       </div>
-      <button :disabled="allStatus.numberOfPeopleComp !== allStatus.nowNumberOfPeopleComp" @click="finishClicked" class="button">完成</button>
+      <button :disabled="allStatus?.numberOfPeopleComp !== allStatus?.nowNumberOfPeopleComp" @click="finishClicked" class="button">完成</button>
     </div>
   </div>
 </template>

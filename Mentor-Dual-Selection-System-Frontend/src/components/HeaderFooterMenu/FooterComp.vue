@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 
+<<<<<<< HEAD
 const copyrightYear = ref<string | null>(null); // 将类型声明为 string | null
+=======
+const copyrightYear = ref<string | null>(null);
+>>>>>>> fe643114aca173d2ceaf54b24572a62f9fcc100f
 
 onMounted(() => {
   const date = new Date();

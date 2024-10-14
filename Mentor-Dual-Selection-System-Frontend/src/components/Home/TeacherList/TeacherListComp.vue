@@ -9,7 +9,7 @@ const userInfoStore = useUserInfoStore();
 
 const isFuncShow = ref(false);
 
-function handleIsFuncShow(target){
+function handleIsFuncShow(target: string | null){
   isFuncShow.value = target === 'ADMIN';
 }
 
