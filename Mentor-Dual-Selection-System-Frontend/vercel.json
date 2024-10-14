@@ -20,13 +20,6 @@
         "source": "/upload/:path*", 
         "destination": "http://223.82.75.76:50000/upload/:path*"
       }
-    ],
-    "redirects": [
-      {
-        "source": "/(.*)", 
-        "destination": "/index.html",
-        "statusCode": 200
-      }
     ]
   }
   
