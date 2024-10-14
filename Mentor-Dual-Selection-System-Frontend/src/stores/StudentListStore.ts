@@ -1,15 +1,15 @@
-import {defineStore} from "pinia";
+import { defineStore } from "pinia";
 
 export const useStudentListStore = defineStore('StudentListStore', {
     state: () => ({
-        isSelectTeacher: null,
-        studentListSt: []
+        isSelectTeacher: null as string | null,
+        studentListSt: [] as any[]
     }),
     actions: {
-        updateIsSelectTeacher(target: string) {
+        updateIsSelectTeacher(target: string | null) {
             this.isSelectTeacher = target;
         },
-        updateStudentList(target) {
+        updateStudentList(target: any[]) {
             this.studentListSt = target;
         }
     }

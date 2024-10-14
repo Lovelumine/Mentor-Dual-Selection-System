@@ -40,7 +40,7 @@ function singinClicked(){
 <template>
   <div class="container">
     <h3>
-      账号登录
+      账号登录(系统处于测试阶段，暂未开放)
     </h3>
     <form @submit.prevent="singinClicked">
       <div class="input_box">

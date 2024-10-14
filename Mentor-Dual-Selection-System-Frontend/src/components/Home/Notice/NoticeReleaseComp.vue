@@ -15,7 +15,7 @@ const noticeForm = ref({
   attachmentUrl: null,
   published: true,
 });
-const attachmentInput = ref(null);
+const attachmentInput = ref<HTMLInputElement | null>(null);
 const uploadStatus = ref("");
 const fileName = ref('未选择');
 
@@ -24,12 +24,13 @@ function resettingClicked() {
 }
 
 // 上传文件的函数
-function handleFileChange(event) {
-  const file = event.target.files[0];
+function handleFileChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files ? input.files[0] : null;
   if (!file) return;
   const formData = new FormData();
   formData.append("file", file);
-  fileName.value = file.name
+  fileName.value = file.name;
   uploadFileStore.changeIsLoading(true);
   // 上传文件到 /upload 接口（不是 /admin/upload）
   axios({
@@ -97,8 +98,13 @@ function uploadRelease() {
 }
 
 function triggerUploadFile() {
-  attachmentInput.value.click();
+  if (attachmentInput.value) {
+    attachmentInput.value.click();
+  } else {
+    console.error("附件输入框未找到");
+  }
 }
+
 
 watch(
   () => userInfoStore.userInfo,

@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import {onMounted, ref} from "vue";
+import { onMounted, ref } from "vue";
 
-const copyrightYear = ref(null);
+const copyrightYear = ref<string | null>(null);
 
 onMounted(() => {
   const date = new Date();
-  let year = date.getFullYear();
-  copyrightYear.value = year === 2024? '2024': `2024-${year}`;
-})
+  const year = date.getFullYear();
+  copyrightYear.value = year === 2024 ? '2024' : `2024-${year}`;
+});
 </script>
+
+
 
 <template>
   <footer>

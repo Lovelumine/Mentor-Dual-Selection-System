@@ -1,32 +1,46 @@
 <script setup lang="ts">
-import {Paperclip} from "@element-plus/icons-vue";
-import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
-import {onMounted, ref, watch} from "vue";
-import {httpAdmin} from "@/utils/http";
+import { Paperclip } from "@element-plus/icons-vue";
+import { useUserInfoStore } from "@/stores/user/UserBasicInformation";
+import { onMounted, ref, watch } from "vue";
+import { httpAdmin } from "@/utils/http";
 import axios from "axios";
 const userStore = useUserInfoStore();
-import {useUploadFileStore} from "@/stores/UploadFileStore";
+import { useUploadFileStore } from "@/stores/UploadFileStore";
 const uploadFileStore = useUploadFileStore();
 
-const userPermi = ref('');
-const allNotice = ref([]);
-const dialogVisible = ref(false)
+const userPermi = ref<string | null>('');
+interface Notice {
+  id: number;
+  title: string;
+  content: string;
+  attachmentUrl: string | null;
+  lastModified: string;
+  lastModifiedCN?: string;  // 可选字段，用于格式化的日期
+}
+
+const allNotice = ref<Notice[]>([]);
+const dialogVisible = ref(false);
 const noticeDetails = ref({
-  id: null,
-  title: null,
-  content: null,
-  attachmentUrl: null,
+  id: null as number | null,
+  title: null as string | null,
+  content: null as string | null,
+  attachmentUrl: null as string | null,
   published: true
-})
-const attachmentInput = ref(null);
+});
+const attachmentInput = ref<HTMLInputElement | null>(null);
 const fileName = ref('未选择（若您先前有附件，您就无需再选附件）');
 
 function triggerUploadFile() {
-  attachmentInput.value.click();
+  if (attachmentInput.value) {
+    attachmentInput.value.click();
+  } else {
+    alert("未找到附件输入框！");
+  }
 }
 
-function handleFileChange(event) {
-  const file = event.target.files[0];
+function handleFileChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files ? input.files[0] : null;
   if (!file) return;
   fileName.value = file.name;
   const formData = new FormData();
@@ -41,23 +55,32 @@ function handleFileChange(event) {
       "Content-Type": "multipart/form-data",
     },
     data: formData,
-  }).then((res) => {
-    if (res.status === 200 && res.data) {
-      noticeDetails.value.attachmentUrl = res.data;
-      alert("文件上传成功！");
-      fileName.value += '-上传成功';
-      uploadFileStore.changeIsLoading(false);
-    } else {
+  })
+    .then((res) => {
+      if (res.status === 200 && res.data) {
+        noticeDetails.value.attachmentUrl = res.data;
+        alert("文件上传成功！");
+        fileName.value += '-上传成功';
+        uploadFileStore.changeIsLoading(false);
+      } else {
+        alert("文件上传失败！");
+        fileName.value += '-上传失败';
+        uploadFileStore.changeIsLoading(false);
+      }
+    })
+    .catch((err) => {
       alert("文件上传失败！");
       fileName.value += '-上传失败';
+      console.error(err);
       uploadFileStore.changeIsLoading(false);
-    }
-  }).catch((err) => {
-    alert("文件上传失败！");
-    fileName.value += '-上传失败';
-    console.error(err);
-    uploadFileStore.changeIsLoading(false);
-  });
+    });
+}
+
+function getFileName(url: string): string {
+  if (!url) return '';
+  const decodedUrl = decodeURIComponent(url);
+  const parts = decodedUrl.split('/');
+  return parts[parts.length - 1];
 }
 
 function changePermi(target: any) {
@@ -120,10 +143,11 @@ function deleteNotice(target: number){
       window.location.reload();
     } else alert('删除失败！');
   }).catch(err => {
-    alert('删除成功！');
+    alert('删除失败！');
     console.error(err);
   })
 }
+
 onMounted(() => {
   if (userStore.userInfo){
     userPermi.value = userStore.userInfo.role;
@@ -204,45 +228,16 @@ watch(() => userStore.userInfo, (newValue) => {
         {{item.content}}
       </div>
       <div class="annex">
-        <a :href="item.attachmentUrl" v-if="item.attachmentUrl"><el-icon size="20"><Paperclip /></el-icon>下载文件.docx</a>
+        <a :href="item.attachmentUrl" v-if="item.attachmentUrl">
+          <el-icon size="20"><Paperclip /></el-icon>
+          {{ getFileName(item.attachmentUrl) }}
+        </a>
         <div class="button_box" v-if="userPermi === 'ADMIN'">
           <button class="button" @click="changeNotice(item.id, index)">修改</button>
           <button class="button" @click="deleteNotice(item.id)">删除</button>
         </div>
       </div>
     </div>
-
-<!--    <div class="card_box">-->
-<!--      <div class="notice_title_box">-->
-<!--        <h3 class="notice_title">-->
-<!--          关于个性化培养方案的说明-->
-<!--        </h3>-->
-<!--        <span class="release_date">-->
-<!--        发布时间：2024年9月10日-->
-<!--      </span>-->
-<!--      </div>-->
-<!--      <hr/>-->
-<!--      <div class="notice_content">-->
-<!--        本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。-->
-<!--        本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。-->
-<!--        本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。-->
-<!--        本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。-->
-<!--        本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。-->
-<!--        本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。-->
-<!--        本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。-->
-<!--        本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。-->
-<!--        本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。-->
-<!--        本学期增加了个性化培养方案的填写，请老师和同学们共同完成，请各位老师依据学生个性化培养方案的完成情况进行评分，并将电子版培养方案上传至系统，或由学生签名后提交给教务老师，谢谢。-->
-
-<!--      </div>-->
-<!--      <div class="annex">-->
-<!--        <a href="#"><el-icon size="20"><Paperclip /></el-icon>下载文件.docx</a>-->
-<!--        <div class="button_box" v-if="userPermi === 'ADMIN'">-->
-<!--          <button class="button" @click="handleEdit(scope.$index, scope.row)">修改</button>-->
-<!--          <button class="button" @click="handleDelete(scope.$index, scope.row)">删除</button>-->
-<!--        </div>-->
-<!--      </div>-->
-<!--    </div>-->
   </div>
 </template>
 

@@ -5,8 +5,8 @@ import {http} from "@/utils/http";
 import {useStudentListStore} from "@/stores/StudentListStore";
 const studentListStore = useStudentListStore();
 
-const grade = ref(null);
-const tableData = ref([]);
+const grade = ref<string | null>(null);
+const tableData = ref<any[]>([]);
 
 function getCurrentYearMonth(): string {
   const now = new Date();
@@ -14,7 +14,7 @@ function getCurrentYearMonth(): string {
   const month = (now.getMonth() + 1).toString().padStart(2, '0');
   return `${year}-${month}`;
 }
-function isStudentGradeThird(): string{
+function isStudentGradeThird(): string | null{
   const currentYearMonth = getCurrentYearMonth();
   const [currentYear, currentMonth] = currentYearMonth.split('-').map(Number);
   let entryYear = new Date().getFullYear() - 2;
@@ -25,9 +25,10 @@ function isStudentGradeThird(): string{
     console.log(2, entryYear - 1);
     return (entryYear - 1).toString().padStart(4, '0');
   }
+  return null;
 }
 
-function selectStudentByName(targetStudentList, targetIsSelectTeacher){
+function selectStudentByName(targetStudentList: any[], targetIsSelectTeacher: any){
   const grade = isStudentGradeThird();
   let tempList = [];
   for (let i = 0; i < targetStudentList.length; i++) {

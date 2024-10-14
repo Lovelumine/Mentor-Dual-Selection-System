@@ -7,7 +7,7 @@ const uploadCoverStore = useUploadCoverStore();
 import {useRouter} from "vue-router";
 const router = useRouter();
 
-const fileInput = ref(null);
+const fileInput = ref<HTMLInputElement | null>(null);
 const excelData = ref([]);
 const excelName = ref('');
 const isUploadBoxShow = ref(false);
@@ -54,15 +54,17 @@ function checkUpload() {
 }
 
 const triggerFileInput = () => {
-  fileInput.value.click();
+  if (fileInput.value) fileInput.value.click();
 }
 
 // 处理文件选择后的变化
-function handleFileChange(event) {
-  const files = event.target.files;
-  console.log('files', files);
-  if (files.length === 0) return;
-  const file = files[0];
+function handleFileChange(event: Event) {
+  const inputElement = event.target as HTMLInputElement | null;
+  let file: any;
+  if (inputElement && inputElement.files) {
+    file = inputElement.files[0];
+  }
+  if (!file) return;
   console.log('file', file);
   excelName.value = file.name;
   if (!['xlsx', 'xls'].includes(file.name.toString().split('.').pop())){
@@ -70,9 +72,11 @@ function handleFileChange(event) {
     return;
   }
   const reader = new FileReader();
-  reader.onload = (e) => {
-    const arrayBuffer = e.target.result;
+  reader.onload = (e: Event) => {
+    const loadEvent = e as ProgressEvent<FileReader>;
+    const arrayBuffer = loadEvent.target?.result as ArrayBuffer;
     const workbook = XLSX.read(arrayBuffer, { type: 'array' }); // 注意这里的 type 是 'array'
+    if (!arrayBuffer) return;
 
     // 处理第一个工作表
     const firstSheetName = workbook.SheetNames[0];

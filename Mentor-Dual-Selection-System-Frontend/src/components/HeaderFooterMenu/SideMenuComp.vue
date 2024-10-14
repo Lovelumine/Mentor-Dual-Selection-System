@@ -33,11 +33,13 @@ function studentListClicked(grade: number) {
   router.push(path);
 }
 
-function handleIsShowFunction(target: string) {
-  isSelectStudentShow.value = ['TEACHER', 'ADMIN'].includes(target);
-  isStudentListShow.value = ['TEACHER', 'ADMIN'].includes(target);
-  isSelectTeacherShow.value = target === 'STUDENT';
-  isTeacherResumeShow.value = ['TEACHER', 'ADMIN'].includes(target);
+function handleIsShowFunction(target: string | null) {
+  if (target) {
+    isSelectStudentShow.value = ['TEACHER', 'ADMIN'].includes(target);
+    isStudentListShow.value = ['TEACHER', 'ADMIN'].includes(target);
+    isSelectTeacherShow.value = target === 'STUDENT';
+    isTeacherResumeShow.value = ['TEACHER', 'ADMIN'].includes(target);
+  }
 }
 
 function SignoutClicked() {

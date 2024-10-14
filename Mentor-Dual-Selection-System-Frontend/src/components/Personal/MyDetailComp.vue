@@ -120,7 +120,7 @@ onMounted(() => {
 });
 
 function getUserDetail(targetInfo: any) {
-  const fetchDetailApi = targetInfo?.role === 'TEACHER' ? httpTeacher : httpStudent;
+  const fetchDetailApi = targetInfo?.role === 'TEACHER' || targetInfo?.role === 'ADMIN' ? httpTeacher : httpStudent;
 
   fetchDetailApi({
     url: '/my-detail',
