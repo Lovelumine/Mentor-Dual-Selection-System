@@ -15,12 +15,7 @@ const noticeForm = ref({
   attachmentUrl: null,
   published: true,
 });
-<<<<<<< HEAD
-const attachmentInput = ref<HTMLInputElement | null>(null);  // 指定类型
-
-=======
 const attachmentInput = ref<HTMLInputElement | null>(null);
->>>>>>> fe643114aca173d2ceaf54b24572a62f9fcc100f
 const uploadStatus = ref("");
 const fileName = ref('未选择');
 

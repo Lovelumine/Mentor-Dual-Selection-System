@@ -102,7 +102,8 @@ async function updateTeacherDetails(rowData: any, index: number) {
       const fullName = String(rowData[1]).trim();
       const username = String(rowData[3]).trim();
 
-      const teacher = allTeachers.find(t => t.username === username && t.fullName === fullName);
+      // 为 t 参数指定类型
+      const teacher = allTeachers.find((t: { username: string; fullName: string }) => t.username === username && t.fullName === fullName);
 
       if (teacher && teacher.uid) {
         // 上传职位、研究方向
@@ -199,7 +200,7 @@ function handleFileChange(event: Event) {
     <el-progress
       :percentage="progressPercentage"
       :text-inside="true"
-      stroke-width="30"
+      :stroke-width="30"
       color="#7ED321"
     ></el-progress>
     <p>{{ progressStatus }}</p>
