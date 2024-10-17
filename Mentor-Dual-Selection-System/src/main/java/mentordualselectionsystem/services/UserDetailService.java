@@ -32,9 +32,12 @@ public class UserDetailService {
     public List<UserDetail> getAllTeacherDetails() {
         return userDetailRepository.findAll()
                 .stream()
-                .filter(detail -> "TEACHER".equals(userRepository.findById(detail.getUid()).get().getRole().getRoleName()))
+                .filter(detail -> userRepository.findById(detail.getUid())
+                        .map(user -> "TEACHER".equals(user.getRole().getRoleName()))
+                        .orElse(false)) // 如果用户不存在则返回 false，跳过此条记录
                 .collect(Collectors.toList());
     }
+
 
     // 获取所有学生的详细信息
     public List<UserDetail> getAllStudentDetails() {
