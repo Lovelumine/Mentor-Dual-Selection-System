@@ -8,7 +8,7 @@ import type { EChartsOption } from 'echarts';
 
 const router = useRouter();
 const userStore = useUserInfoStore();
-const totalSlots = 3;  // 总的可以招收的学生数
+const totalSlots = 9;  // 总的可以招收的学生数
 const studentCount = ref(0);  // 已招收的学生数
 
 // 所有的申请数据
