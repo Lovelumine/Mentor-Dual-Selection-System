@@ -78,8 +78,8 @@ public class ApplicationService {
         }
 
         // 检查导师是否已经有 3 名学生
-        if (getAcceptedStudentCount(mentor.getUid()) >= 3) {
-            throw new RuntimeException("导师已经有3名学生，无法接受更多学生");
+        if (getAcceptedStudentCount(mentor.getUid()) >= 9) {
+            throw new RuntimeException("导师已经有9名学生，无法接受更多学生");
         }
 
         // 检查学生是否已经有导师
@@ -109,9 +109,9 @@ public class ApplicationService {
                 .orElseThrow(() -> new RuntimeException("学生不存在"));
 
         if (approved) {
-            // 检查导师是否已经有 3 名学生
-            if (getAcceptedStudentCount(mentor.getUid()) >= 3) {
-                throw new RuntimeException("导师已经有3名学生");
+            // 检查导师是否已经有 9 名学生
+            if (getAcceptedStudentCount(mentor.getUid()) >= 9) {
+                throw new RuntimeException("导师已经有9名学生");
             }
 
             // 检查学生是否已经有导师
