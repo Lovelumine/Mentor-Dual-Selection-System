@@ -11,10 +11,10 @@ public class MinioConfig {
     @Value("${minio.url}")
     private String minioUrl;
 
-    @Value("uv9Ey4hCgAeF9US8IvW7")
+    @Value("${minio.access-key}")
     private String accessKey;
 
-    @Value("EJxNuc7hJId6cW969JXcMtd14xs7d9wTmC17Mn5W")
+    @Value("${minio.secret-key}")
     private String secretKey;
 
     @Bean

@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:mentor_dual_selection_system;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;INIT=CREATE SCHEMA IF NOT EXISTS teacherselectionsystem\\;SET SCHEMA teacherselectionsystem
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+    properties:
+      hibernate:
+        default_schema: teacherselectionsystem
+  flyway:
+    enabled: false
+  mail:
+    host: localhost
+    port: 25
+
+minio:
+  url: http://localhost:9000
+  access-key: minioadmin
+  secret-key: minioadmin
+  bucket-name: mentor-dual-selection-system
+
+app:
+  mail:
+    from: no-reply@example.com

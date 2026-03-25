@@ -2,14 +2,12 @@ spring:
   application:
     name: Mentor-Dual-Selection-System
 
-  # Configure MySQL data source
   datasource:
-    url: jdbc:mysql://223.82.75.77:3308/teacherselectionsystem?useSSL=false&serverTimezone=UTC
-    username: root
-    password: CL9zbYfqH1ZYShPO
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/teacherselectionsystem?useSSL=false&serverTimezone=UTC}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:change-me}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-  # Auto-create and update tables
   jpa:
     hibernate:
       ddl-auto: update
@@ -19,10 +17,6 @@ spring:
         format_sql: true
     database-platform: org.hibernate.dialect.MySQLDialect
 
-  # Exclude specific autoconfiguration
-  autoconfigure:
-    exclude:
-      - org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration
   mvc:
     cors:
       allowed-origins: "*"
@@ -30,17 +24,16 @@ spring:
       allowed-headers: "*"
       allow-credentials: true  # Cookie
 
-  # Multipart file upload settings
   servlet:
     multipart:
-      max-file-size: 100MB  # 设置单个文件上传的最大大小为 100MB
-      max-request-size: 100MB  # 设置整个请求的最大大小为 100MB
+      max-file-size: 100MB
+      max-request-size: 100MB
 
   mail:
-    host: smtp.exmail.qq.com  # 腾讯企业邮箱 SMTP 服务器地址
-    port: 465                 # SMTP 端口号
-    username: shendekoudai@lovelumine.com  # 你的邮箱账户
-    password: ouyangZHUO088741!            # 你的邮箱密码
+    host: ${SPRING_MAIL_HOST:localhost}
+    port: ${SPRING_MAIL_PORT:25}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
     properties:
       mail:
         smtp:
@@ -50,17 +43,13 @@ spring:
           starttls:
             enable: true
           socketFactory:
-            port: 465
+            port: ${SPRING_MAIL_PORT:25}
             class: javax.net.ssl.SSLSocketFactory
             fallback: false
 
-# Application port
 server:
-  port: 50000
+  port: ${SERVER_PORT:50000}
 
-# Knife4j configuration
-
-# springdoc-openapi
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
@@ -72,7 +61,6 @@ springdoc:
     - group: 'default'
       paths-to-match: '/**'
       packages-to-scan: mentordualselectionsystem.controller
-# knife4j
 knife4j:
   enable: true
   setting:
@@ -82,9 +70,12 @@ knife4j:
     footer-custom-content: Copyright © 2023-2024 Yongxin County Lovelumine Technology Co., Ltd.
 debug: true
 
-# MinIO Configuration
+app:
+  mail:
+    from: ${APP_MAIL_FROM:no-reply@example.com}
+
 minio:
-  url: https://minio.lumoxuan.cn  # MinIO server URL
-  access-key: uv9Ey4hCgAeF9US8IvW7  # MinIO access key
-  secret-key: EJxNuc7hJId6cW969JXcMtd14xs7d9wTmC17Mn5W  # MinIO secret key
-  bucket-name: mentor-dual-selection-system  # default bucket name, can be customized
+  url: ${MINIO_URL:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  bucket-name: ${MINIO_BUCKET_NAME:mentor-dual-selection-system}

@@ -1,0 +1,12 @@
+services:
+  mentor-backend:
+    build:
+      context: ../Mentor-Dual-Selection-System
+      dockerfile: Dockerfile
+    image: mentor-dual-selection-system:latest
+    container_name: mentor-dual-selection-system
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${SERVER_PORT:-50000}:${SERVER_PORT:-50000}"

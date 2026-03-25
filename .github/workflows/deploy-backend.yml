@@ -1,0 +1,147 @@
+name: Deploy Backend
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "Mentor-Dual-Selection-System/**"
+      - "deploy/**"
+      - ".github/workflows/deploy-backend.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate deploy secrets
+        id: validate
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_APP_DIR: ${{ secrets.DEPLOY_APP_DIR }}
+          SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
+          SPRING_MAIL_HOST: ${{ secrets.SPRING_MAIL_HOST }}
+          SPRING_MAIL_PORT: ${{ secrets.SPRING_MAIL_PORT }}
+          SPRING_MAIL_USERNAME: ${{ secrets.SPRING_MAIL_USERNAME }}
+          SPRING_MAIL_PASSWORD: ${{ secrets.SPRING_MAIL_PASSWORD }}
+          APP_MAIL_FROM: ${{ secrets.APP_MAIL_FROM }}
+          MINIO_URL: ${{ secrets.MINIO_URL }}
+          MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}
+          MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
+          MINIO_BUCKET_NAME: ${{ secrets.MINIO_BUCKET_NAME }}
+        run: |
+          set -eu
+          missing=0
+          for var in \
+            DEPLOY_HOST \
+            DEPLOY_USER \
+            DEPLOY_SSH_KEY \
+            DEPLOY_APP_DIR \
+            SPRING_DATASOURCE_URL \
+            SPRING_DATASOURCE_USERNAME \
+            SPRING_DATASOURCE_PASSWORD \
+            MINIO_URL \
+            MINIO_ACCESS_KEY \
+            MINIO_SECRET_KEY \
+            MINIO_BUCKET_NAME; do
+            if [ -z "${!var:-}" ]; then
+              echo "::warning title=Missing deploy secret::$var is not configured."
+              missing=1
+            fi
+          done
+
+          if [ "$missing" -eq 1 ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure SSH
+        if: steps.validate.outputs.skip != 'true'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${DEPLOY_PORT:-22}" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Create deployment bundle
+        if: steps.validate.outputs.skip != 'true'
+        run: tar czf mentor-dual-selection-system.tgz Mentor-Dual-Selection-System deploy
+
+      - name: Create deploy env file
+        if: steps.validate.outputs.skip != 'true'
+        env:
+          SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
+          SPRING_MAIL_HOST: ${{ secrets.SPRING_MAIL_HOST }}
+          SPRING_MAIL_PORT: ${{ secrets.SPRING_MAIL_PORT }}
+          SPRING_MAIL_USERNAME: ${{ secrets.SPRING_MAIL_USERNAME }}
+          SPRING_MAIL_PASSWORD: ${{ secrets.SPRING_MAIL_PASSWORD }}
+          APP_MAIL_FROM: ${{ secrets.APP_MAIL_FROM }}
+          MINIO_URL: ${{ secrets.MINIO_URL }}
+          MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}
+          MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
+          MINIO_BUCKET_NAME: ${{ secrets.MINIO_BUCKET_NAME }}
+        run: |
+          cat > mentor-dual-selection-system.env <<EOF
+          SERVER_PORT=50000
+          SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
+          SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
+          SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
+          SPRING_MAIL_HOST=${SPRING_MAIL_HOST}
+          SPRING_MAIL_PORT=${SPRING_MAIL_PORT}
+          SPRING_MAIL_USERNAME=${SPRING_MAIL_USERNAME}
+          SPRING_MAIL_PASSWORD=${SPRING_MAIL_PASSWORD}
+          APP_MAIL_FROM=${APP_MAIL_FROM}
+          MINIO_URL=${MINIO_URL}
+          MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+          MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+          MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME}
+          EOF
+
+      - name: Upload deployment bundle
+        if: steps.validate.outputs.skip != 'true'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          scp -P "${DEPLOY_PORT:-22}" mentor-dual-selection-system.tgz "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/mentor-dual-selection-system.tgz"
+          scp -P "${DEPLOY_PORT:-22}" mentor-dual-selection-system.env "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/mentor-dual-selection-system.env"
+
+      - name: Deploy on server
+        if: steps.validate.outputs.skip != 'true'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_APP_DIR: ${{ secrets.DEPLOY_APP_DIR }}
+        run: |
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" APP_DIR="${DEPLOY_APP_DIR}" 'bash -s' <<'EOF'
+          set -euo pipefail
+
+          mkdir -p "$APP_DIR"
+          tar xzf /tmp/mentor-dual-selection-system.tgz -C "$APP_DIR"
+          mkdir -p "$APP_DIR/deploy"
+          mv /tmp/mentor-dual-selection-system.env "$APP_DIR/deploy/.env"
+
+          cd "$APP_DIR/deploy"
+          docker compose up -d --build --remove-orphans
+          EOF
+
+      - name: Skip deployment notice
+        if: steps.validate.outputs.skip == 'true'
+        run: echo "Deploy skipped because required GitHub secrets are not configured."
