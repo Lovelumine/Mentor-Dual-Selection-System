@@ -1,4 +1,4 @@
-name: Deploy Backend
+name: Deploy Application
 
 on:
   workflow_dispatch:
@@ -7,6 +7,7 @@ on:
       - main
     paths:
       - "Mentor-Dual-Selection-System/**"
+      - "Mentor-Dual-Selection-System-Frontend/**"
       - "deploy/**"
       - ".github/workflows/deploy-backend.yml"
 
@@ -17,6 +18,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+          cache-dependency-path: Mentor-Dual-Selection-System-Frontend/pnpm-lock.yaml
+
       - name: Validate deploy secrets
         id: validate
         env:
@@ -25,6 +39,7 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_APP_DIR: ${{ secrets.DEPLOY_APP_DIR }}
+          DEPLOY_FRONTEND_DIR: ${{ secrets.DEPLOY_FRONTEND_DIR }}
           SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
           SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
           SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
@@ -33,6 +48,8 @@ jobs:
           SPRING_MAIL_USERNAME: ${{ secrets.SPRING_MAIL_USERNAME }}
           SPRING_MAIL_PASSWORD: ${{ secrets.SPRING_MAIL_PASSWORD }}
           APP_MAIL_FROM: ${{ secrets.APP_MAIL_FROM }}
+          APP_DEFAULT_INITIAL_PASSWORD: ${{ secrets.APP_DEFAULT_INITIAL_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
           MINIO_URL: ${{ secrets.MINIO_URL }}
           MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}
           MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
@@ -48,6 +65,8 @@ jobs:
             SPRING_DATASOURCE_URL \
             SPRING_DATASOURCE_USERNAME \
             SPRING_DATASOURCE_PASSWORD \
+            APP_DEFAULT_INITIAL_PASSWORD \
+            JWT_SECRET \
             MINIO_URL \
             MINIO_ACCESS_KEY \
             MINIO_SECRET_KEY \
@@ -63,6 +82,8 @@ jobs:
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
+
+          echo "frontend_dir=${DEPLOY_FRONTEND_DIR:-/www/wwwroot/select.lumoxuan.cn}" >> "$GITHUB_OUTPUT"
 
       - name: Configure SSH
         if: steps.validate.outputs.skip != 'true'
@@ -80,6 +101,20 @@ jobs:
         if: steps.validate.outputs.skip != 'true'
         run: tar czf mentor-dual-selection-system.tgz Mentor-Dual-Selection-System deploy
 
+      - name: Install frontend dependencies
+        if: steps.validate.outputs.skip != 'true'
+        working-directory: Mentor-Dual-Selection-System-Frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        if: steps.validate.outputs.skip != 'true'
+        working-directory: Mentor-Dual-Selection-System-Frontend
+        run: pnpm build
+
+      - name: Package frontend bundle
+        if: steps.validate.outputs.skip != 'true'
+        run: tar czf mentor-dual-selection-frontend.tgz -C Mentor-Dual-Selection-System-Frontend/dist .
+
       - name: Create deploy env file
         if: steps.validate.outputs.skip != 'true'
         env:
@@ -91,6 +126,8 @@ jobs:
           SPRING_MAIL_USERNAME: ${{ secrets.SPRING_MAIL_USERNAME }}
           SPRING_MAIL_PASSWORD: ${{ secrets.SPRING_MAIL_PASSWORD }}
           APP_MAIL_FROM: ${{ secrets.APP_MAIL_FROM }}
+          APP_DEFAULT_INITIAL_PASSWORD: ${{ secrets.APP_DEFAULT_INITIAL_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
           MINIO_URL: ${{ secrets.MINIO_URL }}
           MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}
           MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
@@ -106,6 +143,8 @@ jobs:
           SPRING_MAIL_USERNAME=${SPRING_MAIL_USERNAME}
           SPRING_MAIL_PASSWORD=${SPRING_MAIL_PASSWORD}
           APP_MAIL_FROM=${APP_MAIL_FROM}
+          APP_DEFAULT_INITIAL_PASSWORD=${APP_DEFAULT_INITIAL_PASSWORD}
+          JWT_SECRET=${JWT_SECRET}
           MINIO_URL=${MINIO_URL}
           MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
           MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
@@ -121,6 +160,7 @@ jobs:
         run: |
           scp -P "${DEPLOY_PORT:-22}" mentor-dual-selection-system.tgz "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/mentor-dual-selection-system.tgz"
           scp -P "${DEPLOY_PORT:-22}" mentor-dual-selection-system.env "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/mentor-dual-selection-system.env"
+          scp -P "${DEPLOY_PORT:-22}" mentor-dual-selection-frontend.tgz "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/mentor-dual-selection-frontend.tgz"
 
       - name: Deploy on server
         if: steps.validate.outputs.skip != 'true'
@@ -129,8 +169,9 @@ jobs:
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_APP_DIR: ${{ secrets.DEPLOY_APP_DIR }}
+          DEPLOY_FRONTEND_DIR: ${{ steps.validate.outputs.frontend_dir }}
         run: |
-          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" APP_DIR="${DEPLOY_APP_DIR}" 'bash -s' <<'EOF'
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" APP_DIR="${DEPLOY_APP_DIR}" FRONTEND_DIR="${DEPLOY_FRONTEND_DIR}" 'bash -s' <<'EOF'
           set -euo pipefail
 
           mkdir -p "$APP_DIR"
@@ -140,6 +181,20 @@ jobs:
 
           cd "$APP_DIR/deploy"
           docker compose up -d --build --remove-orphans
+
+          mkdir -p "$FRONTEND_DIR"
+          find "$FRONTEND_DIR" -mindepth 1 -maxdepth 1 ! -name '.well-known' -exec rm -rf {} +
+          tar xzf /tmp/mentor-dual-selection-frontend.tgz -C "$FRONTEND_DIR"
+
+          for _ in $(seq 1 30); do
+            if curl -fsS "http://127.0.0.1:50000/hello" >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+
+          curl -fsS "http://127.0.0.1:50000/hello" >/dev/null
+          test -f "$FRONTEND_DIR/index.html"
           EOF
 
       - name: Skip deployment notice
