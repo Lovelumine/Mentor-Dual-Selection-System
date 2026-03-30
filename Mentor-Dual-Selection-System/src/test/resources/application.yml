@@ -20,6 +20,9 @@ spring:
     host: localhost
     port: 25
 
+JWT_SECRET: test-jwt-secret-for-h2-security-tests-2026-03-30-keep-stable
+APP_DEFAULT_INITIAL_PASSWORD: TestDefaultPassword!2026
+
 minio:
   url: http://localhost:9000
   access-key: minioadmin

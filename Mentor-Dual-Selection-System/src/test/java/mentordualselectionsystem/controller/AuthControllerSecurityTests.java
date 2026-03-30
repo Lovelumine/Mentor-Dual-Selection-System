@@ -2,6 +2,7 @@ package mentordualselectionsystem.controller;
 
 import mentordualselectionsystem.mysql.User;
 import mentordualselectionsystem.services.PasswordResetService;
+import mentordualselectionsystem.services.SecurityRateLimitService;
 import mentordualselectionsystem.services.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,9 @@ class AuthControllerSecurityTests {
     @MockBean
     private PasswordResetService passwordResetService;
 
+    @MockBean
+    private SecurityRateLimitService securityRateLimitService;
+
     @Test
     void forgotPasswordShouldBeAccessibleWithoutAuthentication() throws Exception {
         User user = new User();
@@ -43,7 +47,17 @@ class AuthControllerSecurityTests {
         mockMvc.perform(post("/api/auth/forgot-password").param("email", "updatedadmin@example.com"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data").value("密码重置邮件已发送到 updatedadmin@example.com"));
+                .andExpect(jsonPath("$.data").value("如果该邮箱已绑定账号，密码重置邮件将发送到对应邮箱"));
+    }
+
+    @Test
+    void forgotPasswordShouldNotRevealWhetherEmailExists() throws Exception {
+        given(userService.getUserByEmail("missing@example.com")).willThrow(new org.springframework.security.core.userdetails.UsernameNotFoundException("not found"));
+
+        mockMvc.perform(post("/api/auth/forgot-password").param("email", "missing@example.com"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data").value("如果该邮箱已绑定账号，密码重置邮件将发送到对应邮箱"));
     }
 
     @Test
@@ -60,5 +74,12 @@ class AuthControllerSecurityTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data").value("密码已重置"));
+    }
+
+    @Test
+    void userAllShouldRequireAuthentication() throws Exception {
+        mockMvc.perform(post("/api/user/all"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(401));
     }
 }

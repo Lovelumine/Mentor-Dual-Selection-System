@@ -19,7 +19,7 @@ public class JwtUtils {
     private final Key secretKey;  // 保持一个固定的密钥
 
     public JwtUtils(
-            @Value("${JWT_SECRET:mentor-dual-selection-system-default-jwt-secret-please-change-this-in-production-2026-03-30-stable-key}") String jwtSecret
+            @Value("${JWT_SECRET}") String jwtSecret
     ) {
         this.secretKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }

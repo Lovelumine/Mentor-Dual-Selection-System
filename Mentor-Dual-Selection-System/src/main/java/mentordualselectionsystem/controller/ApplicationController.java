@@ -93,7 +93,7 @@ public class ApplicationController {
         } catch (NumberFormatException e) {
             return buildErrorResponse(401, "token无效或已过期");
         } catch (Exception e) {
-            return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
+            return buildErrorResponse(500, "服务器内部错误");
         }
     }
 
@@ -148,7 +148,7 @@ public class ApplicationController {
         } catch (NumberFormatException e) {
             return buildErrorResponse(401, "token无效或已过期");
         } catch (Exception e) {
-            return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
+            return buildErrorResponse(500, "服务器内部错误");
         }
     }
 
@@ -213,7 +213,7 @@ public class ApplicationController {
 
             return buildSuccessResponse(200, mentorStudentRelationships);
         } catch (Exception e) {
-            return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
+            return buildErrorResponse(500, "服务器内部错误");
         }
     }
 
@@ -269,7 +269,7 @@ public class ApplicationController {
         } catch (NumberFormatException e) {
             return buildErrorResponse(401, "token无效或已过期");
         } catch (Exception e) {
-            return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
+            return buildErrorResponse(500, "服务器内部错误");
         }
     }
 
@@ -323,7 +323,7 @@ public class ApplicationController {
         } catch (NumberFormatException e) {
             return buildErrorResponse(401, "token无效或已过期");
         } catch (Exception e) {
-            return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
+            return buildErrorResponse(500, "服务器内部错误");
         }
     }
 
@@ -387,7 +387,7 @@ public class ApplicationController {
         } catch (NumberFormatException e) {
             return buildErrorResponse(401, "token无效或已过期");
         } catch (Exception e) {
-            return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
+            return buildErrorResponse(500, "服务器内部错误");
         }
     }
 
@@ -481,7 +481,7 @@ public class ApplicationController {
 
             return buildSuccessResponse(200, data);
         } catch (Exception e) {
-            return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
+            return buildErrorResponse(500, "服务器内部错误");
         }
     }
 
@@ -506,7 +506,7 @@ public class ApplicationController {
             result.put("removedCount", removedCount);
             return buildSuccessResponse(200, result);
         } catch (Exception e) {
-            return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
+            return buildErrorResponse(500, "服务器内部错误");
         }
     }
 
@@ -535,7 +535,7 @@ public class ApplicationController {
             result.put("createdAt", batch.getCreatedAt());
             return buildSuccessResponse(200, result);
         } catch (Exception e) {
-            return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
+            return buildErrorResponse(500, "服务器内部错误");
         }
     }
 
@@ -556,7 +556,7 @@ public class ApplicationController {
                     .toList();
             return buildSuccessResponse(200, batchRecords);
         } catch (Exception e) {
-            return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
+            return buildErrorResponse(500, "服务器内部错误");
         }
     }
 
@@ -581,7 +581,7 @@ public class ApplicationController {
             result.put("lastRestoredByName", batch.getLastRestoredByNameSnapshot());
             return buildSuccessResponse(200, result);
         } catch (Exception e) {
-            return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
+            return buildErrorResponse(500, "服务器内部错误");
         }
     }
 

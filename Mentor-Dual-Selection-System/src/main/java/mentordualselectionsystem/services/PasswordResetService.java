@@ -9,11 +9,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Service
 public class PasswordResetService {
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     @Autowired
     private PasswordResetTokenRepository passwordResetTokenRepository;
@@ -33,7 +34,7 @@ public class PasswordResetService {
         passwordResetTokenRepository.deleteByUid(user.getUid());
 
         // 生成新的验证码
-        String token = UUID.randomUUID().toString().substring(0, 6);  // 生成6位验证码
+        String token = String.format("%08d", SECURE_RANDOM.nextInt(100_000_000));
         PasswordResetToken passwordResetToken = new PasswordResetToken();
         passwordResetToken.setToken(token);
         passwordResetToken.setUid(user.getUid());
@@ -62,9 +63,9 @@ public class PasswordResetService {
     }
 
     public boolean validatePasswordResetToken(String token) {
-        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Token not found"));
-        return resetToken.getExpiryDate().isAfter(LocalDateTime.now()) && !resetToken.getUsed();
+        return passwordResetTokenRepository.findByToken(token)
+                .map(resetToken -> resetToken.getExpiryDate().isAfter(LocalDateTime.now()) && !resetToken.getUsed())
+                .orElse(false);
     }
 
     public User getUserByPasswordResetToken(String token) {

@@ -18,6 +18,7 @@ import mentordualselectionsystem.security.JwtUtils;
 import mentordualselectionsystem.services.UserDetailService;
 import mentordualselectionsystem.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -38,14 +39,22 @@ public class UserController {
     private final JwtUtils jwtUtils;
     private final UserRepository userRepository;
     private final UserDetailService userDetailService;  // 添加 UserDetailService 声明
+    private final String defaultInitialPassword;
 
 
     @Autowired
-    public UserController(UserService userService, JwtUtils jwtUtils, UserRepository userRepository, UserDetailService userDetailService) {
+    public UserController(
+            UserService userService,
+            JwtUtils jwtUtils,
+            UserRepository userRepository,
+            UserDetailService userDetailService,
+            @Value("${app.security.default-initial-password:}") String defaultInitialPassword
+    ) {
         this.userService = userService;
         this.jwtUtils = jwtUtils;
         this.userRepository = userRepository;
         this.userDetailService = userDetailService;
+        this.defaultInitialPassword = defaultInitialPassword;
     }
 
     @Operation(summary = "获取当前用户信息", description = "根据 JWT 令牌获取当前用户的详细信息。")
@@ -93,6 +102,14 @@ public class UserController {
     @PostMapping("/all")
     public ResponseEntity<?> getAllUsers() {
         try {
+            User currentUser = getCurrentAuthenticatedUser();
+            if (currentUser == null) {
+                return buildErrorResponse(401, "token无效或已过期");
+            }
+            if (!"ADMIN".equals(currentUser.getRole().getRoleName())) {
+                return buildErrorResponse(403, "仅管理员可以查看全部用户信息");
+            }
+
             List<User> users = userRepository.findAll();
             Map<String, Object> responseBody = new HashMap<>();
             responseBody.put("code", 200);
@@ -174,6 +191,12 @@ public class UserController {
     @PostMapping("/update")
     public ResponseEntity<?> updateUser(@RequestBody UserRequest userRequest) {
         try {
+            User currentUser = getCurrentAuthenticatedUser();
+            if (currentUser == null) {
+                return buildErrorResponse(401, "token无效或已过期");
+            }
+
+            boolean isAdmin = "ADMIN".equals(currentUser.getRole().getRoleName());
             Long uid = userRequest.getUid();
             boolean created = uid == null;
             Long affectedUid;
@@ -186,6 +209,9 @@ public class UserController {
             String password = userRequest.getPassword();
 
             if (uid == null) {
+                if (!isAdmin) {
+                    return buildErrorResponse(403, "仅管理员可以创建新用户");
+                }
                 // 新增用户
                 if (userRepository.findByUsername(username).isPresent()) {
                     return buildErrorResponse(400, "用户名已存在");
@@ -196,7 +222,7 @@ public class UserController {
                 newUser.setFullName(fullName);
                 newUser.setEmail(email);
                 newUser.setAvatarUrl(normalizedAvatarUrl);
-                newUser.setPassword(password != null && !password.isBlank() ? password : "123");
+                newUser.setPassword(resolveInitialPassword(password));
                 newUser.setActive(true);
                 newUser.setDeactivatedAt(null);
                 newUser.setDeactivatedReason(null);
@@ -221,6 +247,18 @@ public class UserController {
                 // 更新用户
                 User existingUser = userRepository.findById(uid)
                         .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
+
+                if (!isAdmin && !currentUser.getUid().equals(uid)) {
+                    return buildErrorResponse(403, "仅允许修改自己的账号信息");
+                }
+
+                if (!isAdmin) {
+                    String currentRoleName = currentUser.getRole().getRoleName();
+                    if (role != null && !role.equals(currentRoleName)) {
+                        return buildErrorResponse(403, "不能修改自己的角色");
+                    }
+                    role = currentRoleName;
+                }
 
                 if (!existingUser.getUsername().equals(username) && userRepository.findByUsername(username).isPresent()) {
                     return buildErrorResponse(400, "用户名已存在");
@@ -265,8 +303,12 @@ public class UserController {
 
             return ResponseEntity.ok(responseBody);
 
+        } catch (IllegalArgumentException e) {
+            return buildErrorResponse(400, e.getMessage());
+        } catch (IllegalStateException e) {
+            return buildErrorResponse(500, e.getMessage());
         } catch (Exception e) {
-            return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
+            return buildErrorResponse(500, "服务器内部错误");
         }
     }
 
@@ -290,6 +332,29 @@ public class UserController {
         }
 
         return normalized;
+    }
+
+    private User getCurrentAuthenticatedUser() {
+        try {
+            String token = SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
+            String jwtToken = token.replace("Bearer ", "");
+            Long currentUid = jwtUtils.validateTokenAndGetUid(jwtToken);
+            return userService.getUserByUid(currentUid);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String resolveInitialPassword(String requestedPassword) {
+        if (requestedPassword != null && !requestedPassword.isBlank()) {
+            return requestedPassword;
+        }
+
+        if (defaultInitialPassword == null || defaultInitialPassword.isBlank()) {
+            throw new IllegalStateException("未配置默认初始密码，无法创建新用户");
+        }
+
+        return defaultInitialPassword;
     }
 
 
@@ -350,7 +415,7 @@ public class UserController {
         } catch (NumberFormatException e) {
             return buildErrorResponse(400, "无效的 UID");
         } catch (Exception e) {
-            return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
+            return buildErrorResponse(500, "服务器内部错误");
         }
     }
 
@@ -381,7 +446,7 @@ public class UserController {
         } catch (IllegalArgumentException e) {
             return buildErrorResponse(400, e.getMessage());
         } catch (Exception e) {
-            return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
+            return buildErrorResponse(500, "服务器内部错误");
         }
     }
 
@@ -416,7 +481,7 @@ public class UserController {
         } catch (IllegalArgumentException e) {
             return buildErrorResponse(400, e.getMessage());
         } catch (Exception e) {
-            return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
+            return buildErrorResponse(500, "服务器内部错误");
         }
     }
 

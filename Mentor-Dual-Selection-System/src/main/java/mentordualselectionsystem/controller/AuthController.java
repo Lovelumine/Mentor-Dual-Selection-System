@@ -9,7 +9,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import mentordualselectionsystem.mysql.User;
 import mentordualselectionsystem.security.JwtUtils;
 import mentordualselectionsystem.services.PasswordResetService;
+import mentordualselectionsystem.services.SecurityRateLimitService;
 import mentordualselectionsystem.services.UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -26,19 +30,22 @@ import java.util.Map;
 @Tag(name = "认证相关接口", description = "用户身份验证及密码管理接口")
 @RequestMapping("/api/auth")
 public class AuthController {
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
     private final PasswordResetService passwordResetService;
+    private final SecurityRateLimitService securityRateLimitService;
 
-    public AuthController(AuthenticationManager authenticationManager, UserService userService, PasswordEncoder passwordEncoder, JwtUtils jwtUtils, PasswordResetService passwordResetService) {
+    public AuthController(AuthenticationManager authenticationManager, UserService userService, PasswordEncoder passwordEncoder, JwtUtils jwtUtils, PasswordResetService passwordResetService, SecurityRateLimitService securityRateLimitService) {
         this.authenticationManager = authenticationManager;
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtils = jwtUtils;
         this.passwordResetService = passwordResetService;
+        this.securityRateLimitService = securityRateLimitService;
     }
 
     @Operation(summary = "用户登录", description = "验证用户身份并返回 JWT 令牌。")
@@ -70,7 +77,12 @@ public class AuthController {
     })
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest resetPasswordRequest) {
-        String username = resetPasswordRequest.getUsername();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getName() == null) {
+            return ResponseEntity.status(401).body(formatResponse(401, "当前的 token 无效或已过期"));
+        }
+
+        String username = authentication.getName();
         String oldPassword = resetPasswordRequest.getOldPassword();
         String newPassword = resetPasswordRequest.getNewPassword();
         String confirmPassword = resetPasswordRequest.getConfirmPassword();
@@ -88,6 +100,10 @@ public class AuthController {
         if (!newPassword.equals(confirmPassword)) {
             // 返回错误信息，新密码和确认密码不匹配
             return ResponseEntity.status(400).body(formatResponse(400, "新密码和确认密码不匹配"));
+        }
+
+        if (!isStrongPassword(newPassword)) {
+            return ResponseEntity.status(400).body(formatResponse(400, "新密码长度至少为 8 位"));
         }
 
         // 验证旧密码
@@ -113,17 +129,24 @@ public class AuthController {
             @ApiResponse(responseCode = "404", description = "邮箱对应的用户不存在")
     })
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestParam String email) {
+    public ResponseEntity<?> forgotPassword(@RequestParam String email, HttpServletRequest request) {
+        String genericMessage = "如果该邮箱已绑定账号，密码重置邮件将发送到对应邮箱";
         try {
+            securityRateLimitService.checkForgotPasswordAllowed(email, resolveClientIp(request));
             User user = userService.getUserByEmail(email); // 修改为通过邮箱查找用户
             passwordResetService.createPasswordResetTokenForUser(user);  // 生成并发送重置令牌
-            return ResponseEntity.ok(formatResponse(200, "密码重置邮件已发送到 " + email));
+            return ResponseEntity.ok(formatResponse(200, genericMessage));
         } catch (UsernameNotFoundException e) {
-            return ResponseEntity.status(404).body(formatResponse(404, "用户不存在"));
+            return ResponseEntity.ok(formatResponse(200, genericMessage));
         } catch (IllegalStateException e) {
-            return ResponseEntity.status(503).body(formatResponse(503, e.getMessage()));
+            if ("请求过于频繁，请稍后再试".equals(e.getMessage())) {
+                return ResponseEntity.status(429).body(formatResponse(429, e.getMessage()));
+            }
+            log.warn("forgot-password mail sending skipped or failed for email={}: {}", email, e.getMessage());
+            return ResponseEntity.ok(formatResponse(200, genericMessage));
         } catch (RuntimeException e) {
-            return ResponseEntity.status(500).body(formatResponse(500, "密码重置邮件发送失败"));
+            log.warn("forgot-password unexpected error for email={}", email, e);
+            return ResponseEntity.ok(formatResponse(200, genericMessage));
         }
     }
 
@@ -133,15 +156,43 @@ public class AuthController {
             @ApiResponse(responseCode = "400", description = "无效或过期的重置令牌")
     })
     @PostMapping("/reset-password-via-token")
-    public ResponseEntity<?> resetPasswordViaToken(@RequestParam String token, @RequestParam String newPassword) {
+    public ResponseEntity<?> resetPasswordViaToken(@RequestParam String token, @RequestParam String newPassword, HttpServletRequest request) {
+        try {
+            securityRateLimitService.checkResetPasswordAllowed(token, resolveClientIp(request));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(429).body(formatResponse(429, e.getMessage()));
+        }
+
         if (!passwordResetService.validatePasswordResetToken(token)) {
             return ResponseEntity.badRequest().body(formatResponse(400, "无效或过期的重置令牌"));
+        }
+
+        if (!isStrongPassword(newPassword)) {
+            return ResponseEntity.badRequest().body(formatResponse(400, "新密码长度至少为 8 位"));
         }
 
         User user = passwordResetService.getUserByPasswordResetToken(token); // 通过令牌获取用户
         passwordResetService.updatePassword(user, newPassword, token);
 
         return ResponseEntity.ok(formatResponse(200, "密码已重置"));
+    }
+
+    private boolean isStrongPassword(String password) {
+        return password != null && password.trim().length() >= 8;
+    }
+
+    private String resolveClientIp(HttpServletRequest request) {
+        String cfConnectingIp = request.getHeader("CF-Connecting-IP");
+        if (cfConnectingIp != null && !cfConnectingIp.isBlank()) {
+            return cfConnectingIp.trim();
+        }
+
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            return forwardedFor.split(",")[0].trim();
+        }
+
+        return request.getRemoteAddr();
     }
 
     // 新的通用响应格式化方法

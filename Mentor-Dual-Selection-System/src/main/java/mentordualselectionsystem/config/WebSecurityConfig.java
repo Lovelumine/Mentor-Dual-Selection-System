@@ -7,8 +7,10 @@ import mentordualselectionsystem.services.UserService;
 import mentordualselectionsystem.security.JwtUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -20,8 +22,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.util.Arrays;
 
 @EnableWebSecurity
 @Configuration
@@ -52,16 +57,12 @@ public class WebSecurityConfig {
         };
 
         http
+                .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)  // 禁用 CSRF
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
-                        // 允许这些端点公开访问
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/admin/**", "/admin").permitAll()
-                        .requestMatchers("/api/user/me", "/api/user/all", "/api/user/update", "/api/application/**", "/api/email/send").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/webjars/**", "/api-docs/**", "/v3/api-docs/**", "/v3/api-docs", "/v3/api-docs/swagger-config", "/swagger-ui.html", "/doc.html").permitAll()
-                        .requestMatchers("/hello", "/favicon.ico", "/docs.html", "/api-docs/", "/student/**", "/student", "/student/my-detail").permitAll()
-                        .requestMatchers("/teacher", "/teacher/**", "/teacher/student/**", "/upload", "/upload/**").permitAll()
-                        // 其他任何请求都需要认证
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/forgot-password", "/api/auth/reset-password-via-token").permitAll()
+                        .requestMatchers("/hello", "/favicon.ico", "/error").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exceptionHandling -> exceptionHandling
@@ -101,21 +102,24 @@ public class WebSecurityConfig {
         return customAuthenticationProvider;
     }
 
-    @Configuration
-    public static class WebConfig {
+    @Bean
+    public WebMvcConfigurer corsConfigurer(
+            @Value("${app.security.cors.allowed-origins:http://127.0.0.1:5174,http://localhost:5174,http://127.0.0.1:5175,http://localhost:5175,https://select.lumoxuan.cn}") String allowedOriginsProperty
+    ) {
+        String[] allowedOrigins = Arrays.stream(allowedOriginsProperty.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .toArray(String[]::new);
 
-        @Bean
-        public WebMvcConfigurer corsConfigurer() {
-            return new WebMvcConfigurer() {
-                @Override
-                public void addCorsMappings(CorsRegistry registry) {
-                    registry.addMapping("/**") // 允许所有路径
-                            .allowedOriginPatterns("*") // 允许所有源
-                            .allowedMethods("*") // 允许的方法
-                            .allowedHeaders("*") // 允许的头
-                            .allowCredentials(true); // 允许发送 Cookie
-                }
-            };
-        }
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**")
+                        .allowedOrigins(allowedOrigins)
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowedHeaders("*")
+                        .allowCredentials(true);
+            }
+        };
     }
 }
