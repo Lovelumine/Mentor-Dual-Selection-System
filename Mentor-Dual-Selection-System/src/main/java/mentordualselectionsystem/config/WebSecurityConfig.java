@@ -55,11 +55,12 @@ public class WebSecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)  // 禁用 CSRF
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
                         // 允许这些端点公开访问
-                        .requestMatchers("/api/auth/login", "/api/auth/reset-password","admin/**","/admin").permitAll()
-                        .requestMatchers("/api/user/me","/api/user/all","/api/user/update","/api/application/**","api/email/send","/api/auth/forgot-password","/api/auth/reset-password-via-token").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/webjars/**","/api-docs/**","v3/api-docs/**","/v3/api-docs", "/v3/api-docs/swagger-config","/swagger-ui.html","/doc.html").permitAll()
-                        .requestMatchers("/hello","/favicon.ico","docs.html","/api-docs/","student/**","student","student/my-detail").permitAll()
-                        .requestMatchers("teacher","teacher/**","teacher/student/**","upload","upload/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/admin/**", "/admin").permitAll()
+                        .requestMatchers("/api/user/me", "/api/user/all", "/api/user/update", "/api/application/**", "/api/email/send").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/webjars/**", "/api-docs/**", "/v3/api-docs/**", "/v3/api-docs", "/v3/api-docs/swagger-config", "/swagger-ui.html", "/doc.html").permitAll()
+                        .requestMatchers("/hello", "/favicon.ico", "/docs.html", "/api-docs/", "/student/**", "/student", "/student/my-detail").permitAll()
+                        .requestMatchers("/teacher", "/teacher/**", "/teacher/student/**", "/upload", "/upload/**").permitAll()
                         // 其他任何请求都需要认证
                         .anyRequest().authenticated()
                 )

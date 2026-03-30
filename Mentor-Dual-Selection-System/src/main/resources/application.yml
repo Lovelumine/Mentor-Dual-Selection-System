@@ -37,15 +37,18 @@ spring:
     properties:
       mail:
         smtp:
-          auth: true
+          auth: ${SPRING_MAIL_AUTH:true}
+          connectiontimeout: ${SPRING_MAIL_CONNECTION_TIMEOUT:5000}
+          timeout: ${SPRING_MAIL_TIMEOUT:5000}
+          writetimeout: ${SPRING_MAIL_WRITE_TIMEOUT:5000}
           ssl:
-            enable: true
+            enable: ${SPRING_MAIL_SSL_ENABLE:true}
           starttls:
-            enable: true
+            enable: ${SPRING_MAIL_STARTTLS_ENABLE:true}
           socketFactory:
             port: ${SPRING_MAIL_PORT:25}
-            class: javax.net.ssl.SSLSocketFactory
-            fallback: false
+            class: ${SPRING_MAIL_SOCKET_FACTORY_CLASS:javax.net.ssl.SSLSocketFactory}
+            fallback: ${SPRING_MAIL_SOCKET_FACTORY_FALLBACK:false}
 
 server:
   port: ${SERVER_PORT:50000}

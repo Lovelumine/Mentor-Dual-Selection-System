@@ -3,6 +3,7 @@ import FooterComp from "@/components/HeaderFooterMenu/FooterComp.vue";
 import {ref} from "vue";
 import {http} from "@/utils/http";
 import {useRouter} from "vue-router";
+import { ElMessage } from "element-plus";
 const router = useRouter();
 
 interface RepwdImpl {
@@ -30,30 +31,27 @@ const getEmailToken = () => {
       }
     }).then(res => {
       if (res.status === 200) {
-        alert('邮箱令牌已发送！请注意查收！');
+        ElMessage.success('邮箱令牌已发送，请注意查收');
       } else {
-        alert('邮箱令牌发送失败！');
+        ElMessage.error('邮箱令牌发送失败');
       }
     }).catch((err) => {
-      if (err.request.status === 404) {
-        alert(JSON.parse(err.request.responseText).data);
-      } else {
-        alert('邮箱令牌发送失败');
-        // console.log(err);
-      }
-
+      const message = err?.response?.data?.data || err?.response?.data?.message || '邮箱令牌发送失败';
+      ElMessage.error(message);
     })
   } else {
-    alert('请填写邮箱地址！');
+    ElMessage.warning('请填写邮箱地址');
   }
 }
 
 const repwdClicked = () => {
   if (repwdForm.value.password === null || repwdForm.value.password === '') {
-    alert('请填写新密码！');
+    ElMessage.warning('请填写新密码');
+    return;
   }
   if (repwdForm.value.token === null || repwdForm.value.token === '') {
-    alert('请填写邮箱令牌！');
+    ElMessage.warning('请填写邮箱令牌');
+    return;
   }
   http({
     url: '/auth/reset-password-via-token',
@@ -67,10 +65,11 @@ const repwdClicked = () => {
     }
   }).then(res => {
     if (res.status === 200) {
-      alert('密码修改成功！');
-    } else alert('密码修改失败！');
+      ElMessage.success('密码修改成功');
+    } else ElMessage.error('密码修改失败');
   }).catch(() => {
-    alert('密码修改失败！');
+    const message = '密码修改失败';
+    ElMessage.error(message);
   })
 }
 const returnClicked = () => {

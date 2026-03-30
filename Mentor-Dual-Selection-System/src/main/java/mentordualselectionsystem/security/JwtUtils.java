@@ -5,8 +5,10 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
@@ -16,9 +18,10 @@ public class JwtUtils {
     private static final long EXPIRATION_TIME = 864_000_000; // 10 天
     private final Key secretKey;  // 保持一个固定的密钥
 
-    // 在构造函数中生成密钥，确保每次签名和验证使用相同的密钥
-    public JwtUtils() {
-        this.secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
+    public JwtUtils(
+            @Value("${JWT_SECRET:mentor-dual-selection-system-default-jwt-secret-please-change-this-in-production-2026-03-30-stable-key}") String jwtSecret
+    ) {
+        this.secretKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
     // 验证并解析 JWT token，返回 uid，如果签名无效或过期则抛出 SignatureException

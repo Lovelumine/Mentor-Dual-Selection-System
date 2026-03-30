@@ -455,16 +455,17 @@ watch(filteredTeachers, (teachers) => {
   color: #688171
 
 .container
-  display: flex
-  padding-left: 10vw
-  flex-wrap: wrap
-  gap: 100px
-  row-gap: 50px
+  width: min(1120px, 100%)
+  margin: 0 auto
+  display: grid
+  grid-template-columns: repeat(2, minmax(0, 1fr))
+  gap: 36px 40px
   padding-top: 20px
+  align-items: start
 
 .teacher_resume_item
-  width: 500px
-  height: 300px
+  width: 100%
+  min-height: 300px
   position: relative
   .item_box
     width: 100%
@@ -543,4 +544,70 @@ watch(filteredTeachers, (teachers) => {
 
   .avatar--empty
     background: linear-gradient(135deg, rgba(228, 238, 246, .86) 0%, rgba(212, 225, 241, .78) 100%)
+
+@media (max-width: 1280px)
+  .container
+    width: min(980px, 100%)
+    gap: 28px 24px
+
+  .teacher_resume_item
+    min-height: 290px
+
+@media (max-width: 1120px)
+  .top-controls
+    flex-direction: column
+    align-items: stretch
+    gap: 12px
+
+  .top-controls .filter-controls
+    justify-content: space-between
+    flex-wrap: wrap
+
+  .top-controls .pagination-controls
+    display: flex
+    justify-content: flex-end
+
+  .container
+    grid-template-columns: 1fr
+    width: min(640px, 100%)
+
+@media (max-width: 768px)
+  .title
+    left: 0
+    width: 100%
+    padding-left: 16px
+
+  .main-content
+    margin-top: 76px
+
+  .content-wrapper
+    padding: 0 12px
+
+  .top-controls
+    margin: 16px 12px
+
+  .top-controls .filter-controls
+    width: 100%
+    gap: 8px
+
+  .top-controls .filter-controls .el-select
+    width: 100%
+
+  .container
+    width: 100%
+
+  .teacher_resume_item
+    min-height: 320px
+
+    .item_box
+      height: 270px
+
+      .fullname,
+      .email,
+      .professional
+        left: 28%
+
+      .detail_box
+        top: 33%
+        left: 6%
 </style>

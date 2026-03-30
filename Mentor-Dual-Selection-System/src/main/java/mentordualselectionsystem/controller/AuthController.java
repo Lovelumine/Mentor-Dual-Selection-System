@@ -120,6 +120,10 @@ public class AuthController {
             return ResponseEntity.ok(formatResponse(200, "密码重置邮件已发送到 " + email));
         } catch (UsernameNotFoundException e) {
             return ResponseEntity.status(404).body(formatResponse(404, "用户不存在"));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(503).body(formatResponse(503, e.getMessage()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(500).body(formatResponse(500, "密码重置邮件发送失败"));
         }
     }
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {onMounted, ref, watch} from "vue";
 import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
+import { ElMessage } from "element-plus";
 const userInfoStore = useUserInfoStore();
 import {useRouter} from "vue-router";
 import {http} from "@/utils/http";
@@ -15,13 +16,38 @@ const uploadForm = ref({
   grade: null
 })
 
+function normalizeGradeInput(value: unknown) {
+  return value == null ? "" : String(value).replace(/\s+/g, "");
+}
+
+function parseGradeInput(value: unknown) {
+  const normalized = normalizeGradeInput(value);
+  const match = normalized.match(/^(\d{2}|\d{4})(级)?$/);
+  if (!match) {
+    return null;
+  }
+
+  const digits = match[1];
+  return digits.length === 2 ? `20${digits}` : digits;
+}
+
+function isValidGradeInput(value: string) {
+  return parseGradeInput(value) !== null;
+}
+
+function normalizeGradeForSave(value: unknown) {
+  return parseGradeInput(value) ?? normalizeGradeInput(value);
+}
+
 function uploadClicked () {
   if (uploadForm.value.fullName === null || uploadForm.value.fullName === '') {
-    alert('请填写姓名！');
+    ElMessage.warning('请填写姓名！');
   } else if (uploadForm.value.username === null || uploadForm.value.username === '') {
-    alert('请填写学号！');
+    ElMessage.warning('请填写学号！');
   } else if (uploadForm.value.grade === null || uploadForm.value.grade === '') {
-    alert('请填写年级！');
+    ElMessage.warning('请填写年级！');
+  } else if (!isValidGradeInput(String(uploadForm.value.grade))) {
+    ElMessage.warning('年级仅支持 2025、2025级、25 或 25级！');
   } else {
     http({
       url: '/user/update',
@@ -30,17 +56,19 @@ function uploadClicked () {
         Accept: '*/*',
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
-      data: uploadForm.value
+      data: {
+        ...uploadForm.value,
+        grade: normalizeGradeForSave(uploadForm.value.grade),
+      }
     }).then(res => {
       if (res.data.code === 200){
-        alert('添加成功！');
+        ElMessage.success('添加成功！');
         window.location.reload();
       } else {
-        alert('添加失败！');
+        ElMessage.error('添加失败！');
       }
     }).catch(err => {
-      alert('添加失败！');
-      alert(JSON.parse(err.request.responseText).data.error);
+      ElMessage.error(JSON.parse(err.request.responseText).data.error || '添加失败！');
     })
   }
 }
@@ -74,7 +102,7 @@ watch(() => userInfoStore.userInfo, (newVal) => {
         <el-input v-model="uploadForm.email"/>
       </el-form-item>
       <el-form-item label="学年：">
-        <el-input v-model="uploadForm.grade" placeholder="例：2024"/>
+        <el-input v-model="uploadForm.grade" placeholder="例：2025、2025级、25"/>
       </el-form-item>
       <button class="button" type="submit">上传</button>
       <button class="button" @click="resettingClicked" type="button">重置</button>

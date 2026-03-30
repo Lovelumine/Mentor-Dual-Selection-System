@@ -13,9 +13,10 @@ import {
   type ExistingImportUser,
 } from "@/utils/importUserPreview";
 import {
+  getCohortGradeByKey,
   getStudentListPageTitle,
-  matchesStudentListKey,
   type StudentListKey,
+  matchesStudentListKey,
 } from "@/utils/studentCohort";
 import {
   createImportColumnOptions,
@@ -71,6 +72,15 @@ interface StudentEditDraft {
   resume: string;
 }
 
+interface SingleStudentForm {
+  role: string;
+  fullName: string;
+  email: string;
+  username: string;
+  grade: string;
+  resume: string;
+}
+
 const studentImportRules: ImportColumnRule<StudentUploadField>[] = [
   { key: "role", label: "权限", aliases: ["权限", "角色", "role"], fallbackIndex: 0 },
   { key: "fullName", label: "姓名", aliases: ["姓名", "学生姓名", "名称", "fullname", "name"], fallbackIndex: 1, required: true },
@@ -106,6 +116,8 @@ const columnMapping = ref<Record<StudentUploadField, number | null>>({
 const isUploadBoxShow = ref(false);
 const isDownloadingTemplate = ref(false);
 const isExporting = ref(false);
+const isAddStudentDialogVisible = ref(false);
+const isSubmittingSingleStudent = ref(false);
 const editingUid = ref<number | null>(null);
 const editingDraft = ref<StudentEditDraft | null>(null);
 const isSaving = ref(false);
@@ -114,6 +126,14 @@ const draftStudentName = ref("");
 const draftMentorStatus = ref("");
 const appliedStudentName = ref("");
 const appliedMentorStatus = ref("");
+const singleStudentForm = ref<SingleStudentForm>({
+  role: "STUDENT",
+  fullName: "",
+  email: "",
+  username: "",
+  grade: "",
+  resume: "",
+});
 
 const isAdmin = computed(() => userInfoStore.userInfo.role === "ADMIN");
 const isEditing = computed(() => editingUid.value !== null);
@@ -147,14 +167,25 @@ const importPlans = computed<StudentImportPlanRow[]>(() =>
       { label: "学号", value: (row) => row.username },
       { label: "年级", value: (row) => row.grade },
     ],
-  }).map((plan) => ({
-    ...plan.row,
-    rowIndex: plan.rowIndex,
-    action: plan.action,
-    actionLabel: getActionLabel(plan.action),
-    message: plan.message,
-    existingUid: plan.existingUser?.uid ?? null,
-  })),
+  }).map((plan) => {
+    const normalizedGrade = parseGradeInput(plan.row.grade);
+    const action = normalizedGrade ? plan.action : "conflict";
+    const message = normalizedGrade
+      ? plan.message
+      : plan.message
+        ? `${plan.message}；${getGradeFormatMessage()}`
+        : getGradeFormatMessage();
+
+    return {
+      ...plan.row,
+      grade: normalizedGrade ?? sanitizeGradeInput(plan.row.grade),
+      rowIndex: plan.rowIndex,
+      action,
+      actionLabel: getActionLabel(action),
+      message,
+      existingUid: plan.existingUser?.uid ?? null,
+    };
+  }),
 );
 const previewRows = computed(() => importPlans.value.slice(0, 8));
 const hasMorePreview = computed(() => importPlans.value.length > previewRows.value.length);
@@ -221,13 +252,27 @@ function sanitizeGradeInput(value: unknown) {
   return normalizeText(value).replace(/\s+/g, "");
 }
 
+function parseGradeInput(value: unknown) {
+  const normalized = sanitizeGradeInput(value);
+  const match = normalized.match(/^(\d{2}|\d{4})(级)?$/);
+  if (!match) {
+    return null;
+  }
+
+  const digits = match[1];
+  return digits.length === 2 ? `20${digits}` : digits;
+}
+
 function isValidGradeInput(value: string) {
-  return /^\d{4}(级)?$/.test(sanitizeGradeInput(value));
+  return parseGradeInput(value) !== null;
 }
 
 function normalizeGradeForSave(value: string) {
-  const normalized = sanitizeGradeInput(value);
-  return normalized.endsWith("级") ? normalized.slice(0, -1) : normalized;
+  return parseGradeInput(value) ?? sanitizeGradeInput(value);
+}
+
+function getGradeFormatMessage() {
+  return "年级仅支持 2025、2025级、25 或 25级";
 }
 
 function getErrorMessage(error: any, fallback: string) {
@@ -355,7 +400,7 @@ async function saveEditingRow(silentSuccess = false) {
   }
 
   if (!isValidGradeInput(draft.grade)) {
-    ElMessage.warning("年级只能填写 4 位数字，或 4 位数字后加“级”");
+    ElMessage.warning(getGradeFormatMessage());
     return false;
   }
 
@@ -513,7 +558,107 @@ const resetFilters = () => {
 };
 
 const addSingleStudent = () => {
-  router.push("/add_single_stu");
+  resetSingleStudentForm();
+  isAddStudentDialogVisible.value = true;
+};
+
+function resetSingleStudentForm() {
+  singleStudentForm.value = {
+    role: "STUDENT",
+    fullName: "",
+    email: "",
+    username: "",
+    grade: props.listKey === "graduated" ? "" : getCohortGradeByKey(props.listKey),
+    resume: "",
+  };
+}
+
+const submitSingleStudent = async () => {
+  if (isSubmittingSingleStudent.value) return;
+
+  const draft = {
+    role: "STUDENT",
+    fullName: singleStudentForm.value.fullName.trim(),
+    email: singleStudentForm.value.email.trim(),
+    username: singleStudentForm.value.username.trim(),
+    grade: sanitizeGradeInput(singleStudentForm.value.grade),
+    resume: singleStudentForm.value.resume.trim(),
+  };
+
+  if (!draft.fullName) {
+    ElMessage.warning("请填写姓名");
+    return;
+  }
+
+  if (!draft.username) {
+    ElMessage.warning("请填写学号");
+    return;
+  }
+
+  if (!draft.grade) {
+    ElMessage.warning("请填写年级");
+    return;
+  }
+
+  if (!isValidGradeInput(draft.grade)) {
+    ElMessage.warning(getGradeFormatMessage());
+    return;
+  }
+
+  const normalizedGrade = normalizeGradeForSave(draft.grade);
+  isSubmittingSingleStudent.value = true;
+
+  try {
+    const basicRes = await http({
+      url: "/user/update",
+      method: "POST",
+      headers: {
+        ...authHeaders(),
+        "Content-Type": "application/json",
+      },
+      data: {
+        role: draft.role,
+        fullName: draft.fullName,
+        email: draft.email || null,
+        username: draft.username,
+        grade: normalizedGrade,
+      },
+    });
+
+    if (basicRes.data.code !== 200) {
+      throw new Error(basicRes.data?.data?.error || basicRes.data?.message || "学生基础信息添加失败");
+    }
+
+    const uid = Number(basicRes.data?.data?.uid);
+    if (!Number.isFinite(uid) || uid <= 0) {
+      throw new Error("学生基础信息返回的 UID 无效");
+    }
+
+    const detailRes = await httpAdmin({
+      url: `/update/${uid}`,
+      method: "PUT",
+      headers: {
+        ...authHeaders(),
+        "Content-Type": "application/json",
+      },
+      data: {
+        resume: draft.resume,
+      },
+    });
+
+    if (detailRes.data.code !== 200) {
+      throw new Error(detailRes.data?.data?.error || detailRes.data?.message || "学生简介添加失败");
+    }
+
+    await fetchBaseData();
+    isAddStudentDialogVisible.value = false;
+    resetSingleStudentForm();
+    ElMessage.success("学生信息已添加");
+  } catch (error: any) {
+    ElMessage.error(getErrorMessage(error, "学生信息添加失败"));
+  } finally {
+    isSubmittingSingleStudent.value = false;
+  }
 };
 
 const downloadStudentTemplate = async () => {
@@ -708,7 +853,7 @@ const uploadStudents = async () => {
           fullName: row.fullName,
           email: mergedEmail,
           username: row.username,
-          grade: row.grade,
+          grade: normalizeGradeForSave(row.grade),
         },
       });
 
@@ -846,6 +991,46 @@ onMounted(async () => {
     <button @click="triggerFileInput">批量上传学生信息</button>
   </div>
 
+  <el-dialog
+    v-model="isAddStudentDialogVisible"
+    title="添加单条学生信息"
+    width="560px"
+    destroy-on-close
+    :close-on-click-modal="!isSubmittingSingleStudent"
+  >
+    <el-form label-width="92px" @submit.prevent="submitSingleStudent">
+      <el-form-item label="姓名">
+        <el-input v-model="singleStudentForm.fullName" placeholder="请输入学生姓名" />
+      </el-form-item>
+      <el-form-item label="学号">
+        <el-input v-model="singleStudentForm.username" placeholder="请输入学生学号" />
+      </el-form-item>
+      <el-form-item label="电子邮箱">
+        <el-input v-model="singleStudentForm.email" placeholder="可选，推荐填写学校邮箱" />
+      </el-form-item>
+      <el-form-item label="年级">
+        <el-input v-model="singleStudentForm.grade" placeholder="例如：2025、2025级、25" />
+      </el-form-item>
+      <el-form-item label="简介">
+        <el-input
+          v-model="singleStudentForm.resume"
+          type="textarea"
+          :autosize="{ minRows: 3, maxRows: 6 }"
+          placeholder="可选，填写学生简介"
+        />
+      </el-form-item>
+    </el-form>
+
+    <template #footer>
+      <div class="single_dialog_actions">
+        <button class="dialog_button dialog_button--ghost" :disabled="isSubmittingSingleStudent" @click="isAddStudentDialogVisible = false">取消</button>
+        <button class="dialog_button" :disabled="isSubmittingSingleStudent" @click="submitSingleStudent">
+          {{ isSubmittingSingleStudent ? "提交中..." : "确认添加" }}
+        </button>
+      </div>
+    </template>
+  </el-dialog>
+
   <div v-if="isUploadBoxShow" class="excel_status">
     <div class="excel_status__summary">
       <p>已读取文件：{{ excelName }}，当前映射后共 {{ importPlans.length }} 条学生数据</p>
@@ -909,7 +1094,7 @@ onMounted(async () => {
   <div v-if="isAdmin" class="section_title">
     <div class="section_title__actions">
       <span class="section_title__hint">
-        <template v-if="isEditing">正在编辑当前学生。学号、导师状态和导师姓名保持只读，年级仅支持 2025 或 2025级</template>
+        <template v-if="isEditing">正在编辑当前学生。学号、导师状态和导师姓名保持只读，年级支持 2025、2025级、25 或 25级</template>
         <template v-else>管理员双击学生行可编辑；学号和导师信息不可修改</template>
       </span>
       <template v-if="isEditing">
@@ -948,7 +1133,7 @@ onMounted(async () => {
           v-if="isRowEditing(row) && editingDraft"
           v-model="editingDraft.grade"
           size="small"
-          placeholder="2025 或 2025级"
+          placeholder="例如：2025、2025级、25"
         />
         <span v-else>{{ row.grade }}</span>
       </template>
@@ -1228,6 +1413,38 @@ onMounted(async () => {
 .table
   width: 100%
 
+.single_dialog_actions
+  display: flex
+  justify-content: flex-end
+  gap: 12px
+
+.dialog_button
+  height: 36px
+  min-width: 104px
+  padding: 0 18px
+  border: 1px solid var(--app-brand)
+  border-radius: 8px
+  background: var(--app-brand)
+  color: #fff
+  transition: .2s ease
+  cursor: pointer
+
+.dialog_button:hover:not(:disabled)
+  background: var(--app-brand-hover)
+  border-color: var(--app-brand-hover)
+
+.dialog_button:disabled
+  opacity: .6
+  cursor: not-allowed
+
+.dialog_button--ghost
+  background: var(--app-surface)
+  border-color: var(--app-border)
+  color: var(--app-text-primary)
+
+.dialog_button--ghost:hover:not(:disabled)
+  background: var(--app-surface-muted)
+
 .cell_multiline
   display: block
   white-space: pre-wrap
@@ -1266,4 +1483,11 @@ onMounted(async () => {
     align-items: flex-start
     flex-direction: column
     padding: 10px 20px
+
+  .single_dialog_actions
+    width: 100%
+    flex-direction: column-reverse
+
+  .dialog_button
+    width: 100%
 </style>

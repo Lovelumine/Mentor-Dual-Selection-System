@@ -1,6 +1,7 @@
 .env
 .env.*
 !**/.env.example
+/deploy/.env
 /local-dev.sh
 /.local-dev/
 /test-results/

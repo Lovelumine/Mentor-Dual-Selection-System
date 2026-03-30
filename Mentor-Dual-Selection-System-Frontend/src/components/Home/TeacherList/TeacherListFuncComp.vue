@@ -3,7 +3,6 @@ import { computed, ref } from "vue";
 import * as XLSX from "xlsx";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { http, httpAdmin } from "@/utils/http";
-import { useRouter } from "vue-router";
 import { useTeacherListStore } from "@/stores/TeacherListStore";
 import type { TeachDetailsFullImpl } from "@/interfaces/TeachDetailsFullImpl";
 import { downloadBlob, downloadWorkbook, parseContentDispositionFilename } from "@/utils/fileDownload";
@@ -43,6 +42,16 @@ interface TeacherImportPlanRow extends TeacherUploadPreviewRow {
   existingUid: number | null;
 }
 
+interface SingleTeacherForm {
+  role: string;
+  fullName: string;
+  email: string;
+  username: string;
+  teacherPosition: string;
+  researchDirection: string;
+  resume: string;
+}
+
 const teacherImportRules: ImportColumnRule<TeacherUploadField>[] = [
   { key: "role", label: "权限", aliases: ["权限", "角色", "role"], fallbackIndex: 0 },
   { key: "fullName", label: "姓名", aliases: ["姓名", "导师姓名", "名称", "fullname", "name"], fallbackIndex: 1, required: true },
@@ -52,7 +61,6 @@ const teacherImportRules: ImportColumnRule<TeacherUploadField>[] = [
   { key: "researchDirection", label: "研究方向", aliases: ["研究方向", "方向", "研究领域", "researchdirection"], fallbackIndex: 5 },
 ];
 
-const router = useRouter();
 const teacherListStore = useTeacherListStore();
 
 const fileInput = ref<HTMLInputElement | null>(null);
@@ -73,10 +81,21 @@ const isUploadBoxShow = ref(false);
 const isUploading = ref(false);
 const isDownloadingTemplate = ref(false);
 const isExporting = ref(false);
+const isAddTeacherDialogVisible = ref(false);
+const isSubmittingSingleTeacher = ref(false);
 const progressPercentage = ref(0);
 const progressStatus = ref("");
 const total = ref(0);
 const falCount = ref(0);
+const singleTeacherForm = ref<SingleTeacherForm>({
+  role: "TEACHER",
+  fullName: "",
+  email: "",
+  username: "",
+  teacherPosition: "",
+  researchDirection: "",
+  resume: "",
+});
 
 const previewLimit = 8;
 const columnOptions = computed(() => createImportColumnOptions(headerRow.value));
@@ -183,9 +202,9 @@ async function fetchExistingUsers() {
   existingUsers.value = res.data.data;
 }
 
-async function fetchTeachersForExport() {
+async function fetchTeachersForExport(forceRefresh = false) {
   const cachedRows = Array.isArray(teacherListStore.teacherListSt) ? teacherListStore.teacherListSt : null;
-  if (cachedRows) {
+  if (!forceRefresh && cachedRows) {
     currentTeachers.value = cachedRows;
     return cachedRows;
   }
@@ -226,7 +245,107 @@ function resetUploadPreview() {
 }
 
 function addSingleTeacherClicked() {
-  router.push("/add_single_teach");
+  resetSingleTeacherForm();
+  isAddTeacherDialogVisible.value = true;
+}
+
+function resetSingleTeacherForm() {
+  singleTeacherForm.value = {
+    role: "TEACHER",
+    fullName: "",
+    email: "",
+    username: "",
+    teacherPosition: "",
+    researchDirection: "",
+    resume: "",
+  };
+}
+
+async function submitSingleTeacher() {
+  if (isSubmittingSingleTeacher.value) return;
+
+  const draft = {
+    role: "TEACHER",
+    fullName: singleTeacherForm.value.fullName.trim(),
+    email: singleTeacherForm.value.email.trim(),
+    username: singleTeacherForm.value.username.trim(),
+    teacherPosition: singleTeacherForm.value.teacherPosition.trim(),
+    researchDirection: singleTeacherForm.value.researchDirection.trim(),
+    resume: singleTeacherForm.value.resume.trim(),
+  };
+
+  if (!draft.fullName) {
+    ElMessage.warning("请填写姓名");
+    return;
+  }
+
+  if (!draft.username) {
+    ElMessage.warning("请填写工号");
+    return;
+  }
+
+  if (!draft.teacherPosition) {
+    ElMessage.warning("请填写职称");
+    return;
+  }
+
+  isSubmittingSingleTeacher.value = true;
+
+  try {
+    const basicRes = await http({
+      url: "/user/update",
+      method: "POST",
+      headers: {
+        ...authHeaders(),
+        "Content-Type": "application/json",
+      },
+      data: {
+        role: draft.role,
+        fullName: draft.fullName,
+        email: draft.email || null,
+        username: draft.username,
+      },
+    });
+
+    if (basicRes.data.code !== 200) {
+      throw new Error(basicRes.data?.data?.error || basicRes.data?.message || "导师基础信息添加失败");
+    }
+
+    const uid = Number(basicRes.data?.data?.uid);
+    if (!Number.isFinite(uid) || uid <= 0) {
+      throw new Error("导师基础信息返回的 UID 无效");
+    }
+
+    const detailRes = await httpAdmin({
+      url: `/update/${uid}`,
+      method: "PUT",
+      headers: {
+        ...authHeaders(),
+        "Content-Type": "application/json",
+      },
+      data: {
+        teacherPosition: draft.teacherPosition,
+        researchDirection: draft.researchDirection,
+        professionalDirection: "",
+        resume: draft.resume,
+        studentGrade: "",
+      },
+    });
+
+    if (detailRes.data.code !== 200) {
+      throw new Error(detailRes.data?.data?.error || detailRes.data?.message || "导师详情添加失败");
+    }
+
+    const latestTeachers = await fetchTeachersForExport(true);
+    teacherListStore.updateTeacherList(latestTeachers);
+    isAddTeacherDialogVisible.value = false;
+    resetSingleTeacherForm();
+    ElMessage.success("导师信息已添加");
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.data?.error || error?.message || "导师信息添加失败");
+  } finally {
+    isSubmittingSingleTeacher.value = false;
+  }
 }
 
 async function downloadTeacherTemplate() {
@@ -498,6 +617,54 @@ function handleFileChange(event: Event) {
     <button @click="triggerFileInput">批量上传导师信息</button>
   </div>
 
+  <el-dialog
+    v-model="isAddTeacherDialogVisible"
+    title="添加单条导师信息"
+    width="560px"
+    destroy-on-close
+    :close-on-click-modal="!isSubmittingSingleTeacher"
+  >
+    <el-form label-width="92px" @submit.prevent="submitSingleTeacher">
+      <el-form-item label="姓名">
+        <el-input v-model="singleTeacherForm.fullName" placeholder="请输入导师姓名" />
+      </el-form-item>
+      <el-form-item label="工号">
+        <el-input v-model="singleTeacherForm.username" placeholder="请输入导师工号" />
+      </el-form-item>
+      <el-form-item label="电子邮箱">
+        <el-input v-model="singleTeacherForm.email" placeholder="可选，推荐填写学校邮箱" />
+      </el-form-item>
+      <el-form-item label="职称">
+        <el-input v-model="singleTeacherForm.teacherPosition" placeholder="例如：教授 / 副教授" />
+      </el-form-item>
+      <el-form-item label="研究方向">
+        <el-input
+          v-model="singleTeacherForm.researchDirection"
+          type="textarea"
+          :autosize="{ minRows: 3, maxRows: 6 }"
+          placeholder="可选，填写主要研究方向"
+        />
+      </el-form-item>
+      <el-form-item label="简历">
+        <el-input
+          v-model="singleTeacherForm.resume"
+          type="textarea"
+          :autosize="{ minRows: 3, maxRows: 6 }"
+          placeholder="可选，填写导师简介"
+        />
+      </el-form-item>
+    </el-form>
+
+    <template #footer>
+      <div class="single_dialog_actions">
+        <button class="dialog_button dialog_button--ghost" :disabled="isSubmittingSingleTeacher" @click="isAddTeacherDialogVisible = false">取消</button>
+        <button class="dialog_button" :disabled="isSubmittingSingleTeacher" @click="submitSingleTeacher">
+          {{ isSubmittingSingleTeacher ? "提交中..." : "确认添加" }}
+        </button>
+      </div>
+    </template>
+  </el-dialog>
+
   <div v-if="isUploadBoxShow" class="excel_status">
     <div class="excel_status__summary">
       <p>已读取文件：{{ excelName }}，当前映射后共 {{ importPlans.length }} 条导师数据</p>
@@ -696,6 +863,38 @@ function handleFileChange(event: Event) {
   p
     color: var(--app-text-secondary)
 
+.single_dialog_actions
+  display: flex
+  justify-content: flex-end
+  gap: 12px
+
+.dialog_button
+  height: 36px
+  min-width: 104px
+  padding: 0 18px
+  border: 1px solid var(--app-brand)
+  border-radius: 8px
+  background: var(--app-brand)
+  color: #fff
+  transition: .2s ease
+  cursor: pointer
+
+.dialog_button:hover:not(:disabled)
+  background: var(--app-brand-hover)
+  border-color: var(--app-brand-hover)
+
+.dialog_button:disabled
+  opacity: .6
+  cursor: not-allowed
+
+.dialog_button--ghost
+  background: var(--app-surface)
+  border-color: var(--app-border)
+  color: var(--app-text-primary)
+
+.dialog_button--ghost:hover:not(:disabled)
+  background: var(--app-surface-muted)
+
 @media (max-width: 980px)
   .button_box
     gap: 12px
@@ -718,4 +917,11 @@ function handleFileChange(event: Event) {
 
   .mapping_grid
     grid-template-columns: 1fr
+
+  .single_dialog_actions
+    width: 100%
+    flex-direction: column-reverse
+
+  .dialog_button
+    width: 100%
 </style>
