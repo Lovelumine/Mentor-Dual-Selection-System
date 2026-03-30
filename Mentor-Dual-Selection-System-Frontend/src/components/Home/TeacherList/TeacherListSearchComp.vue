@@ -1,42 +1,59 @@
 <script setup lang="ts">
-import {ref} from "vue";
-import {http} from "@/utils/http";
-import {useTeacherListStore} from "@/stores/TeacherListStore";
-const teacherListStore = useTeacherListStore();
+import { ref, watch } from "vue";
+import { ElMessage } from "element-plus";
+import { useRoute, useRouter } from "vue-router";
+import { getSingleQueryValue } from "@/utils/routeQuery";
 
-const selectTeacherValue = ref(null);
+const route = useRoute();
+const router = useRouter();
+const selectTeacherValue = ref("");
 
-function selectTeacherClicked() {
-  console.log(selectTeacherValue.value);
-  if (selectTeacherValue.value === null || selectTeacherValue.value === "") {
-    alert('请输入正确的内容');
-  } else {
-    http({
-      url: '/search/teachers/search',
-      method: 'GET',
-      headers: {
-        Accept: '*/*',
-        Authorization: 'Bearer ' + localStorage.getItem('token')
-      },
-      params: {
-        name: selectTeacherValue.value,
-      }
-    }).then(res => {
-      console.log(res);
-      if (res.data.code === 200){
-        teacherListStore.updateTeacherList(res.data.data);
-      } else {
-        alert(res.data.data.error);
-      }
-    }).catch(err => {
-      alert(JSON.parse(err.requests.responseText).data.error);
-    })
+function syncSearchInputFromRoute() {
+  selectTeacherValue.value = getSingleQueryValue(route.query.name);
+}
+
+async function selectTeacherClicked() {
+  const nextTeacherName = selectTeacherValue.value.trim();
+  if (!nextTeacherName) {
+    ElMessage.warning("请输入正确的内容");
+    return;
   }
+
+  if (getSingleQueryValue(route.query.name) === nextTeacherName) {
+    return;
+  }
+
+  await router.replace({
+    path: route.path,
+    query: {
+      ...route.query,
+      name: nextTeacherName,
+    },
+  });
 }
 
-function resettingClicked() {
-  window.location.reload();
+async function resettingClicked() {
+  if (!selectTeacherValue.value && !getSingleQueryValue(route.query.name)) {
+    return;
+  }
+
+  selectTeacherValue.value = "";
+  const nextQuery = { ...route.query };
+  delete nextQuery.name;
+
+  await router.replace({
+    path: route.path,
+    query: nextQuery,
+  });
 }
+
+watch(
+  () => route.query.name,
+  () => {
+    syncSearchInputFromRoute();
+  },
+  { immediate: true },
+);
 </script>
 
 <template>

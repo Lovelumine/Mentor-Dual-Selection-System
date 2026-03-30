@@ -3,10 +3,11 @@ import { computed, onMounted, ref, watch } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import * as XLSX from "xlsx";
 import { http, httpAdmin } from "@/utils/http";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useUploadCoverStore } from "@/stores/UploadCoverStore";
 import { useUserInfoStore } from "@/stores/user/UserBasicInformation";
 import { downloadBlob, downloadWorkbook, parseContentDispositionFilename } from "@/utils/fileDownload";
+import { getSingleQueryValue, parseEnumQuery } from "@/utils/routeQuery";
 import {
   analyzeImportRows,
   type ExistingImportUser,
@@ -83,8 +84,10 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
+const route = useRoute();
 const uploadCoverStore = useUploadCoverStore();
 const userInfoStore = useUserInfoStore();
+const mentorStatusQueryOptions = ["", "no", "accepted"] as const;
 
 const students = ref<StudentRecord[]>([]);
 const teachers = ref<TeacherRecord[]>([]);
@@ -253,6 +256,44 @@ function authHeaders() {
     Accept: "*/*",
     Authorization: `Bearer ${localStorage.getItem("token")}`,
   };
+}
+
+function syncFiltersFromRouteQuery() {
+  const nextKeyword = getSingleQueryValue(route.query.keyword);
+  const nextMentorStatus = parseEnumQuery(route.query.mentorStatus, mentorStatusQueryOptions, "");
+
+  draftStudentName.value = nextKeyword;
+  appliedStudentName.value = nextKeyword;
+  draftMentorStatus.value = nextMentorStatus;
+  appliedMentorStatus.value = nextMentorStatus;
+}
+
+async function updateFilterQuery() {
+  const nextKeyword = appliedStudentName.value.trim();
+  const nextMentorStatus = appliedMentorStatus.value;
+  const currentKeyword = getSingleQueryValue(route.query.keyword);
+  const currentMentorStatus = parseEnumQuery(route.query.mentorStatus, mentorStatusQueryOptions, "");
+
+  if (currentKeyword === nextKeyword && currentMentorStatus === nextMentorStatus) {
+    return;
+  }
+
+  const nextQuery = { ...route.query };
+  delete nextQuery.keyword;
+  delete nextQuery.mentorStatus;
+
+  if (nextKeyword) {
+    nextQuery.keyword = nextKeyword;
+  }
+
+  if (nextMentorStatus) {
+    nextQuery.mentorStatus = nextMentorStatus;
+  }
+
+  await router.replace({
+    path: route.path,
+    query: nextQuery,
+  });
 }
 
 function cancelEditing() {
@@ -460,6 +501,7 @@ async function fetchExistingUsers() {
 const applyFilters = () => {
   appliedStudentName.value = draftStudentName.value;
   appliedMentorStatus.value = draftMentorStatus.value;
+  void updateFilterQuery();
 };
 
 const resetFilters = () => {
@@ -467,6 +509,7 @@ const resetFilters = () => {
   draftMentorStatus.value = "";
   appliedStudentName.value = "";
   appliedMentorStatus.value = "";
+  void updateFilterQuery();
 };
 
 const addSingleStudent = () => {
@@ -745,6 +788,14 @@ const archiveStudent = async (student: StudentRecord) => {
     ElMessage.error(error?.response?.data?.data?.error || "转出学生失败");
   }
 };
+
+watch(
+  () => route.query,
+  () => {
+    syncFiltersFromRouteQuery();
+  },
+  { immediate: true },
+);
 
 watch(
   () => isAdmin.value,

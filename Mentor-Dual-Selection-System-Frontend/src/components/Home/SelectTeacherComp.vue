@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from "vue";
+import { onMounted, ref, computed, watch } from "vue";
 import {
   ElPagination,
   ElSelect,
@@ -14,7 +14,8 @@ import {
 } from "element-plus";
 import { http, httpStudent } from "@/utils/http";
 import { getCardBackgroundImageUrl, getPortraitImageUrl } from "@/utils/media";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
+import { getSingleQueryValue, parsePositiveIntQuery } from "@/utils/routeQuery";
 
 interface TeacherInfo {
   uid: number;
@@ -30,7 +31,7 @@ interface TeacherInfo {
 const allTeacherDetailsList = ref<TeacherInfo[]>([]); // 类型为 TeacherInfo 数组
 const currentPage = ref(1);
 const pageSize = ref(6);
-const positions = ["教授", "副教授", "助理教授", "博士后", "学术顾问", "客座/兼职教授"];
+const positions = ["教授", "副教授", "助理教授", "博士后", "学术顾问", "客座/兼职教授"] as const;
 const selectedPosition = ref("");
 const dialogVisible = ref(false);
 const applicationDialogVisible = ref(false);
@@ -39,6 +40,8 @@ const selectTeacherUid = ref<number | null>(null);
 const selectedTeacher = ref<TeacherInfo | null>(null); // 类型为 TeacherInfo 或 null
 const isGeneratingReason = ref(false);
 const router = useRouter();
+const route = useRoute();
+const hasLoadedTeachers = ref(false);
 
 const consumeReasonStream = async (response: Response) => {
   if (!response.body) {
@@ -181,6 +184,8 @@ onMounted(() => {
             });
           }
         });
+
+        hasLoadedTeachers.value = true;
       } else {
         ElMessage.error("导师信息获取失败！");
       }
@@ -190,11 +195,13 @@ onMounted(() => {
 // 处理筛选条件
 const onPositionChange = () => {
   currentPage.value = 1;
+  void syncQueryFromState();
 };
 
 const resetFilter = () => {
   selectedPosition.value = "";
   currentPage.value = 1;
+  void syncQueryFromState();
 };
 
 // 过滤导师
@@ -278,11 +285,70 @@ const checkApplication = async () => {
 // 处理分页页码变化
 const handlePageChange = (page: number) => {
   currentPage.value = page;
+  void syncQueryFromState();
 };
 
 const getCardImageUrl = (url?: string | null) => getCardBackgroundImageUrl(url);
 const getPhotoImageUrl = (url?: string | null) => getPortraitImageUrl(url);
 const getTeacherInitial = (name?: string | null) => name?.trim()?.slice(0, 1) || "师";
+
+function getPositionQueryValue() {
+  const queryValue = getSingleQueryValue(route.query.position);
+  return positions.includes(queryValue as (typeof positions)[number]) ? queryValue : "";
+}
+
+function syncStateFromRouteQuery() {
+  selectedPosition.value = getPositionQueryValue();
+  currentPage.value = parsePositiveIntQuery(route.query.page, 1);
+}
+
+async function syncQueryFromState() {
+  const nextPosition = selectedPosition.value;
+  const nextPage = currentPage.value;
+  const currentPosition = getPositionQueryValue();
+  const currentPageQuery = parsePositiveIntQuery(route.query.page, 1);
+
+  if (currentPosition === nextPosition && currentPageQuery === nextPage) {
+    return;
+  }
+
+  const nextQuery = { ...route.query };
+  delete nextQuery.position;
+  delete nextQuery.page;
+
+  if (nextPosition) {
+    nextQuery.position = nextPosition;
+  }
+
+  if (nextPage > 1) {
+    nextQuery.page = String(nextPage);
+  }
+
+  await router.replace({
+    path: route.path,
+    query: nextQuery,
+  });
+}
+
+watch(
+  () => route.query,
+  () => {
+    syncStateFromRouteQuery();
+  },
+  { immediate: true },
+);
+
+watch(filteredTeachers, (teachers) => {
+  if (!hasLoadedTeachers.value) {
+    return;
+  }
+
+  const totalPages = Math.max(1, Math.ceil(teachers.length / pageSize.value));
+  if (currentPage.value > totalPages) {
+    currentPage.value = totalPages;
+    void syncQueryFromState();
+  }
+});
 </script>
 
 <template>

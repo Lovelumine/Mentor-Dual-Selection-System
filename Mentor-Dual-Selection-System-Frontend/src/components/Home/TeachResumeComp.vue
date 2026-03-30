@@ -120,7 +120,7 @@
 <!--};-->
 <!--</script>-->
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 import {
   ElPagination,
   ElSelect,
@@ -131,16 +131,21 @@ import {
 import { http, httpStudent } from '@/utils/http';
 import type {TeacherDetailImpl} from "@/interfaces/TeachDetailsImpl";
 import { getCardBackgroundImageUrl, getPortraitImageUrl } from "@/utils/media";
+import { useRoute, useRouter } from "vue-router";
+import { getSingleQueryValue, parsePositiveIntQuery } from "@/utils/routeQuery";
 
 
 // 状态变量
 const allTeacherDetailsList = ref<TeacherDetailImpl[]>([]);
 const currentPage = ref<number>(1);
 const pageSize = ref<number>(6);
-const positions = ['教授', '副教授', '助理教授', '博士后', '学术顾问', '客座/兼职教授'];
+const positions = ['教授', '副教授', '助理教授', '博士后', '学术顾问', '客座/兼职教授'] as const;
 const selectedPosition = ref<string>('');
 const dialogVisible = ref<boolean>(false);
 const selectedTeacher = ref<TeacherDetailImpl | null>(null);
+const route = useRoute();
+const router = useRouter();
+const hasLoadedTeachers = ref(false);
 
 // 挂载时获取教师数据
 onMounted(async () => {
@@ -177,6 +182,8 @@ onMounted(async () => {
         });
         console.log('All Teachers Data:', allTeacherDetailsList.value);
       }
+
+      hasLoadedTeachers.value = true;
     } else {
       alert('导师信息获取失败！');
     }
@@ -190,12 +197,14 @@ onMounted(async () => {
 const onPositionChange = () => {
   console.log('Selected Position:', selectedPosition.value);
   currentPage.value = 1;
+  void syncQueryFromState();
 };
 
 // 重置筛选条件
 const resetFilter = () => {
   selectedPosition.value = '';
   currentPage.value = 1;
+  void syncQueryFromState();
 };
 
 // 过滤后的教师列表
@@ -225,11 +234,70 @@ const showDetails = (teacher: TeacherDetailImpl) => {
 // 处理分页页码变化
 const handlePageChange = (page: number) => {
   currentPage.value = page;
+  void syncQueryFromState();
 };
 
 const getCardImageUrl = (url?: string | null) => getCardBackgroundImageUrl(url);
 const getPhotoImageUrl = (url?: string | null) => getPortraitImageUrl(url);
 const getTeacherInitial = (name?: string | null) => name?.trim()?.slice(0, 1) || '师';
+
+function getPositionQueryValue() {
+  const queryValue = getSingleQueryValue(route.query.position);
+  return positions.includes(queryValue as (typeof positions)[number]) ? queryValue : '';
+}
+
+function syncStateFromRouteQuery() {
+  selectedPosition.value = getPositionQueryValue();
+  currentPage.value = parsePositiveIntQuery(route.query.page, 1);
+}
+
+async function syncQueryFromState() {
+  const nextPosition = selectedPosition.value;
+  const nextPage = currentPage.value;
+  const currentPosition = getPositionQueryValue();
+  const currentPageQuery = parsePositiveIntQuery(route.query.page, 1);
+
+  if (currentPosition === nextPosition && currentPageQuery === nextPage) {
+    return;
+  }
+
+  const nextQuery = { ...route.query };
+  delete nextQuery.position;
+  delete nextQuery.page;
+
+  if (nextPosition) {
+    nextQuery.position = nextPosition;
+  }
+
+  if (nextPage > 1) {
+    nextQuery.page = String(nextPage);
+  }
+
+  await router.replace({
+    path: route.path,
+    query: nextQuery,
+  });
+}
+
+watch(
+  () => route.query,
+  () => {
+    syncStateFromRouteQuery();
+  },
+  { immediate: true },
+);
+
+watch(filteredTeachers, (teachers) => {
+  if (!hasLoadedTeachers.value) {
+    return;
+  }
+
+  const totalPages = Math.max(1, Math.ceil(teachers.length / pageSize.value));
+  if (currentPage.value > totalPages) {
+    currentPage.value = totalPages;
+    void syncQueryFromState();
+  }
+});
 </script>
 
 <template>

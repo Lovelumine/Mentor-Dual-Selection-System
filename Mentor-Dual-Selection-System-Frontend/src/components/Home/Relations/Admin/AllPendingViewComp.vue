@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
+import { useRoute, useRouter } from "vue-router";
 import { http } from "@/utils/http";
 import { getPortraitImageCandidates } from "@/utils/media";
+import { getSingleQueryValue, parseEnumQuery } from "@/utils/routeQuery";
 
 interface MentorSummary {
   uid: number;
@@ -78,6 +80,10 @@ interface StudentSlot {
 type StatusFilter = "all" | "hasStudents" | "empty" | "full";
 type SortMode = "countDesc" | "countAsc" | "nameAsc";
 
+const route = useRoute();
+const router = useRouter();
+const statusFilterOptions = ["all", "hasStudents", "empty", "full"] as const;
+const sortModeOptions = ["countDesc", "countAsc", "nameAsc"] as const;
 const loading = ref(false);
 const searchKeyword = ref("");
 const statusFilter = ref<StatusFilter>("all");
@@ -106,6 +112,47 @@ const resettingAll = ref(false);
 const restoringBatchId = ref<number | null>(null);
 
 const keyword = computed(() => searchKeyword.value.trim().toLowerCase());
+
+function syncFiltersFromRouteQuery() {
+  searchKeyword.value = getSingleQueryValue(route.query.keyword);
+  statusFilter.value = parseEnumQuery(route.query.scope, statusFilterOptions, "all");
+  sortMode.value = parseEnumQuery(route.query.sort, sortModeOptions, "countDesc");
+}
+
+async function syncFilterQuery() {
+  const nextKeyword = searchKeyword.value.trim();
+  const nextScope = statusFilter.value;
+  const nextSort = sortMode.value;
+  const currentKeyword = getSingleQueryValue(route.query.keyword);
+  const currentScope = parseEnumQuery(route.query.scope, statusFilterOptions, "all");
+  const currentSort = parseEnumQuery(route.query.sort, sortModeOptions, "countDesc");
+
+  if (currentKeyword === nextKeyword && currentScope === nextScope && currentSort === nextSort) {
+    return;
+  }
+
+  const nextQuery = { ...route.query };
+  delete nextQuery.keyword;
+  delete nextQuery.scope;
+  delete nextQuery.sort;
+
+  if (nextKeyword) {
+    nextQuery.keyword = nextKeyword;
+  }
+
+  if (nextScope !== "all") {
+    nextQuery.scope = nextScope;
+  }
+
+  if (nextSort !== "countDesc") {
+    nextQuery.sort = nextSort;
+  }
+
+  await router.replace({
+    path: route.path,
+    query: nextQuery,
+  });
+}
 
 function normalizeText(value: unknown) {
   if (value == null) {
@@ -512,6 +559,21 @@ function expandAll() {
 function collapseAll() {
   expandedMentorIds.value = [];
 }
+
+watch(
+  () => route.query,
+  () => {
+    syncFiltersFromRouteQuery();
+  },
+  { immediate: true },
+);
+
+watch(
+  [searchKeyword, statusFilter, sortMode],
+  () => {
+    void syncFilterQuery();
+  },
+);
 
 watch(
   filteredGroups,

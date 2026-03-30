@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
+import { useRoute } from "vue-router";
 import { useUserInfoStore } from "@/stores/user/UserBasicInformation";
 import { useTeacherListStore } from "@/stores/TeacherListStore";
 import { http, httpAdmin } from "@/utils/http";
 import type { TeachDetailsFullImpl } from "@/interfaces/TeachDetailsFullImpl";
+import { getSingleQueryValue } from "@/utils/routeQuery";
 
 interface TeacherTableRow extends TeachDetailsFullImpl {
   avatarUrl: string | null;
@@ -25,6 +27,7 @@ interface TeacherEditDraft {
 
 const userStore = useUserInfoStore();
 const teacherListStore = useTeacherListStore();
+const route = useRoute();
 
 const tableData = ref<TeacherTableRow[]>([]);
 const tableRef = ref<any>(null);
@@ -38,6 +41,7 @@ const isDeleting = ref(false);
 
 const isAdmin = computed(() => userStore.userInfo?.role === "ADMIN");
 const isEditing = computed(() => editingUid.value !== null);
+const searchTeacherName = computed(() => getSingleQueryValue(route.query.name).trim());
 
 const authHeaders = computed(() => ({
   Accept: "*/*",
@@ -121,9 +125,14 @@ async function loadTeachers() {
 
   try {
     const res = await http({
-      url: "/search/teachers",
+      url: searchTeacherName.value ? "/search/teachers/search" : "/search/teachers",
       method: "GET",
       headers: authHeaders.value,
+      params: searchTeacherName.value
+        ? {
+          name: searchTeacherName.value,
+        }
+        : undefined,
     });
 
     if (res.data.code === 200) {
@@ -340,6 +349,16 @@ async function confirmDeleteSelectedTeachers() {
 }
 
 watch(
+  () => route.query.name,
+  () => {
+    cancelEditing();
+    exitDeleteMode();
+    void loadTeachers();
+  },
+  { immediate: true },
+);
+
+watch(
   () => teacherListStore.teacherListSt,
   (newTeacherListVal) => {
     if (Array.isArray(newTeacherListVal)) {
@@ -358,9 +377,6 @@ watch(
   }
 );
 
-onMounted(() => {
-  void loadTeachers();
-});
 </script>
 
 <template>
