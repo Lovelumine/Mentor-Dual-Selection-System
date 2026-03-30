@@ -9,16 +9,12 @@ import {
   ElForm,
   ElFormItem,
   ElInput,
+  ElMessage,
+  ElMessageBox,
 } from "element-plus";
 import { http, httpStudent } from "@/utils/http";
-import axios from "axios";
-
-// 定义学生和导师的信息类型
-interface StudentInfo {
-  studentGrade: string;
-  studentClass: string;
-  resume: string;
-}
+import { getCardBackgroundImageUrl, getPortraitImageUrl } from "@/utils/media";
+import { useRouter } from "vue-router";
 
 interface TeacherInfo {
   uid: number;
@@ -26,13 +22,11 @@ interface TeacherInfo {
   teacherposition: string;
   research_direction: string;
   email: string;
-  photourl: string;
+  photourl: string | null;
   resume: string;
-  avatarUrl: string;
+  avatarUrl: string | null;
 }
 
-// 学生和教师的信息
-const studentInfo = ref<StudentInfo | null>(null); // 类型为 StudentInfo 或 null
 const allTeacherDetailsList = ref<TeacherInfo[]>([]); // 类型为 TeacherInfo 数组
 const currentPage = ref(1);
 const pageSize = ref(6);
@@ -44,62 +38,113 @@ const selectReason = ref<string | null>(null);
 const selectTeacherUid = ref<number | null>(null);
 const selectedTeacher = ref<TeacherInfo | null>(null); // 类型为 TeacherInfo 或 null
 const isGeneratingReason = ref(false);
+const router = useRouter();
 
-// 获取学生信息
-const fetchStudentInfo = () => {
-  httpStudent({
-    url: "/my-detail",
-    method: "GET",
-    headers: {
-      Accept: "*/*",
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
-  }).then((res) => {
-    if (res.data.code === 200) {
-      studentInfo.value = res.data.data;
+const consumeReasonStream = async (response: Response) => {
+  if (!response.body) {
+    throw new Error("浏览器不支持流式返回");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let buffer = "";
+
+  const processEventBlock = (block: string) => {
+    const normalizedBlock = block.trim();
+    if (!normalizedBlock) {
+      return;
     }
-  });
+
+    let eventName = "message";
+    const dataLines: string[] = [];
+
+    normalizedBlock.split(/\r?\n/).forEach((line) => {
+      if (line.startsWith("event:")) {
+        eventName = line.slice(6).trim();
+      } else if (line.startsWith("data:")) {
+        dataLines.push(line.slice(5).trimStart());
+      }
+    });
+
+    if (!dataLines.length) {
+      return;
+    }
+
+    const payloadText = dataLines.join("\n");
+    const payload = JSON.parse(payloadText);
+
+    if (eventName === "chunk") {
+      selectReason.value = (selectReason.value || "") + (payload.content || "");
+      return;
+    }
+
+    if (eventName === "error") {
+      throw new Error(payload.message || "生成申请理由失败，请稍后重试！");
+    }
+  };
+
+  while (true) {
+    const { value, done } = await reader.read();
+    buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+
+    const blocks = buffer.split(/\n\n/);
+    buffer = blocks.pop() || "";
+
+    for (const block of blocks) {
+      processEventBlock(block);
+    }
+
+    if (done) {
+      if (buffer.trim()) {
+        processEventBlock(buffer);
+      }
+      break;
+    }
+  }
 };
 
 // 生成AI申请理由功能
 const generateAIReason = async () => {
-  if (!studentInfo.value || !selectedTeacher.value) {
-    alert("无法获取学生或导师信息！");
+  if (!selectedTeacher.value?.uid) {
+    ElMessage.warning("无法获取导师信息！");
     return;
   }
   isGeneratingReason.value = true;
+  selectReason.value = "";
   try {
-    const prompt = `根据以下信息生成申请理由：
-    学生年级: ${studentInfo.value.studentGrade}
-    学生班级: ${studentInfo.value.studentClass}
-    学生简介: ${studentInfo.value.resume}
-    导师姓名: ${selectedTeacher.value.fullName}
-    导师职称: ${selectedTeacher.value.teacherposition}
-    导师研究方向: ${selectedTeacher.value.research_direction}`;
-
-    const response = await axios.post(
-      "https://api.lqqq.ltd/v1/chat/completions",
-      {
-        model: "gpt-3.5-turbo-0125",
-        prompt: prompt,
-        max_tokens: 2000,
-        temperature: 0.7,
+    const response = await fetch("/student/generate-application-reason/stream", {
+      method: "POST",
+      headers: {
+        Accept: "text/event-stream",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
-      {
-        headers: {
-          Authorization: `Bearer sk-F0G0uD0m1tVmk5OUAa7bF90e0d824d44Ad65CdC9286aFc2a`,
-        },
-      }
-    );
+      body: JSON.stringify({
+        mentorId: selectedTeacher.value.uid,
+      }),
+    });
 
-    if (response.status === 200 && response.data.choices) {
-      selectReason.value = response.data.choices[0].message.content.trim();
-    } else {
-      alert("生成申请理由失败，请重试！");
+    if (!response.ok) {
+      const errorText = await response.text();
+      try {
+        const errorJson = JSON.parse(errorText);
+        const message = errorJson?.data?.message || errorJson?.data?.error || "生成申请理由失败，请稍后重试！";
+        throw new Error(message);
+      } catch (parseError) {
+        if (parseError instanceof Error) {
+          throw parseError;
+        }
+        throw new Error(errorText || "生成申请理由失败，请稍后重试！");
+      }
     }
-  } catch (error) {
+
+    await consumeReasonStream(response);
+  } catch (error: unknown) {
     console.error(error);
-    alert("生成申请理由失败，请重试！");
+    const message = error instanceof Error ? error.message : "生成申请理由失败，请稍后重试！";
+    if (!selectReason.value) {
+      ElMessage.error(message);
+    }
   } finally {
     isGeneratingReason.value = false;
   }
@@ -107,7 +152,6 @@ const generateAIReason = async () => {
 
 // 获取导师信息
 onMounted(() => {
-  fetchStudentInfo();
   http({
     url: "/search/teachers",
     method: "GET",
@@ -138,7 +182,7 @@ onMounted(() => {
           }
         });
       } else {
-        alert("导师信息获取失败！");
+        ElMessage.error("导师信息获取失败！");
       }
     });
 });
@@ -182,44 +226,63 @@ const showApplicationDialog = (teacher: TeacherInfo) => {
 };
 
 // 提交申请
-const checkApplication = () => {
+const checkApplication = async () => {
   if (!selectReason.value) {
-    alert("请填写您的理由！");
+    ElMessage.warning("请填写申请理由");
     return;
   }
-  http({
-    url: "/application/submit",
-    method: "POST",
-    headers: {
-      Accept: "*/*",
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
-    data: {
-      mentorId: selectTeacherUid.value,
-      reason: selectReason.value,
-    },
-  })
-    .then((res) => {
-      if (res.data.code === 200) {
-        alert("申请提交成功，请等待导师处理！\n期间您不可选择其他导师！");
-        applicationDialogVisible.value = false;
-      } else {
-        alert(res.data.data.error);
+
+  try {
+    await ElMessageBox.confirm(
+      "提交后将进入待处理状态，期间你将不能再选择其他导师，也不能自行撤销。确认现在提交吗？",
+      "确认提交申请",
+      {
+        confirmButtonText: "确认提交",
+        cancelButtonText: "再想想",
+        type: "warning",
+        closeOnClickModal: false,
+        closeOnPressEscape: false,
       }
-    })
-    .catch((error) => {
-      if (error.response && error.response.data && error.response.data.data) {
-        alert(error.response.data.data.error);
-      } else {
-        alert("提交申请时出现未知错误，请稍后重试！");
-      }
+    );
+  } catch {
+    return;
+  }
+
+  try {
+    const res = await http({
+      url: "/application/submit",
+      method: "POST",
+      headers: {
+        Accept: "*/*",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      data: {
+        mentorId: selectTeacherUid.value,
+        reason: selectReason.value,
+      },
     });
+
+    if (res.data.code === 200) {
+      applicationDialogVisible.value = false;
+      ElMessage.success("申请提交成功，正在跳转到师生关系页面");
+      await router.push("/relations");
+      return;
+    }
+
+    ElMessage.error(res.data?.data?.error || "申请提交失败，请稍后重试！");
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.data?.error || "提交申请时出现未知错误，请稍后重试！");
+  }
 };
 
 // 处理分页页码变化
 const handlePageChange = (page: number) => {
   currentPage.value = page;
 };
+
+const getCardImageUrl = (url?: string | null) => getCardBackgroundImageUrl(url);
+const getPhotoImageUrl = (url?: string | null) => getPortraitImageUrl(url);
+const getTeacherInitial = (name?: string | null) => name?.trim()?.slice(0, 1) || "师";
 </script>
 
 <template>
@@ -270,8 +333,9 @@ const handlePageChange = (page: number) => {
             v-for="(item, index) in paginatedTeachers"
             :key="index"
         >
-          <div class="photo">
-            <img :src="item.photourl" alt="photo" />
+          <div class="photo" :class="{ 'photo--placeholder': !getPhotoImageUrl(item.photourl) }">
+            <img v-if="getPhotoImageUrl(item.photourl)" :src="getPhotoImageUrl(item.photourl)" alt="photo" />
+            <span v-else>{{ getTeacherInitial(item.fullName) }}</span>
           </div>
           <div class="item_box">
             <span class="fullname">{{ item.fullName }}</span>
@@ -289,8 +353,8 @@ const handlePageChange = (page: number) => {
               <el-button type="primary" size="small" @click="showDetails(item)">了解更多</el-button>
               <el-button type="primary" size="small" @click="showApplicationDialog(item)">选择导师</el-button>
             </div>
-            <div class="avatar">
-              <img :src="item.avatarUrl" alt="avatar" />
+            <div class="avatar" :class="{ 'avatar--empty': !getCardImageUrl(item.avatarUrl) }">
+              <img v-if="getCardImageUrl(item.avatarUrl)" :src="getCardImageUrl(item.avatarUrl)" alt="avatar" />
             </div>
           </div>
         </div>
@@ -394,49 +458,68 @@ const handlePageChange = (page: number) => {
       width: 90%
       left: 50%
       transform: translateX(-50%)
+      z-index: 2
     .fullname
       position: absolute
       top: -13%
       left: 22%
       font-size: 18px
+      z-index: 2
     .email
       position: absolute
       left: 22%
       display: flex
       align-items: center
       top: 2%
+      z-index: 2
     .professional
       position: absolute
       left: 22%
       top: 12%
+      z-index: 2
     .detail_box
       position: absolute
       top: 30%
       left: 5%
+      z-index: 2
     .avatar
-      z-index: -1
+      z-index: 0
       width: 100%
       height: 100%
       overflow: hidden
-      position: relative
+      position: absolute
+      inset: 0
       border-radius: 10px
       img
-        position: absolute
-        top: 50%
-        left: 50%
-        transform: translate(-50%, -50%)
         width: 100%
-        opacity: .2
+        height: 100%
+        object-fit: cover
+        opacity: .26
   .photo
     box-shadow: #00000030 0 0 5px
     background-color: white
     border-radius: 10px
-    z-index: 1
+    z-index: 3
     left: 5%
     width: 75px
     height: 99px
     overflow: hidden
     position: absolute
+    display: flex
+    align-items: center
+    justify-content: center
     img
       width: 100%
+      height: 100%
+      object-fit: cover
+
+  .photo--placeholder
+    background: linear-gradient(160deg, rgba(255, 255, 255, .92) 0%, rgba(230, 237, 244, .98) 100%)
+    color: #5f7180
+    font-size: 34px
+    font-weight: 700
+    letter-spacing: .08em
+
+  .avatar--empty
+    background: linear-gradient(135deg, rgba(228, 238, 246, .86) 0%, rgba(212, 225, 241, .78) 100%)
 </style>

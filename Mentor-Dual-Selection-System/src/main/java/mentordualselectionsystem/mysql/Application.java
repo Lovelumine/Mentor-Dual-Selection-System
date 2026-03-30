@@ -6,7 +6,15 @@ import jakarta.validation.constraints.Size;
 import java.time.Instant;
 
 @Entity
-@Table(name = "applications", schema = "teacherselectionsystem")
+@Table(
+        name = "applications",
+        schema = "teacherselectionsystem",
+        indexes = {
+                @Index(name = "idx_applications_status", columnList = "status"),
+                @Index(name = "idx_applications_mentor_status", columnList = "mentor_id,status"),
+                @Index(name = "idx_applications_student_status", columnList = "student_id,status")
+        }
+)
 public class Application {
 
     @Id

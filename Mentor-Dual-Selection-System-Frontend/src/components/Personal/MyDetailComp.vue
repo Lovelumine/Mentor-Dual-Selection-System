@@ -3,6 +3,7 @@ import { onMounted, ref, watch } from "vue";
 import { useUserInfoStore } from "@/stores/user/UserBasicInformation";
 import { httpStudent, httpTeacher } from "@/utils/http";
 import axios from "axios";
+import { getPortraitImageUrl } from "@/utils/media";
 
 const userInfoStore = useUserInfoStore();
 import { useUploadFileStore } from "@/stores/UploadFileStore";
@@ -17,7 +18,6 @@ const userDetail = ref({
   professionalDirection: '',
   resume: '',
   netid: '',
-  studentClass: null,
   studentGrade: null,
 });
 const userDetailTemp = ref({
@@ -28,7 +28,6 @@ const userDetailTemp = ref({
   professionalDirection: '',
   resume: '',
   netid: '',
-  studentClass: null,
   studentGrade: null,
 });
 const isChangeDetailDisabled = ref(true);
@@ -156,6 +155,8 @@ watch(
     }
   }
 );
+
+const getProfilePhotoUrl = (url?: string | null) => getPortraitImageUrl(url);
 </script>
 
 <template>
@@ -165,7 +166,8 @@ watch(
       <h3 class="form-title">详细信息</h3>
       <el-form-item label="照片：" class="form-label">
         <div class="photo_box">
-          <img :src="userDetailTemp.photoUrl" alt="photo"/>
+          <img v-if="getProfilePhotoUrl(userDetailTemp.photoUrl)" :src="getProfilePhotoUrl(userDetailTemp.photoUrl)" alt="photo"/>
+          <div v-else class="photo_placeholder">未设置照片</div>
         </div>
         <input type="file" style="display: none" ref="fileInput" @change="handleFileChange"/>
         <button v-if="!isChangeDetailDisabled" type="button" class="button" @click="triggerUploadFile">选择图片</button>
@@ -176,7 +178,14 @@ watch(
         <span v-else class="form-text">{{ userDetail.teacherPosition }}</span>
       </el-form-item>
       <el-form-item label="研究方向：" class="form-label">
-        <el-input v-if="!isChangeDetailDisabled" v-model="userDetailTemp.researchDirection"/>
+        <el-input
+          v-if="!isChangeDetailDisabled"
+          v-model="userDetailTemp.researchDirection"
+          type="textarea"
+          :rows="4"
+          maxlength="5000"
+          show-word-limit
+        />
         <span v-else class="form-text">{{ userDetail.researchDirection }}</span>
       </el-form-item>
       <el-form-item label="简介：" class="form-label">
@@ -193,7 +202,8 @@ watch(
       <h3 class="form-title">详细信息</h3>
       <el-form-item label="照片：" class="form-label">
         <div class="photo_box">
-          <img :src="userDetailTemp.photoUrl" alt="photo"/>
+          <img v-if="getProfilePhotoUrl(userDetailTemp.photoUrl)" :src="getProfilePhotoUrl(userDetailTemp.photoUrl)" alt="photo"/>
+          <div v-else class="photo_placeholder">未设置照片</div>
         </div>
         <input type="file" style="display: none" ref="fileInput" @change="handleFileChange"/>
         <button v-if="!isChangeDetailDisabled" type="button" class="button" @click="triggerUploadFile">选择图片</button>
@@ -203,12 +213,15 @@ watch(
         <el-input v-if="!isChangeDetailDisabled" v-model="userDetailTemp.studentGrade"/>
         <span v-else class="form-text">{{ userDetail.studentGrade }}</span>
       </el-form-item>
-      <el-form-item label="班级：" class="form-label">
-        <el-input v-if="!isChangeDetailDisabled" v-model="userDetailTemp.studentClass"/>
-        <span v-else class="form-text">{{ userDetail.studentClass }}</span>
-      </el-form-item>
       <el-form-item label="意向研究方向：" class="form-label">
-        <el-input v-if="!isChangeDetailDisabled" v-model="userDetailTemp.researchDirection"/>
+        <el-input
+          v-if="!isChangeDetailDisabled"
+          v-model="userDetailTemp.researchDirection"
+          type="textarea"
+          :rows="4"
+          maxlength="5000"
+          show-word-limit
+        />
         <span v-else class="form-text">{{ userDetail.researchDirection }}</span>
       </el-form-item>
       <el-form-item label="专业：" class="form-label">
@@ -228,19 +241,43 @@ watch(
 
 <style scoped lang="sass">
 .my_detail_box
-  box-shadow: #005826 0 0 5px
-  border-radius: 10px
+  box-shadow: 0 20px 40px var(--app-shadow)
+  border-radius: 18px
+  border: 1px solid var(--app-border)
+  background: linear-gradient(180deg, var(--app-surface) 0%, var(--app-surface-elevated) 100%)
   width: 100%
-  margin: 10px auto
+  margin: 16px auto
   text-align: center
+  color: var(--app-text-primary)
+  padding: 24px 0
+  :deep(.el-form-item__label)
+    color: var(--app-text-primary)
+    font-weight: 600
+  :deep(.el-input__wrapper),
+  :deep(.el-textarea__inner)
+    background-color: var(--app-surface)
   .photo_box
     width: 75px
     height: 99px
     overflow: hidden
+    border-radius: 12px
+    border: 1px solid var(--app-border)
+    display: flex
+    align-items: center
+    justify-content: center
+    background: linear-gradient(160deg, color-mix(in srgb, var(--app-surface) 82%, #eef4fa 18%) 0%, color-mix(in srgb, var(--app-surface-elevated) 88%, #dbe8f5 12%) 100%)
     img
       width: 100%
+      height: 100%
+      object-fit: cover
+  .photo_placeholder
+    padding: 0 8px
+    font-size: 12px
+    line-height: 1.4
+    color: var(--app-text-tertiary)
+    text-align: center
   .form-title
-    color: #005826
+    color: var(--app-brand)
     font-weight: bold
     font-size: 1.5em
     margin-bottom: 10px
@@ -248,18 +285,19 @@ watch(
     font-weight: bold
   .form-text
     font-size: 1em
+    color: var(--app-text-secondary)
   .button
-    border-radius: 5px
+    border-radius: 10px
     width: 100px
     height: 32px
-    background-color: #005826
-    color: white
+    background-color: var(--app-brand)
+    color: var(--app-text-inverse)
     margin-left: 20px
     border: none
     font-size: 15px
     transition: .3s ease
   .button:hover
-    background-color: #0f7e3f
+    background-color: var(--app-brand-hover)
   .button:disabled
-    background-color: #55655b
+    background-color: color-mix(in srgb, var(--app-surface-muted) 78%, var(--app-border-strong) 22%)
 </style>

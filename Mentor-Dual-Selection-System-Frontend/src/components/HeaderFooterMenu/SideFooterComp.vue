@@ -26,12 +26,12 @@ onMounted(() => {
   z-index: -10
   p
     font-size: 12px
-    color: white
+    color: var(--app-menu-text)
     margin: 0
     padding: 0
   a
     text-decoration: none
-    color: white
+    color: var(--app-menu-text)
     font-size: 12px
     margin: 0
     padding: 0

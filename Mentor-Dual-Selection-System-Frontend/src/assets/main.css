@@ -1,59 +1,329 @@
 @import './base.css';
 
-body{
+:root {
+  --el-color-primary: var(--app-brand);
+  --el-color-primary-dark-2: #00471f;
+  --el-color-primary-light-3: #3d8e5e;
+  --el-color-primary-light-5: #67aa80;
+  --el-color-primary-light-7: #99c7a9;
+  --el-color-primary-light-8: #bcddc7;
+  --el-color-primary-light-9: #e3f0e8;
+  --el-color-primary-rgb: 0, 88, 38;
+  --el-color-danger: var(--app-danger);
+  --el-border-radius-base: 10px;
+  --el-border-radius-small: 8px;
+  --el-border-radius-round: 999px;
+  --el-font-family:
+    'Noto Sans SC',
+    'PingFang SC',
+    'Microsoft YaHei',
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+body {
   margin: 0;
   padding: 0;
+  background:
+    radial-gradient(circle at top left, rgba(0, 88, 38, 0.08), transparent 26%),
+    linear-gradient(180deg, var(--app-page-bg) 0%, var(--app-page-bg-alt) 100%);
+  color: var(--app-text-primary);
 }
-/* 滚动条整体宽度或高度 */
+
+#app {
+  background: transparent;
+}
+
+::selection {
+  background: var(--app-brand-ring);
+}
+
 ::-webkit-scrollbar {
-  width: 10px; /* 对垂直滚动条有效 */
-  height: 10px; /* 对水平滚动条有效 */
+  width: 10px;
+  height: 10px;
 }
 
-/* 滚动条滑块 */
 ::-webkit-scrollbar-thumb {
-  background: #aaaaaa; /* 滑块颜色 */
+  background: var(--app-border-strong);
+  border-radius: 999px;
 }
 
-/* 滚动条轨道 */
 ::-webkit-scrollbar-track {
-  background: #5a5a5a; /* 轨道颜色 */
+  background: var(--app-surface-muted);
 }
 
-/* 当鼠标悬停在滑块上时 */
 ::-webkit-scrollbar-thumb:hover {
-  background: #555; /* 滑块悬停颜色 */
+  background: var(--app-brand-hover);
 }
-/*#app {*/
-/*  max-width: 1280px;*/
-/*  margin: 0 auto;*/
-/*  padding: 2rem;*/
-/*  font-weight: normal;*/
-/*}*/
 
-/*a,*/
-/*.green {*/
-/*  text-decoration: none;*/
-/*  color: hsla(160, 100%, 37%, 1);*/
-/*  transition: 0.4s;*/
-/*  padding: 3px;*/
-/*}*/
+html.dark {
+  --el-color-primary: var(--app-brand);
+  --el-color-primary-dark-2: #236d45;
+  --el-color-primary-light-3: #57ad7a;
+  --el-color-primary-light-5: #7dc397;
+  --el-color-primary-light-7: #a9d8b8;
+  --el-color-primary-light-8: #c5e5d0;
+  --el-color-primary-light-9: #e5f4ea;
+  --el-color-primary-rgb: 46, 142, 90;
+  --el-bg-color: var(--app-surface);
+  --el-bg-color-page: var(--app-page-bg);
+  --el-bg-color-overlay: var(--app-surface-elevated);
+  --el-fill-color-blank: var(--app-surface);
+  --el-fill-color-light: var(--app-surface-muted);
+  --el-fill-color-lighter: #29342d;
+  --el-fill-color-dark: #101813;
+  --el-text-color-primary: var(--app-text-primary);
+  --el-text-color-regular: var(--app-text-secondary);
+  --el-text-color-secondary: var(--app-text-secondary);
+  --el-border-color: var(--app-border);
+  --el-border-color-light: var(--app-border);
+  --el-border-color-lighter: var(--app-border);
+  --el-border-color-dark: var(--app-border-strong);
+  --el-mask-color: rgba(6, 10, 8, 0.72);
+  --el-box-shadow: 0 20px 45px var(--app-shadow);
+  --el-table-tr-bg-color: var(--app-surface);
+  --el-table-row-hover-bg-color: var(--app-surface-muted);
+  --el-table-header-bg-color: #1b251f;
+  --el-table-border-color: var(--app-border);
+  --el-fill-color-blank: var(--app-surface);
+}
 
-/*@media (hover: hover) {*/
-/*  a:hover {*/
-/*    background-color: hsla(160, 100%, 37%, 0.2);*/
-/*  }*/
-/*}*/
+html.dark body {
+  background:
+    radial-gradient(circle at top left, rgba(46, 142, 90, 0.16), transparent 28%),
+    linear-gradient(180deg, var(--app-page-bg) 0%, var(--app-page-bg-alt) 100%);
+}
 
-/*@media (min-width: 1024px) {*/
-/*  body {*/
-/*    display: flex;*/
-/*    place-items: center;*/
-/*  }*/
+html.dark .container_login,
+html.dark .router_container,
+html.dark .main-content,
+html.dark .content-wrapper,
+html.dark .card_container,
+html.dark .personal_box,
+html.dark .student-info-card,
+html.dark .dialog-footer,
+html.dark .top-controls {
+  color: var(--app-text-primary);
+}
 
-/*  #app {*/
-/*    display: grid;*/
-/*    grid-template-columns: 1fr 1fr;*/
-/*    padding: 0 2rem;*/
-/*  }*/
-/*}*/
+html.dark .router_container,
+html.dark .container_login {
+  background: transparent;
+}
+
+html.dark .router_container > .title,
+html.dark .router_container .title,
+html.dark .router_container .section_title,
+html.dark .router_container .button_box,
+html.dark .router_container .excel_status,
+html.dark .router_container .search_box,
+html.dark .router_container .top-controls,
+html.dark footer,
+html.dark .footer_box {
+  background:
+    linear-gradient(135deg, rgba(23, 33, 27, 0.98), rgba(31, 42, 35, 0.98)) !important;
+  color: var(--app-text-primary) !important;
+  border-bottom: 1px solid var(--app-border);
+}
+
+html.dark .router_container .title {
+  box-shadow: inset 4px 0 0 var(--app-brand);
+}
+
+html.dark .router_container .button_box,
+html.dark .router_container .section_title,
+html.dark .router_container .excel_status,
+html.dark .router_container .search_box,
+html.dark .router_container .top-controls,
+html.dark .router_container .container,
+html.dark .router_container .user_info_box,
+html.dark .router_container .change_info_box,
+html.dark .card_box,
+html.dark .teacher_resume_item .item_box,
+html.dark .teacher_resume_item .photo,
+html.dark .student-info-card,
+html.dark .el-card {
+  color: var(--app-text-primary);
+}
+
+html.dark .router_container .button_box,
+html.dark .router_container .section_title,
+html.dark .router_container .excel_status,
+html.dark .router_container .search_box,
+html.dark .router_container .top-controls,
+html.dark .router_container .user_info_box,
+html.dark .router_container .change_info_box,
+html.dark .card_box,
+html.dark .teacher_resume_item .item_box,
+html.dark .teacher_resume_item .photo,
+html.dark .student-info-card {
+  border: 1px solid var(--app-border);
+  box-shadow: 0 20px 40px var(--app-shadow);
+}
+
+html.dark .router_container .button_box,
+html.dark .router_container .excel_status,
+html.dark .router_container .search_box,
+html.dark .router_container .top-controls,
+html.dark .router_container .user_info_box,
+html.dark .router_container .change_info_box,
+html.dark .card_box,
+html.dark .teacher_resume_item .item_box,
+html.dark .teacher_resume_item .photo {
+  background-color: var(--app-surface) !important;
+}
+
+html.dark .router_container .table,
+html.dark .router_container .el-table {
+  background-color: var(--app-surface) !important;
+  border-color: var(--app-border) !important;
+  box-shadow: none;
+}
+
+html.dark .router_container .table:hover {
+  box-shadow: 0 20px 40px var(--app-shadow) !important;
+}
+
+html.dark .router_container hr,
+html.dark .teacher_resume_item .hea_con_hr {
+  border-color: var(--app-border);
+  opacity: 0.8;
+}
+
+html.dark .router_container .release_date,
+html.dark .router_container .notice_content,
+html.dark .router_container .professional,
+html.dark .router_container .email,
+html.dark .router_container .resume,
+html.dark .router_container .annex a,
+html.dark footer p,
+html.dark footer a,
+html.dark .footer_box p,
+html.dark .footer_box a {
+  color: var(--app-text-secondary) !important;
+}
+
+html.dark .router_container .avatar_box,
+html.dark .router_container .photo {
+  border-color: var(--app-border);
+}
+
+html.dark input:not([type='file']):not(.el-input__inner):not(.el-checkbox__original):not(.el-radio__original),
+html.dark select,
+html.dark textarea:not(.el-textarea__inner) {
+  background-color: var(--app-surface-elevated) !important;
+  color: var(--app-text-primary) !important;
+  border: 1px solid var(--app-border) !important;
+}
+
+html.dark input:not([type='file']):not(.el-input__inner):not(.el-checkbox__original):not(.el-radio__original)::placeholder,
+html.dark textarea:not(.el-textarea__inner)::placeholder {
+  color: var(--app-text-secondary);
+}
+
+html.dark input:not([type='file']):not(.el-input__inner):not(.el-checkbox__original):not(.el-radio__original):focus,
+html.dark select:focus,
+html.dark textarea:not(.el-textarea__inner):focus {
+  outline: none;
+  border-color: var(--app-brand) !important;
+  box-shadow: 0 0 0 3px var(--app-brand-ring) !important;
+}
+
+html.dark .el-table th.el-table__cell,
+html.dark .el-table tr,
+html.dark .el-table__body td.el-table__cell,
+html.dark .el-table__header th.el-table__cell,
+html.dark .el-table__empty-block {
+  background-color: transparent;
+}
+
+html.dark .el-input__wrapper,
+html.dark .el-select__wrapper,
+html.dark .el-textarea__inner,
+html.dark .el-dialog,
+html.dark .el-pagination.is-background .btn-next,
+html.dark .el-pagination.is-background .btn-prev,
+html.dark .el-pagination.is-background .el-pager li {
+  box-shadow: none;
+}
+
+html.dark .el-input__wrapper,
+html.dark .el-select__wrapper,
+html.dark .el-textarea__inner {
+  background-color: var(--app-surface-elevated);
+}
+
+html.dark .el-form-item__label,
+html.dark .el-dialog__title,
+html.dark .el-checkbox__label,
+html.dark .el-pagination,
+html.dark .el-empty__description p {
+  color: var(--app-text-primary);
+}
+
+html.dark .search_box .button:last-child,
+html.dark .excel_status button:last-child,
+html.dark .table .button:last-child,
+html.dark .card_box .button:last-child {
+  background-color: var(--app-danger-soft) !important;
+  border-color: var(--app-danger) !important;
+  color: var(--app-danger) !important;
+}
+
+html.dark .search_box .button:last-child:hover,
+html.dark .excel_status button:last-child:hover,
+html.dark .table .button:last-child:hover,
+html.dark .card_box .button:last-child:hover {
+  background-color: var(--app-danger) !important;
+  color: #170808 !important;
+}
+
+.el-button--primary {
+  --el-button-bg-color: var(--app-brand);
+  --el-button-border-color: var(--app-brand);
+  --el-button-hover-bg-color: var(--app-brand-hover);
+  --el-button-hover-border-color: var(--app-brand-hover);
+  --el-button-active-bg-color: var(--el-color-primary-dark-2);
+  --el-button-active-border-color: var(--el-color-primary-dark-2);
+  --el-button-disabled-bg-color: color-mix(in srgb, var(--app-brand) 42%, white 58%);
+  --el-button-disabled-border-color: color-mix(in srgb, var(--app-brand) 30%, white 70%);
+}
+
+.el-button--primary.is-plain {
+  --el-button-text-color: var(--app-brand);
+  --el-button-bg-color: color-mix(in srgb, var(--app-brand-soft) 60%, white 40%);
+  --el-button-border-color: color-mix(in srgb, var(--app-brand) 26%, white 74%);
+  --el-button-hover-text-color: var(--app-text-inverse);
+  --el-button-hover-bg-color: var(--app-brand);
+  --el-button-hover-border-color: var(--app-brand);
+  --el-button-active-text-color: var(--app-text-inverse);
+  --el-button-active-bg-color: var(--app-brand-hover);
+  --el-button-active-border-color: var(--app-brand-hover);
+}
+
+.el-button.is-link:not(.el-button--danger) {
+  color: var(--app-brand);
+}
+
+.el-tag--primary {
+  --el-tag-text-color: var(--app-brand);
+  --el-tag-bg-color: color-mix(in srgb, var(--app-brand-soft) 56%, white 44%);
+  --el-tag-border-color: color-mix(in srgb, var(--app-brand) 26%, white 74%);
+}
+
+.el-pagination.is-background .el-pager li.is-active,
+.el-pagination.is-background .btn-next:hover,
+.el-pagination.is-background .btn-prev:hover {
+  background-color: var(--app-brand);
+  border-color: var(--app-brand);
+  color: var(--app-text-inverse);
+}

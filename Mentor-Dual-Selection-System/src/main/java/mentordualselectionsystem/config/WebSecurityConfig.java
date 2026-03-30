@@ -8,6 +8,7 @@ import mentordualselectionsystem.security.JwtUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -15,6 +16,8 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -42,6 +45,11 @@ public class WebSecurityConfig {
 
         // JwtAuthorizationFilter 验证所有请求中的 JWT
         JwtAuthorizationFilter jwtAuthorizationFilter = new JwtAuthorizationFilter(authenticationManager, jwtUtils, userService);  // 添加 AuthenticationManager 参数
+        AuthenticationEntryPoint authenticationEntryPoint = (request, response, authException) -> {
+            response.setStatus(401);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"code\":401,\"data\":{\"error\":\"当前的 token 无效或已过期\"}}");
+        };
 
         http
                 .csrf(AbstractHttpConfigurer::disable)  // 禁用 CSRF
@@ -55,6 +63,19 @@ public class WebSecurityConfig {
                         // 其他任何请求都需要认证
                         .anyRequest().authenticated()
                 )
+                .exceptionHandling(exceptionHandling -> exceptionHandling
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            var authentication = SecurityContextHolder.getContext().getAuthentication();
+                            if (authentication == null || authentication instanceof AnonymousAuthenticationToken || !authentication.isAuthenticated()) {
+                                authenticationEntryPoint.commence(request, response, null);
+                                return;
+                            }
+
+                            response.setStatus(403);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write("{\"code\":403,\"data\":{\"error\":\"Access denied. You don't have the necessary permissions.\"}}");
+                        }))
                 // 将自定义的 JWT 过滤器添加到过滤器链中
                 .addFilterBefore(jwtAuthorizationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

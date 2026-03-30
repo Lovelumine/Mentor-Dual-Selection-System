@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import mentordualselectionsystem.dto.StudentArchiveRequest;
+import mentordualselectionsystem.dto.TeacherArchiveRequest;
 import mentordualselectionsystem.dto.UserRequest;
 import mentordualselectionsystem.mysql.User;
 import mentordualselectionsystem.mysql.UserDetail;
@@ -29,6 +31,8 @@ import java.util.Map;
 @Tag(name = "账号信息相关接口")
 @RequestMapping("/api/user")
 public class UserController {
+    private static final String DEFAULT_CARD_BACKGROUND_URL = "https://minio.lumoxuan.cn/mentor-dual-selection-system/admin/%E7%BA%AA%E8%A1%8C%EF%BC%8E%E6%8D%95%E9%A3%8E.png";
+    private static final String LEGACY_DEFAULT_AVATAR_URL = "https://minio.lumoxuan.cn/mentor-dual-selection-system/defaultavater.webp";
 
     private final UserService userService;
     private final JwtUtils jwtUtils;
@@ -101,6 +105,7 @@ public class UserController {
                 userMap.put("fullName", user.getFullName());
                 userMap.put("avatarUrl", user.getAvatarUrl());
                 userMap.put("role", user.getRole().getRoleName());
+                userMap.put("active", user.isEnabled());
                 return userMap;
             }).toList();
 
@@ -121,12 +126,10 @@ public class UserController {
     @GetMapping("/allteacher")
     public ResponseEntity<?> getAllTeachers() {
         try {
-            // 从数据库中获取所有用户
-            List<User> users = userRepository.findAll();
+            List<User> users = userService.getAllTeachers();
 
             // 筛选出角色为 "TEACHER" 的用户
             List<Map<String, Object>> teacherList = users.stream()
-                    .filter(user -> "TEACHER".equals(user.getRole().getRoleName()))
                     .map(user -> {
                         Map<String, Object> userMap = new HashMap<>();
                         userMap.put("uid", user.getUid());
@@ -172,12 +175,15 @@ public class UserController {
     public ResponseEntity<?> updateUser(@RequestBody UserRequest userRequest) {
         try {
             Long uid = userRequest.getUid();
+            boolean created = uid == null;
+            Long affectedUid;
             String role = userRequest.getRole();
             String avatarUrl = userRequest.getAvatarUrl();
+            String normalizedAvatarUrl = normalizeAvatarUrl(avatarUrl);
             String fullName = userRequest.getFullName();
             String email = userRequest.getEmail();
             String username = userRequest.getUsername();
-            String password = userRequest.getPassword() != null ? userRequest.getPassword() : "123";  // 默认密码为123
+            String password = userRequest.getPassword();
 
             if (uid == null) {
                 // 新增用户
@@ -189,18 +195,22 @@ public class UserController {
                 newUser.setUsername(username);
                 newUser.setFullName(fullName);
                 newUser.setEmail(email);
-                newUser.setAvatarUrl(avatarUrl != null ? avatarUrl : "https://minio.lumoxuan.cn/mentor-dual-selection-system/defaultavater.webp");
-                newUser.setPassword(password);
+                newUser.setAvatarUrl(normalizedAvatarUrl);
+                newUser.setPassword(password != null && !password.isBlank() ? password : "123");
+                newUser.setActive(true);
+                newUser.setDeactivatedAt(null);
+                newUser.setDeactivatedReason(null);
+                newUser.setDeactivatedById(null);
                 newUser.setRole(userService.getRoleByName(role));
                 userService.saveUser(newUser);
+                affectedUid = newUser.getUid();
 
-                // 如果是新增学生，则必须提供年级信息
+                // 如果是新增学生，则必须提供年级并创建学生详情
                 if ("STUDENT".equals(role)) {
                     String grade = userRequest.getGrade();
                     if (grade == null || grade.isEmpty()) {
                         return buildErrorResponse(400, "学生角色必须提供年级信息");
                     }
-
                     UserDetail userDetail = new UserDetail();
                     userDetail.setUid(newUser.getUid());
                     userDetail.setStudentGrade(grade);
@@ -219,10 +229,15 @@ public class UserController {
                 existingUser.setUsername(username);
                 existingUser.setFullName(fullName);
                 existingUser.setEmail(email);
-                existingUser.setAvatarUrl(avatarUrl != null ? avatarUrl : "https://minio.lumoxuan.cn/mentor-dual-selection-system/defaultavater.webp");
-                existingUser.setPassword(password);
+                if (avatarUrl != null) {
+                    existingUser.setAvatarUrl(normalizedAvatarUrl);
+                }
+                if (password != null && !password.isBlank()) {
+                    existingUser.setPassword(password);
+                }
                 existingUser.setRole(userService.getRoleByName(role));
                 userService.saveUser(existingUser);
+                affectedUid = existingUser.getUid();
 
                 // 如果是更新学生信息，不需要强制提供年级信息
                 if ("STUDENT".equals(role)) {
@@ -242,13 +257,39 @@ public class UserController {
 
             Map<String, Object> responseBody = new HashMap<>();
             responseBody.put("code", 200);
-            responseBody.put("message", "用户信息更新成功");
+            responseBody.put("message", created ? "用户信息创建成功" : "用户信息更新成功");
+            Map<String, Object> data = new HashMap<>();
+            data.put("uid", affectedUid);
+            data.put("created", created);
+            responseBody.put("data", data);
 
             return ResponseEntity.ok(responseBody);
 
         } catch (Exception e) {
             return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
         }
+    }
+
+    private String normalizeAvatarUrl(String avatarUrl) {
+        if (avatarUrl == null) {
+            return DEFAULT_CARD_BACKGROUND_URL;
+        }
+
+        String normalized = avatarUrl.trim();
+        if (normalized.isEmpty()) {
+            return DEFAULT_CARD_BACKGROUND_URL;
+        }
+
+        String lowerNormalized = normalized.toLowerCase();
+        if (LEGACY_DEFAULT_AVATAR_URL.equalsIgnoreCase(normalized)
+                || lowerNormalized.endsWith("/defaultavater.webp")
+                || lowerNormalized.endsWith("/defaultavatar.webp")
+                || lowerNormalized.endsWith("defaultavater.webp")
+                || lowerNormalized.endsWith("defaultavatar.webp")) {
+            return DEFAULT_CARD_BACKGROUND_URL;
+        }
+
+        return normalized;
     }
 
 
@@ -308,6 +349,72 @@ public class UserController {
 
         } catch (NumberFormatException e) {
             return buildErrorResponse(400, "无效的 UID");
+        } catch (Exception e) {
+            return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/student/{uid}/archive")
+    public ResponseEntity<?> archiveStudent(@PathVariable Long uid, @RequestBody(required = false) StudentArchiveRequest request) {
+        try {
+            String token = SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
+            String jwtToken = token.replace("Bearer ", "");
+            Long currentUid = jwtUtils.validateTokenAndGetUid(jwtToken);
+            User currentUser = userService.getUserByUid(currentUid);
+
+            if (!"ADMIN".equals(currentUser.getRole().getRoleName())) {
+                return buildErrorResponse(403, "仅管理员可以转出学生");
+            }
+
+            User student = userService.getUserByUid(uid);
+            if (!"STUDENT".equals(student.getRole().getRoleName())) {
+                return buildErrorResponse(400, "只能转出学生账号");
+            }
+
+            String reason = request == null ? null : request.getReason();
+            userService.archiveStudentByUid(uid, currentUser, reason);
+
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("code", 200);
+            responseBody.put("message", "学生已转出停用，历史记录已保留");
+            return ResponseEntity.ok(responseBody);
+        } catch (IllegalArgumentException e) {
+            return buildErrorResponse(400, e.getMessage());
+        } catch (Exception e) {
+            return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/student/{uid}")
+    public ResponseEntity<?> deleteStudent(@PathVariable Long uid) {
+        return archiveStudent(uid, null);
+    }
+
+    @PostMapping("/teachers/archive")
+    public ResponseEntity<?> archiveTeachers(@RequestBody TeacherArchiveRequest request) {
+        try {
+            String token = SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
+            String jwtToken = token.replace("Bearer ", "");
+            Long currentUid = jwtUtils.validateTokenAndGetUid(jwtToken);
+            User currentUser = userService.getUserByUid(currentUid);
+
+            if (!"ADMIN".equals(currentUser.getRole().getRoleName())) {
+                return buildErrorResponse(403, "仅管理员可以删除导师");
+            }
+
+            Map<String, Object> result = userService.archiveTeachersByUids(
+                    request == null ? null : request.getTeacherIds(),
+                    currentUser,
+                    request == null ? null : request.getReason()
+            );
+
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("code", 200);
+            responseBody.put("message", "导师已转为历史导师，当前学生关系已解除");
+            responseBody.put("data", result);
+            return ResponseEntity.ok(responseBody);
+        } catch (IllegalArgumentException e) {
+            return buildErrorResponse(400, e.getMessage());
         } catch (Exception e) {
             return buildErrorResponse(500, "服务器内部错误: " + e.getMessage());
         }

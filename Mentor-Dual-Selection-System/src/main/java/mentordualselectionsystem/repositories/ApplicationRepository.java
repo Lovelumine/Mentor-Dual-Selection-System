@@ -17,9 +17,15 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     // 根据导师ID查询所有申请（不管状态）
     List<Application> findByMentorId(Long mentorId);
 
+    List<Application> findByMentorIdAndStatusOrderByDecisionDateAsc(Long mentorId, String status);
+
     // 根据学生ID查询所有申请（不管状态）
     List<Application> findByStudentId(Long studentId);
 
+    List<Application> findByStudentIdAndStatusOrderByDecisionDateAsc(Long studentId, String status);
+
     // 查询所有状态为 PENDING 的申请
     List<Application> findByStatus(String status);
+
+    void deleteByStudentId(Long studentId);
 }

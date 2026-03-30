@@ -166,38 +166,7 @@ public class SearchController {
             return buildErrorResponse(500, "获取学生列表失败");
         }
 
-        List<Map<String, Object>> studentDataList = students.stream().map(student -> {
-            UserDetail userDetail;
-            try {
-                userDetail = userDetailService.getUserDetailByUid(student.getUid());
-            } catch (Exception e) {
-                userDetail = null;
-            }
-
-            Map<String, Object> studentData = new HashMap<>();
-            studentData.put("uid", student.getUid());
-            studentData.put("username", student.getUsername());
-            studentData.put("email", student.getEmail());
-            studentData.put("fullName", student.getFullName());
-            studentData.put("avatarUrl", student.getAvatarUrl());
-            studentData.put("mentor_id",student.getMentorId());
-            if (userDetail != null) {
-                studentData.put("photourl", userDetail.getPhotoUrl());
-                studentData.put("grade", userDetail.getStudentGrade());
-                studentData.put("class", userDetail.getStudentClass());
-                studentData.put("netid",userDetail.getNetid());
-                studentData.put("research_direction", userDetail.getResearchDirection());
-                studentData.put("resume", userDetail.getResume());
-            } else {
-                studentData.put("photourl", null);
-                studentData.put("grade", null);
-                studentData.put("class", null);
-                studentData.put("resume", null);
-                studentData.put("netid", null);
-                studentData.put("research_direction", null);
-            }
-            return studentData;
-        }).collect(Collectors.toList());
+        List<Map<String, Object>> studentDataList = buildStudentDataList(students);
 
         Map<String, Object> responseBody = new HashMap<>();
         responseBody.put("code", 200);
@@ -251,38 +220,7 @@ public class SearchController {
             return buildErrorResponse(500, "学生搜索失败");
         }
 
-        List<Map<String, Object>> studentDataList = students.stream().map(student -> {
-            UserDetail userDetail;
-            try {
-                userDetail = userDetailService.getUserDetailByUid(student.getUid());
-            } catch (Exception e) {
-                userDetail = null;
-            }
-
-            Map<String, Object> studentData = new HashMap<>();
-            studentData.put("uid", student.getUid());
-            studentData.put("username", student.getUsername());
-            studentData.put("email", student.getEmail());
-            studentData.put("fullName", student.getFullName());
-            studentData.put("avatarUrl", student.getAvatarUrl());
-            studentData.put("mentor_id",student.getMentorId());
-            if (userDetail != null) {
-                studentData.put("photourl", userDetail.getPhotoUrl());
-                studentData.put("grade", userDetail.getStudentGrade());
-                studentData.put("class", userDetail.getStudentClass());
-                studentData.put("netid",userDetail.getNetid());
-                studentData.put("research_direction", userDetail.getResearchDirection());
-                studentData.put("resume", userDetail.getResume());
-            } else {
-                studentData.put("photourl", null);
-                studentData.put("grade", null);
-                studentData.put("class", null);
-                studentData.put("netid",null);
-                studentData.put("resume", null);
-                studentData.put("research_direction", null);
-            }
-            return studentData;
-        }).collect(Collectors.toList());
+        List<Map<String, Object>> studentDataList = buildStudentDataList(students);
 
         Map<String, Object> responseBody = new HashMap<>();
         responseBody.put("code", 200);
@@ -341,51 +279,23 @@ public class SearchController {
         }
         int totalStudents = students.size(); // 获取学生总数
 
-        // 筛选学生
-        List<Map<String, Object>> filteredStudents = students.stream()
+        Map<Long, UserDetail> userDetailMap = userDetailService.getUserDetailMapByUids(
+                students.stream().map(User::getUid).toList()
+        );
+
+        List<User> filteredStudentUsers = students.stream()
                 .filter(student -> {
-                    UserDetail userDetail;
-                    try {
-                        userDetail = userDetailService.getUserDetailByUid(student.getUid());
-                    } catch (Exception e) {
-                        userDetail = null;
-                    }
-                    boolean matchGrade = (grade != null && userDetail != null && grade.equals(userDetail.getStudentGrade()));
-                    boolean matchClass = (studentClass != null && userDetail != null && studentClass.equals(userDetail.getStudentClass()));
+                    UserDetail userDetail = userDetailMap.get(student.getUid());
+                    boolean matchGrade = grade != null && userDetail != null && grade.equals(userDetail.getStudentGrade());
+                    boolean matchClass = studentClass != null
+                            && userDetail != null
+                            && userDetail.getStudentClass() != null
+                            && studentClass.equals(String.valueOf(userDetail.getStudentClass()));
                     return matchGrade || matchClass;
                 })
-                .map(student -> {
-                    UserDetail userDetail;
-                    try {
-                        userDetail = userDetailService.getUserDetailByUid(student.getUid());
-                    } catch (Exception e) {
-                        userDetail = null;
-                    }
+                .toList();
 
-                    Map<String, Object> studentData = new HashMap<>();
-                    studentData.put("uid", student.getUid());
-                    studentData.put("username", student.getUsername());
-                    studentData.put("email", student.getEmail());
-                    studentData.put("fullName", student.getFullName());
-                    studentData.put("avatarUrl", student.getAvatarUrl());
-                    studentData.put("mentor_id",student.getMentorId());
-                    if (userDetail != null) {
-                        studentData.put("photourl", userDetail.getPhotoUrl());
-                        studentData.put("grade", userDetail.getStudentGrade());
-                        studentData.put("class", userDetail.getStudentClass());
-                        studentData.put("research_direction", userDetail.getResearchDirection());
-                        studentData.put("netid",userDetail.getNetid());
-                        studentData.put("resume", userDetail.getResume());
-                    } else {
-                        studentData.put("photourl", null);
-                        studentData.put("grade", null);
-                        studentData.put("class", null);
-                        studentData.put("netid",null);
-                        studentData.put("resume", null);
-                        studentData.put("research_direction", null);
-                    }
-                    return studentData;
-                }).collect(Collectors.toList());
+        List<Map<String, Object>> filteredStudents = buildStudentDataList(filteredStudentUsers, userDetailMap);
 
         int filteredStudentsCount = filteredStudents.size(); // 获取筛选后的学生数量
 
@@ -434,36 +344,7 @@ public class SearchController {
             return buildErrorResponse(500, "获取老师列表失败");
         }
 
-        List<Map<String, Object>> teacherDataList = teachers.stream().map(teacher -> {
-            UserDetail userDetail;
-            try {
-                userDetail = userDetailService.getUserDetailByUid(teacher.getUid());
-            } catch (Exception e) {
-                userDetail = null;
-            }
-
-            Map<String, Object> teacherData = new HashMap<>();
-            teacherData.put("uid", teacher.getUid());
-            teacherData.put("username", teacher.getUsername());
-            teacherData.put("email", teacher.getEmail());
-            teacherData.put("fullName", teacher.getFullName());
-            teacherData.put("avatarUrl", teacher.getAvatarUrl());
-            teacherData.put("AcceptedStudents", teacher.getAcceptedStudents());
-            if (userDetail != null) {
-                teacherData.put("photourl", userDetail.getPhotoUrl());
-                teacherData.put("teacherposition", userDetail.getTeacherPosition());
-                teacherData.put("research_direction", userDetail.getResearchDirection());
-                teacherData.put("resume", userDetail.getResume());
-                teacherData.put("netid", userDetail.getNetid());
-            } else {
-                teacherData.put("photourl", null);
-                teacherData.put("teacherposition", null);
-                teacherData.put("research_direction", null);
-                teacherData.put("resume", null);
-                teacherData.put("netid", null);
-            }
-            return teacherData;
-        }).collect(Collectors.toList());
+        List<Map<String, Object>> teacherDataList = buildTeacherDataList(teachers);
 
         Map<String, Object> responseBody = new HashMap<>();
         responseBody.put("code", 200);
@@ -534,6 +415,7 @@ public class SearchController {
         data.put("photourl", userDetail.getPhotoUrl());
         data.put("teacher_position", userDetail.getTeacherPosition());
         data.put("research_direction", userDetail.getResearchDirection());
+        data.put("professionalDirection", userDetail.getProfessionalDirection());
         data.put("resume", userDetail.getResume());
         data.put("netid",userDetail.getNetid());
 
@@ -583,36 +465,7 @@ public class SearchController {
             return buildErrorResponse(500, "老师搜索失败");
         }
 
-        List<Map<String, Object>> teacherDataList = teachers.stream().map(teacher -> {
-            UserDetail userDetail;
-            try {
-                userDetail = userDetailService.getUserDetailByUid(teacher.getUid());
-            } catch (Exception e) {
-                userDetail = null;
-            }
-
-            Map<String, Object> teacherData = new HashMap<>();
-            teacherData.put("uid", teacher.getUid());
-            teacherData.put("username", teacher.getUsername());
-            teacherData.put("email", teacher.getEmail());
-            teacherData.put("fullName", teacher.getFullName());
-            teacherData.put("avatarUrl", teacher.getAvatarUrl());
-            teacherData.put("AcceptedStudents", teacher.getAcceptedStudents());
-            if (userDetail != null) {
-                teacherData.put("photourl", userDetail.getPhotoUrl());
-                teacherData.put("teacherposition", userDetail.getTeacherPosition());
-                teacherData.put("research_direction", userDetail.getResearchDirection());
-                teacherData.put("resume", userDetail.getResume());
-                teacherData.put("netid", userDetail.getNetid());
-            } else {
-                teacherData.put("photourl", null);
-                teacherData.put("teacherposition", null);
-                teacherData.put("research_direction", null);
-                teacherData.put("resume", null);
-                teacherData.put("netid",null);
-            }
-            return teacherData;
-        }).collect(Collectors.toList());
+        List<Map<String, Object>> teacherDataList = buildTeacherDataList(teachers);
 
         Map<String, Object> responseBody = new HashMap<>();
         responseBody.put("code", 200);
@@ -656,5 +509,74 @@ public class SearchController {
         response.put("code", code);
         response.put("data", data);
         return response;
+    }
+
+    private List<Map<String, Object>> buildStudentDataList(List<User> students) {
+        Map<Long, UserDetail> userDetailMap = userDetailService.getUserDetailMapByUids(
+                students.stream().map(User::getUid).toList()
+        );
+        return buildStudentDataList(students, userDetailMap);
+    }
+
+    private List<Map<String, Object>> buildStudentDataList(List<User> students, Map<Long, UserDetail> userDetailMap) {
+        return students.stream().map(student -> {
+            UserDetail userDetail = userDetailMap.get(student.getUid());
+            Map<String, Object> studentData = new HashMap<>();
+            studentData.put("uid", student.getUid());
+            studentData.put("username", student.getUsername());
+            studentData.put("email", student.getEmail());
+            studentData.put("fullName", student.getFullName());
+            studentData.put("avatarUrl", student.getAvatarUrl());
+            studentData.put("mentor_id", student.getMentorId());
+            if (userDetail != null) {
+                studentData.put("photourl", userDetail.getPhotoUrl());
+                studentData.put("grade", userDetail.getStudentGrade());
+                studentData.put("class", userDetail.getStudentClass());
+                studentData.put("netid", userDetail.getNetid());
+                studentData.put("research_direction", userDetail.getResearchDirection());
+                studentData.put("resume", userDetail.getResume());
+            } else {
+                studentData.put("photourl", null);
+                studentData.put("grade", null);
+                studentData.put("class", null);
+                studentData.put("resume", null);
+                studentData.put("netid", null);
+                studentData.put("research_direction", null);
+            }
+            return studentData;
+        }).collect(Collectors.toList());
+    }
+
+    private List<Map<String, Object>> buildTeacherDataList(List<User> teachers) {
+        Map<Long, UserDetail> userDetailMap = userDetailService.getUserDetailMapByUids(
+                teachers.stream().map(User::getUid).toList()
+        );
+
+        return teachers.stream().map(teacher -> {
+            UserDetail userDetail = userDetailMap.get(teacher.getUid());
+            Map<String, Object> teacherData = new HashMap<>();
+            teacherData.put("uid", teacher.getUid());
+            teacherData.put("username", teacher.getUsername());
+            teacherData.put("email", teacher.getEmail());
+            teacherData.put("fullName", teacher.getFullName());
+            teacherData.put("avatarUrl", teacher.getAvatarUrl());
+            teacherData.put("AcceptedStudents", teacher.getAcceptedStudents());
+            if (userDetail != null) {
+                teacherData.put("photourl", userDetail.getPhotoUrl());
+                teacherData.put("teacherposition", userDetail.getTeacherPosition());
+                teacherData.put("research_direction", userDetail.getResearchDirection());
+                teacherData.put("professionalDirection", userDetail.getProfessionalDirection());
+                teacherData.put("resume", userDetail.getResume());
+                teacherData.put("netid", userDetail.getNetid());
+            } else {
+                teacherData.put("photourl", null);
+                teacherData.put("teacherposition", null);
+                teacherData.put("research_direction", null);
+                teacherData.put("professionalDirection", null);
+                teacherData.put("resume", null);
+                teacherData.put("netid", null);
+            }
+            return teacherData;
+        }).collect(Collectors.toList());
     }
 }

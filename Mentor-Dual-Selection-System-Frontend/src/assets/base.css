@@ -1,53 +1,78 @@
-/* color palette from <https://github.com/vuejs/theme> */
 :root {
-  --vt-c-white: #ffffff;
-  --vt-c-white-soft: #f8f8f8;
-  --vt-c-white-mute: #f2f2f2;
+  color-scheme: light;
+  --app-page-bg: #f3f7f3;
+  --app-page-bg-alt: #e7efe8;
+  --app-surface: #ffffff;
+  --app-surface-muted: #e6ece7;
+  --app-surface-elevated: #fbfdfb;
+  --app-border: #d3ddd6;
+  --app-border-strong: #b6c6ba;
+  --app-text-primary: #173124;
+  --app-text-secondary: #5f7065;
+  --app-text-inverse: #f7fff9;
+  --app-brand: #005826;
+  --app-brand-hover: #0f7e3f;
+  --app-brand-soft: #d8ebde;
+  --app-brand-ring: rgba(0, 88, 38, 0.18);
+  --app-menu-bg: #003c1a;
+  --app-menu-sub-bg: #002912;
+  --app-menu-text: #f0faf3;
+  --app-menu-active-text: #ffc832;
+  --app-menu-hover: rgba(255, 255, 255, 0.08);
+  --app-menu-active-bg: rgba(255, 200, 50, 0.16);
+  --app-header-bg: #005826;
+  --app-header-text: #ffffff;
+  --app-danger: #bd0000;
+  --app-danger-soft: rgba(189, 0, 0, 0.08);
+  --app-shadow: rgba(16, 41, 27, 0.12);
+  --app-shadow-strong: rgba(16, 41, 27, 0.18);
 
-  --vt-c-black: #181818;
-  --vt-c-black-soft: #222222;
-  --vt-c-black-mute: #282828;
-
-  --vt-c-indigo: #2c3e50;
-
-  --vt-c-divider-light-1: rgba(60, 60, 60, 0.29);
-  --vt-c-divider-light-2: rgba(60, 60, 60, 0.12);
-  --vt-c-divider-dark-1: rgba(84, 84, 84, 0.65);
-  --vt-c-divider-dark-2: rgba(84, 84, 84, 0.48);
-
-  --vt-c-text-light-1: var(--vt-c-indigo);
-  --vt-c-text-light-2: rgba(60, 60, 60, 0.66);
-  --vt-c-text-dark-1: var(--vt-c-white);
-  --vt-c-text-dark-2: rgba(235, 235, 235, 0.64);
-}
-
-/* semantic color variables for this project */
-:root {
-  --color-background: var(--vt-c-white);
-  --color-background-soft: var(--vt-c-white-soft);
-  --color-background-mute: var(--vt-c-white-mute);
-
-  --color-border: var(--vt-c-divider-light-2);
-  --color-border-hover: var(--vt-c-divider-light-1);
-
-  --color-heading: var(--vt-c-text-light-1);
-  --color-text: var(--vt-c-text-light-1);
-
+  --color-background: var(--app-page-bg);
+  --color-background-soft: var(--app-surface);
+  --color-background-mute: var(--app-surface-muted);
+  --color-border: var(--app-border);
+  --color-border-hover: var(--app-border-strong);
+  --color-heading: var(--app-text-primary);
+  --color-text: var(--app-text-primary);
   --section-gap: 160px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-background: var(--vt-c-black);
-    --color-background-soft: var(--vt-c-black-soft);
-    --color-background-mute: var(--vt-c-black-mute);
+html.dark {
+  color-scheme: dark;
+  --app-page-bg: #0d1411;
+  --app-page-bg-alt: #121c17;
+  --app-surface: #17211b;
+  --app-surface-muted: #202b24;
+  --app-surface-elevated: #263129;
+  --app-border: #33443a;
+  --app-border-strong: #476051;
+  --app-text-primary: #edf6ef;
+  --app-text-secondary: #afc0b3;
+  --app-text-inverse: #f8fff9;
+  --app-brand: #2e8e5a;
+  --app-brand-hover: #39a56a;
+  --app-brand-soft: #1b3225;
+  --app-brand-ring: rgba(46, 142, 90, 0.22);
+  --app-menu-bg: #0f2116;
+  --app-menu-sub-bg: #0a1a12;
+  --app-menu-text: #edf6ef;
+  --app-menu-active-text: #ffd56b;
+  --app-menu-hover: rgba(255, 255, 255, 0.08);
+  --app-menu-active-bg: rgba(255, 213, 107, 0.12);
+  --app-header-bg: #123824;
+  --app-header-text: #f6fff8;
+  --app-danger: #ff8b8b;
+  --app-danger-soft: rgba(255, 139, 139, 0.14);
+  --app-shadow: rgba(0, 0, 0, 0.34);
+  --app-shadow-strong: rgba(0, 0, 0, 0.46);
 
-    --color-border: var(--vt-c-divider-dark-2);
-    --color-border-hover: var(--vt-c-divider-dark-1);
-
-    --color-heading: var(--vt-c-text-dark-1);
-    --color-text: var(--vt-c-text-dark-2);
-  }
+  --color-background: var(--app-page-bg);
+  --color-background-soft: var(--app-surface);
+  --color-background-mute: var(--app-surface-muted);
+  --color-border: var(--app-border);
+  --color-border-hover: var(--app-border-strong);
+  --color-heading: var(--app-text-primary);
+  --color-text: var(--app-text-primary);
 }
 
 *,
@@ -62,25 +87,24 @@ body {
   min-height: 100vh;
   color: var(--color-text);
   background: var(--color-background);
-  transition:
-    color 0.5s,
-    background-color 0.5s;
+  transition: color 0.25s ease, background-color 0.25s ease;
   line-height: 1.6;
   font-family:
+    'Noto Sans SC',
+    'PingFang SC',
+    'Microsoft YaHei',
     Inter,
     -apple-system,
     BlinkMacSystemFont,
     'Segoe UI',
-    Roboto,
-    Oxygen,
-    Ubuntu,
-    Cantarell,
-    'Fira Sans',
-    'Droid Sans',
     'Helvetica Neue',
     sans-serif;
   font-size: 15px;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
 }

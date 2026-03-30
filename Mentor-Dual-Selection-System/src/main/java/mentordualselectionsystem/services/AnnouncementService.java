@@ -18,7 +18,7 @@ public class AnnouncementService {
     }
 
     public List<Announcement> getAllAnnouncements() {
-        return announcementRepository.findAll();
+        return announcementRepository.findAllByOrderByLastModifiedDesc();
     }
 
     public Announcement createAnnouncement(Announcement announcement) {

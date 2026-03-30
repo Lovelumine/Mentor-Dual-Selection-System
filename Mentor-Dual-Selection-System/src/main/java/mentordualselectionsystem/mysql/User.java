@@ -7,11 +7,17 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 
 @Entity
-@Table(name = "users")
+@Table(
+        name = "users",
+        indexes = {
+                @Index(name = "idx_users_mentor_id", columnList = "mentor_id")
+        }
+)
 public class User implements UserDetails {
 
     @Id
@@ -40,6 +46,19 @@ public class User implements UserDetails {
 
     @Column(name = "mentor_id")
     private Long mentorId; // 导师 ID，学生与导师之间的关系
+
+    @Column(name = "active", nullable = false)
+    private Boolean active = true;
+
+    @Column(name = "deactivated_at")
+    private Instant deactivatedAt;
+
+    @Lob
+    @Column(name = "deactivated_reason", columnDefinition = "TEXT")
+    private String deactivatedReason;
+
+    @Column(name = "deactivated_by_id")
+    private Long deactivatedById;
 
     @Transient
     private UserDetail userDetail; // 非数据库映射字段，用于在 User 中存储关联的 UserDetail 信息
@@ -119,6 +138,38 @@ public class User implements UserDetails {
         this.mentorId = mentorId;
     }
 
+    public Boolean getActive() {
+        return active;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
+    }
+
+    public Instant getDeactivatedAt() {
+        return deactivatedAt;
+    }
+
+    public void setDeactivatedAt(Instant deactivatedAt) {
+        this.deactivatedAt = deactivatedAt;
+    }
+
+    public String getDeactivatedReason() {
+        return deactivatedReason;
+    }
+
+    public void setDeactivatedReason(String deactivatedReason) {
+        this.deactivatedReason = deactivatedReason;
+    }
+
+    public Long getDeactivatedById() {
+        return deactivatedById;
+    }
+
+    public void setDeactivatedById(Long deactivatedById) {
+        this.deactivatedById = deactivatedById;
+    }
+
     public UserDetail getUserDetail() {
         return userDetail;
     }
@@ -150,6 +201,6 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return active == null || active;
     }
 }

@@ -10,4 +10,6 @@ public interface UserDetailRepository extends JpaRepository<UserDetail, Long> {
 
     // 自定义方法，用于查找一组 UID 的用户详细信息
     List<UserDetail> findAllByUidIn(List<Long> uids);
+
+    void deleteByUid(Long uid);
 }

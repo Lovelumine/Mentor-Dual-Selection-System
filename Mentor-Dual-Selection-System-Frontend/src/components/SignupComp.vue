@@ -40,15 +40,15 @@ function signupClicked(){
     </h3>
     <form @submit.prevent="signupClicked">
       <div class="input_box">
-        <el-icon size="25" color="#005826"><User /></el-icon>
+        <el-icon size="25" color="var(--app-brand)"><User /></el-icon>
         <input placeholder="工号 / 学号" type="text" required v-model="registerForm.username" />
       </div>
       <div class="input_box">
-        <el-icon size="25" color="#005826"><Message /></el-icon>
+        <el-icon size="25" color="var(--app-brand)"><Message /></el-icon>
         <input placeholder="电子邮箱" type="text" required v-model="registerForm.email" />
       </div>
       <div class="input_box">
-        <el-icon size="25" color="#005826"><Lock /></el-icon>
+        <el-icon size="25" color="var(--app-brand)"><Lock /></el-icon>
         <input placeholder="密码" type="password" required v-model="registerForm.password" />
       </div>
       <button type="submit" class="register_button">注册</button>
@@ -62,11 +62,13 @@ function signupClicked(){
   height: 300px
   position: relative
   margin: 30px auto 0 0
-  box-shadow: #005826 0 0 5px
+  box-shadow: 0 10px 24px var(--app-shadow)
   padding: 20px
   border-radius: 10px
+  background-color: var(--app-surface)
+  color: var(--app-text-primary)
   h3
-    color: #005826
+    color: var(--app-brand)
     text-align: center
     font-weight: bold
   .input_box
@@ -74,21 +76,24 @@ function signupClicked(){
     margin: 30px 0 30px 0
     display: flex
     align-items: center
-    border-bottom: 1px solid #005826
+    border-bottom: 1px solid var(--app-brand)
     input
       margin-left: 20px
       width: 80%
       border: none
+      color: var(--app-text-primary)
+      background: transparent
     input:focus
       outline: none
       border: none
     input::placeholder
       font-size: 15px
+      color: var(--app-text-secondary)
   .register_button
     border-radius: 5px
     border: none
-    background-color: #005826
-    color: white
+    background-color: var(--app-brand)
+    color: var(--app-text-inverse)
     width: 50%
     height: 35px
     font-size: 16px
@@ -100,5 +105,5 @@ function signupClicked(){
     transform: translate(-50%)
     transition: .3s ease
   .register_button:hover
-    background-color: #0f7e3f
+    background-color: var(--app-brand-hover)
 </style>

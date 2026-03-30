@@ -91,7 +91,7 @@ watch(
 .title
   width: 100%
   height: 60px
-  background-color: #e2e2e2
+  background-color: var(--app-surface-muted)
   line-height: 60px
   padding-left: 20px
   font-size: 20px
@@ -99,9 +99,13 @@ watch(
   top: 60px
   left: 200px
   z-index: 1000
+  color: var(--app-text-primary)
+  border-bottom: 1px solid var(--app-border)
+  box-shadow: 0 12px 24px var(--app-shadow)
 
 .container
   margin-top: 80px // 确保内容不会被固定的标题遮挡
+  color: var(--app-text-primary)
 
 .spacer
   height: 50px // 每个空白行的高度，可以根据需要调整

@@ -8,6 +8,7 @@ export interface TeachDetailsFullImpl {
     netid: string | null;
     teacherposition: string | null;
     research_direction: string | null;
+    professionalDirection: string | null;
     AcceptedStudents: number;
     username: string;
 }

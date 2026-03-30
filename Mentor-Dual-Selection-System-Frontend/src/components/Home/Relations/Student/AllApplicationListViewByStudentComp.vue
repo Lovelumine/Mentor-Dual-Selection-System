@@ -20,12 +20,37 @@ interface Application {
   statusCN?: string; // 增加一个中文状态字段
   teacherName?: string; // 增加一个导师姓名字段
   rejectionReason?: string;
+  applicationDate?: string | null;
+  decisionDate?: string | null;
+}
+
+interface MentorHistoryItem {
+  mentorId: number;
+  current: boolean;
 }
 
 const allUser = ref<User[]>([]);
 const allTeacher = ref<User[]>([]);
 const pendingList = ref<Application[]>([]);
 const nowStatus = ref('未选择');
+
+function formatDateTime(value: string | null | undefined) {
+  if (!value) {
+    return '—';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '—';
+  }
+
+  return date
+    .toLocaleString('zh-CN', {
+      hour12: false,
+      timeZone: 'Asia/Shanghai',
+    })
+    .replace(/\//g, '-');
+}
 
 onMounted(() => {
   http({
@@ -58,7 +83,6 @@ onMounted(() => {
           pendingList.value = res.data.data;
 
           // 更新状态
-          let hasAccepted = false;
           let hasPending = false;
           for (let i = 0; i < pendingList.value.length; i++) {
             switch (pendingList.value[i].status) {
@@ -71,7 +95,6 @@ onMounted(() => {
                 break;
               case 'ACCEPTED':
                 pendingList.value[i].statusCN = '已通过';
-                hasAccepted = true;
                 break;
               default:
                 break;
@@ -83,15 +106,34 @@ onMounted(() => {
               }
             }
           }
-          // 根据优先级设置 nowStatus
-          if (hasAccepted) {
-            nowStatus.value = '已通过';
-          } else if (hasPending) {
-            nowStatus.value = '待审核';
-          } else {
-            nowStatus.value = '未选择';
-          }
+          http({
+            url: '/application/student/relationship-history',
+            method: 'GET',
+            headers: {
+              'Content-Type': '*/*',
+              'Authorization': 'Bearer ' + localStorage.getItem('token'),
+            },
+          }).then(historyRes => {
+            if (historyRes.data.code === 200) {
+              const currentRelationship = historyRes.data.data.currentRelationship;
+              const historicalRelationships = (historyRes.data.data.historicalRelationships || []) as MentorHistoryItem[];
 
+              if (currentRelationship?.current) {
+                nowStatus.value = '已通过';
+              } else if (hasPending) {
+                nowStatus.value = '待审核';
+              } else if (historicalRelationships.length > 0) {
+                nowStatus.value = '已解除';
+              } else {
+                nowStatus.value = '未选择';
+              }
+            } else {
+              alert(historyRes.data.data.error);
+            }
+          }).catch(err => {
+            console.error(err);
+            alert(JSON.parse(err.request.responseText).data.error);
+          });
         } else {
           alert(res.data.data.error);
         }
@@ -133,7 +175,17 @@ function statusClass(statusCN: string) {
     <el-table :data="pendingList" stripe class="table">
       <el-table-column prop="id" label="申请编号"/>
       <el-table-column prop="teacherName" label="导师姓名"/>
-      <el-table-column prop="applicationReason" label="申请理由"/>
+      <el-table-column label="申请时间" min-width="168">
+        <template #default="scope">
+          {{ formatDateTime(scope.row.applicationDate) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="处理时间" min-width="168">
+        <template #default="scope">
+          {{ formatDateTime(scope.row.decisionDate) }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="applicationReason" label="申请理由" show-overflow-tooltip/>
       
       <!-- 动态改变状态栏颜色 -->
       <el-table-column prop="statusCN" label="当前状态">
@@ -154,36 +206,39 @@ function statusClass(statusCN: string) {
   .title
     width: 100%
     height: 40px
-    background-color: #e2e2e2
+    background-color: var(--app-surface-muted)
     line-height: 40px
     padding-left: 20px
     font-size: 16px
     margin-bottom: 20px
     font-family: 'Microsoft YaHei', sans-serif // 确保和前面统一的字体
+    color: var(--app-text-primary)
+    border: 1px solid var(--app-border)
+    border-radius: 14px
 
   .table
     font-family: 'Microsoft YaHei', sans-serif // 确保表格字体统一
     .accepted-status
-      background-color: #e6ffe6 // 绿色背景
-      color: #2e7d32
+      background-color: color-mix(in srgb, var(--app-brand-soft) 72%, var(--app-surface) 28%)
+      color: var(--app-brand)
       font-weight: bold
       padding: 5px 10px
-      border-radius: 4px
+      border-radius: 999px
       font-family: 'Microsoft YaHei', sans-serif // 确保状态文本的字体统一
 
     .rejected-status
-      background-color: #ffe6e6 // 红色背景
-      color: #d32f2f
+      background-color: var(--app-danger-soft)
+      color: var(--app-danger)
       font-weight: bold
       padding: 5px 10px
-      border-radius: 4px
+      border-radius: 999px
       font-family: 'Microsoft YaHei', sans-serif // 确保状态文本的字体统一
 
     .pending-status
-      background-color: #fff9c4 // 黄色背景
-      color: #f9a825
+      background-color: rgba(255, 213, 107, 0.2)
+      color: #c98b07
       font-weight: bold
       padding: 5px 10px
-      border-radius: 4px
+      border-radius: 999px
       font-family: 'Microsoft YaHei', sans-serif // 确保状态文本的字体统一
 </style>

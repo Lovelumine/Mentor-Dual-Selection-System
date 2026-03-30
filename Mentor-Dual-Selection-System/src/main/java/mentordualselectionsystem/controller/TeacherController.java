@@ -84,7 +84,6 @@ public class TeacherController {
     })
     @GetMapping("/students")
     public ResponseEntity<Map<String, Object>> getAllStudentDetails(Authentication authentication) {
-        List<UserDetail> studentDetails = userDetailService.getAllStudentDetails();
         if (authentication == null || authentication.getCredentials() == null) {
             return ResponseEntity.status(401).body(formatResponse(401, "当前的token无效"));
         }
@@ -97,6 +96,7 @@ public class TeacherController {
         if (!"TEACHER".equals(teacher.getRole().getRoleName())) {
             return ResponseEntity.status(403).body(formatResponse(403, "该用户不是老师，无权查看所有学生的详细信息"));
         }
+        List<UserDetail> studentDetails = userDetailService.getAllStudentDetails();
         return ResponseEntity.ok(formatResponse(200, studentDetails));
     }
 

@@ -24,16 +24,17 @@ onMounted(() => {
 footer
   height: 30px
   width: 100%
-  background-color: #e0e0e0
+  background-color: var(--app-surface-muted)
   position: absolute
   bottom: 0
   z-index: 10
+  border-top: 1px solid var(--app-border)
   .container
     p
       position: absolute
       text-align: center
       font-size: 12px
-      color: #003c1a
+      color: var(--app-text-secondary)
       font-weight: bold
       top: 50%
       left: 4%
@@ -47,7 +48,7 @@ footer
       font-weight: bold
       margin: 0
       padding: 0
-      color: #003c1a
+      color: var(--app-text-secondary)
       top: 50%
       transform: translateY(-50%)
       right: 4%

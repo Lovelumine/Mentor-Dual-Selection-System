@@ -1,62 +1,23 @@
 <script setup lang="ts">
 import zhuzhanLogo from "@/assets/zhuzhanLOGO.png";
-import {onMounted, ref, watch} from "vue";
+import {computed} from "vue";
 import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
 const userInfoStore = useUserInfoStore();
 
-const iconProperty = ref({color: '', size: 0});
-const isLogin = ref(false);
-const userInfoComp = ref({
-  fullName: null as string | null,
-  role: null as string | null,
-  avatarUrl: null as string | null,
-  email: null as string | null,
-  username: null as string | null,
+const isLogin = computed(() => userInfoStore.isAuthenticated);
+const userInfoComp = computed(() => userInfoStore.userInfo);
+const userRoleCN = computed(() => {
+  switch (userInfoStore.userInfo.role) {
+    case 'TEACHER': return '导师';
+    case 'ADMIN': return '管理员';
+    case 'STUDENT': return '学生';
+    default: return '';
+  }
 });
-const userRoleCN = ref('');
-
-onMounted(() => {
-  if (localStorage.getItem("token")) {
-    isLogin.value = true;
-  }
-  iconProperty.value.color = '#fff';
-  iconProperty.value.size = 24;
-  if (userInfoStore.userInfo) {
-    userInfoComp.value = {
-      fullName: userInfoStore.userInfo.fullName,
-      role: userInfoStore.userInfo.role,
-      avatarUrl: userInfoStore.userInfo.avatarUrl,
-      email: userInfoStore.userInfo.email,
-      username: userInfoStore.userInfo.username
-    };
-    switch (userInfoStore.userInfo.role) {
-      case 'TEACHER': userRoleCN.value = '导师'; break;
-      case 'ADMIN': userRoleCN.value = '管理员'; break;
-      case 'STUDENT': userRoleCN.value = '学生'; break;
-      default: break;
-    }
-  }
-})
 
 function logoClicked() {
   window.location.href = "https://www.sysu.edu.cn/";
 }
-
-watch(() => userInfoStore.userInfo, (newValue) => {
-  userInfoComp.value = {
-    fullName: newValue.fullName,
-    role: newValue.role,
-    avatarUrl: newValue.avatarUrl,
-    email: newValue.email,
-    username: newValue.username
-  };
-  switch (newValue.role) {
-    case 'TEACHER': userRoleCN.value = '导师'; break;
-    case 'ADMIN': userRoleCN.value = '管理员'; break;
-    case 'STUDENT': userRoleCN.value = '学生'; break;
-    default: break;
-  }
-});
 </script>
 
 
@@ -67,7 +28,7 @@ watch(() => userInfoStore.userInfo, (newValue) => {
       <span class="logo_title">农业与生物技术学院 - 师生双选系统</span>
     </div>
     <div class="user_bar" v-if="isLogin">
-      欢迎您！{{userRoleCN}}：{{userInfoComp.fullName}}
+      欢迎您！{{ userRoleCN }}：{{ userInfoComp.fullName }}
     </div>
    <!-- <div class="user_bar" v-if="isLogin">-->
 <!--      <a href="/relations" title="师生关系">-->
@@ -93,10 +54,11 @@ watch(() => userInfoStore.userInfo, (newValue) => {
 .header_box
   width: 100%
   height: 60px
-  background-color: #005826
+  background: linear-gradient(90deg, var(--app-header-bg) 0%, color-mix(in srgb, var(--app-header-bg) 82%, black) 100%)
   display: flex
   justify-content: center
   align-items: center
+  box-shadow: 0 10px 24px var(--app-shadow)
   .logo_box
     width: 100%
     height: 100%
@@ -109,7 +71,7 @@ watch(() => userInfoStore.userInfo, (newValue) => {
       cursor: pointer
     .logo_title
       font-size: 25px
-      color: white
+      color: var(--app-header-text)
       font-weight: bold
       margin-left: 15px
       letter-spacing: 2px
@@ -117,7 +79,7 @@ watch(() => userInfoStore.userInfo, (newValue) => {
     text-decoration: none
   .user_bar
     width: 500px
-    color: white
+    color: var(--app-header-text)
     margin: 0 20px 0 auto
     flex: 0 1 auto
     display: flex
@@ -130,15 +92,15 @@ watch(() => userInfoStore.userInfo, (newValue) => {
       width: 32px
       height: 32px
       border-radius: 50%
-      border: 1px solid #fff
+      border: 1px solid var(--app-header-text)
     .user_icon_box:hover
-      background-color: #ffffff90
+      background-color: rgba(255, 255, 255, 0.56)
     .user_icon_box
       border-radius: 4px
-      border: 1px solid white
+      border: 1px solid var(--app-header-text)
       width: 32px
       height: 32px
-      background-color: #ffffff40
+      background-color: rgba(255, 255, 255, 0.22)
       position: relative
       transition: .5s ease background-color
       .user_icon
@@ -147,5 +109,5 @@ watch(() => userInfoStore.userInfo, (newValue) => {
         top: 3px
         p
           padding: 0
-          color: white
+          color: var(--app-header-text)
 </style>

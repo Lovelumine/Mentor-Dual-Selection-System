@@ -7,8 +7,13 @@ import mentordualselectionsystem.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,23 +33,33 @@ public class UserDetailService {
         return userDetailRepository.findByUid(uid);
     }
 
+    public Map<Long, UserDetail> getUserDetailMapByUids(Collection<Long> uids) {
+        if (uids == null || uids.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        return userDetailRepository.findAllByUidIn(new java.util.ArrayList<>(new LinkedHashSet<>(uids)))
+                .stream()
+                .collect(Collectors.toMap(UserDetail::getUid, Function.identity()));
+    }
+
     // 获取所有教师的详细信息
     public List<UserDetail> getAllTeacherDetails() {
-        return userDetailRepository.findAll()
-                .stream()
-                .filter(detail -> userRepository.findById(detail.getUid())
-                        .map(user -> "TEACHER".equals(user.getRole().getRoleName()))
-                        .orElse(false)) // 如果用户不存在则返回 false，跳过此条记录
-                .collect(Collectors.toList());
+        List<Long> teacherUids = userRepository.findAllByRole_RoleName("TEACHER").stream()
+                .map(User::getUid)
+                .toList();
+
+        return userDetailRepository.findAllByUidIn(teacherUids);
     }
 
 
     // 获取所有学生的详细信息
     public List<UserDetail> getAllStudentDetails() {
-        return userDetailRepository.findAll()
-                .stream()
-                .filter(detail -> "STUDENT".equals(userRepository.findById(detail.getUid()).get().getRole().getRoleName()))
-                .collect(Collectors.toList());
+        List<Long> studentUids = userRepository.findAllByRole_RoleName("STUDENT").stream()
+                .map(User::getUid)
+                .toList();
+
+        return userDetailRepository.findAllByUidIn(studentUids);
     }
 
     // 根据用户名查找用户详细信息
@@ -61,15 +76,31 @@ public class UserDetailService {
     public UserDetail updateUserDetail(Long uid, UserDetail userDetail) {
         UserDetail existingDetail = userDetailRepository.findByUid(uid);
         if (existingDetail != null) {
-            // 更新字段
-            existingDetail.setPhotoUrl(userDetail.getPhotoUrl());
-            existingDetail.setTeacherPosition(userDetail.getTeacherPosition());
-            existingDetail.setResearchDirection(userDetail.getResearchDirection());
-            existingDetail.setProfessionalDirection(userDetail.getProfessionalDirection());
-            existingDetail.setResume(userDetail.getResume());
-            existingDetail.setNetid(userDetail.getNetid());
-            existingDetail.setStudentClass(userDetail.getStudentClass());
-            existingDetail.setStudentGrade(userDetail.getStudentGrade());
+            // 仅覆盖本次明确传入的字段，避免部分更新时把其它详情误清空。
+            if (userDetail.getPhotoUrl() != null) {
+                existingDetail.setPhotoUrl(userDetail.getPhotoUrl());
+            }
+            if (userDetail.getTeacherPosition() != null) {
+                existingDetail.setTeacherPosition(userDetail.getTeacherPosition());
+            }
+            if (userDetail.getResearchDirection() != null) {
+                existingDetail.setResearchDirection(userDetail.getResearchDirection());
+            }
+            if (userDetail.getProfessionalDirection() != null) {
+                existingDetail.setProfessionalDirection(userDetail.getProfessionalDirection());
+            }
+            if (userDetail.getResume() != null) {
+                existingDetail.setResume(userDetail.getResume());
+            }
+            if (userDetail.getNetid() != null) {
+                existingDetail.setNetid(userDetail.getNetid());
+            }
+            if (userDetail.getStudentClass() != null) {
+                existingDetail.setStudentClass(userDetail.getStudentClass());
+            }
+            if (userDetail.getStudentGrade() != null) {
+                existingDetail.setStudentGrade(userDetail.getStudentGrade());
+            }
             return userDetailRepository.save(existingDetail);
         } else {
             // 如果不存在，则可以选择创建新用户详细信息

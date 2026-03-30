@@ -9,7 +9,6 @@ import mentordualselectionsystem.services.UserService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 import java.io.IOException;
@@ -36,25 +35,38 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
 
         String token = header.replace("Bearer ", "");
 
-        // 使用 JwtUtils 从 token 中解析出 uid 而不是 username
-        Long uid = jwtUtils.validateTokenAndGetUid(token);
+        try {
+            Long uid = jwtUtils.validateTokenAndGetUid(token);
+            if (uid == null) {
+                writeUnauthorized(response, "token无效或已过期");
+                return;
+            }
 
-        if (uid != null) {
-            // 从 UserService 中通过 uid 获取自定义的 User 实体
             User user = userService.getUserByUid(uid);
+            if (user == null) {
+                writeUnauthorized(response, "token无效或已过期");
+                return;
+            }
 
-            // 使用 UserDetails 进行授权
-            UserDetails userDetails = userService.loadUserByUsername(user.getUsername());
+            if (!user.isEnabled()) {
+                writeUnauthorized(response, "账号已停用");
+                return;
+            }
 
-            // 创建一个基于 UserDetails 的认证对象
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    userDetails, token, userDetails.getAuthorities()
+                    user, token, user.getAuthorities()
             );
 
-            // 将认证信息存储在 SecurityContext 中
             SecurityContextHolder.getContext().setAuthentication(authentication);
+            chain.doFilter(request, response);
+        } catch (Exception e) {
+            writeUnauthorized(response, "token无效或已过期");
         }
+    }
 
-        chain.doFilter(request, response);
+    private void writeUnauthorized(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(String.format("{\"code\":401,\"data\":{\"error\":\"%s\"}}", message));
     }
 }

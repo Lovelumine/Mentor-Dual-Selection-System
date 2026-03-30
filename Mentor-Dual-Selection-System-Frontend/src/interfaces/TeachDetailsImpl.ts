@@ -6,6 +6,6 @@ export interface TeacherDetailImpl {
     resume: string;
     email: string;
     fullName: string;
-    avatarUrl: string;
-    photoUrl: string;
+    avatarUrl: string | null;
+    photoUrl: string | null;
 }

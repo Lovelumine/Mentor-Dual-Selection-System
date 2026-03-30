@@ -6,15 +6,14 @@ const router = useRouter();
 const route = useRoute();
 import { useUserInfoStore } from "@/stores/user/UserBasicInformation";
 const userInfoStore = useUserInfoStore();
-import { useStuListGrade } from "@/stores/StudentListGrade";
 import SideFooterComp from "@/components/HeaderFooterMenu/SideFooterComp.vue";
-const stuListGrade = useStuListGrade();
+import { getStudentListMenuItems } from "@/utils/studentCohort";
 
-const sidemenuDet = ref({ bacc: '#003c1a', atcolor: '#ffc832', baccsub: '#002912' });
 const isSelectStudentShow = ref(false);
 const isSelectTeacherShow = ref(false);
 const isStudentListShow = ref(false);
 const isTeacherResumeShow = ref(false);
+const studentListMenuItems = getStudentListMenuItems();
 
 
 // 用于高亮选中的菜单项
@@ -26,9 +25,7 @@ onMounted(() => {
 
 });
 
-function studentListClicked(grade: number) {
-  stuListGrade.changeGrade(grade);
-  const path = `/stu_list${grade}`;
+function studentListClicked(path: string) {
   activeMenu.value = path;
   router.push(path);
 }
@@ -43,8 +40,8 @@ function handleIsShowFunction(target: string | null) {
 }
 
 function SignoutClicked() {
-  localStorage.removeItem("token");
-  window.location.reload();
+  userInfoStore.clearSession();
+  router.replace("/");
 }
 
 watch(() => userInfoStore.userInfo, (newValue) => {
@@ -62,10 +59,10 @@ watch(route, (newRoute) => {
       <el-col>
         <el-menu
           :default-active="activeMenu"
-          :active-text-color="sidemenuDet.atcolor"
-          :background-color="sidemenuDet.bacc"
+          active-text-color="var(--app-menu-active-text)"
+          background-color="var(--app-menu-bg)"
           class="el-menu-vertical-demo"
-          text-color="#fff"
+          text-color="var(--app-menu-text)"
         >
           <el-sub-menu v-if="isStudentListShow" index="sl">
             <template #title>
@@ -73,10 +70,14 @@ watch(route, (newRoute) => {
               <span>学生列表</span>
             </template>
             <el-menu-item-group title="学年" class="sub_menu">
-              <el-menu-item index="/stu_list1" @click="studentListClicked(1)">大一</el-menu-item>
-              <el-menu-item index="/stu_list2" @click="studentListClicked(2)">大二</el-menu-item>
-              <el-menu-item index="/stu_list3" @click="studentListClicked(3)">大三</el-menu-item>
-              <el-menu-item index="/stu_list4" @click="studentListClicked(4)">大四</el-menu-item>
+              <el-menu-item
+                v-for="item in studentListMenuItems"
+                :key="item.path"
+                :index="item.path"
+                @click="studentListClicked(item.path)"
+              >
+                {{ item.label }}
+              </el-menu-item>
             </el-menu-item-group>
           </el-sub-menu>
           <el-menu-item index="/teach_list" @click="activeMenu = '/teach_list'; router.push('/teach_list')">
@@ -128,13 +129,28 @@ watch(route, (newRoute) => {
   top: 60px
   left: 0
   width: 200px
-  height: 100vh
-  background-color: #003c1a
-  //position: relative
+  height: calc(100vh - 60px)
+  background-color: var(--app-menu-bg)
+  color: var(--app-menu-text)
   .el-menu-vertical-demo
     height: 100%
     width: 100%
+  :deep(.el-menu)
     border-right: none
-    .sub_menu
-      background-color: #002912
+    background-color: var(--app-menu-bg)
+  :deep(.el-menu-item)
+    color: var(--app-menu-text)
+    background-color: transparent
+  :deep(.el-sub-menu__title)
+    color: var(--app-menu-text)
+    background-color: transparent
+  :deep(.el-menu-item:hover),
+  :deep(.el-sub-menu__title:hover)
+    background-color: var(--app-menu-hover)
+  :deep(.el-menu-item.is-active)
+    background-color: var(--app-menu-active-bg)
+  :deep(.el-menu-item-group__title)
+    color: color-mix(in srgb, var(--app-menu-text) 72%, transparent)
+  :deep(.sub_menu)
+    background-color: var(--app-menu-sub-bg)
 </style>

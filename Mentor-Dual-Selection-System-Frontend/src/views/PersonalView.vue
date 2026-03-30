@@ -7,6 +7,7 @@ import PersonalTitleComp from "@/components/Personal/PersonalTitleComp.vue";
 import MyDetailComp from "@/components/Personal/MyDetailComp.vue";
 import axios from "axios";
 import { http } from "@/utils/http";
+import { getCardBackgroundImageUrl } from "@/utils/media";
 const router = useRouter();
 import { useUploadFileStore } from "@/stores/UploadFileStore";
 import type { UserInfo } from "@/interfaces/UserInfoImpl";
@@ -118,6 +119,8 @@ watch(() => userStore.userInfo, (newValue) => {
     userInfoChange.value = newValue;
   }
 });
+
+const getProfileCardBackgroundUrl = (url?: string | null) => getCardBackgroundImageUrl(url);
 </script>
 
 <template>
@@ -128,7 +131,13 @@ watch(() => userStore.userInfo, (newValue) => {
       <div class="user_info_box">
         <!-- 卡片背景图仅展示给教师角色 -->
         <div class="avatar_box" v-if="userInfoComp?.role === 'TEACHER'">
-          <img class="avatar" :src="userInfoComp?.avatarUrl || '卡片背景图错误'" alt="卡片背景图" />
+          <img
+            v-if="getProfileCardBackgroundUrl(userInfoComp?.avatarUrl)"
+            class="avatar"
+            :src="getProfileCardBackgroundUrl(userInfoComp?.avatarUrl)"
+            alt="卡片背景图"
+          />
+          <div v-else class="avatar_placeholder">未设置卡片背景</div>
         </div>
         <ul>
           <li>姓名：{{ userInfoComp?.fullName }}</li>
@@ -163,7 +172,12 @@ watch(() => userStore.userInfo, (newValue) => {
             <li class="avatar_list" v-if="userInfoComp?.role === 'TEACHER'">
               卡片背景图：
               <div class="avatar_box">
-                <img :src="userInfoComp?.avatarUrl || '卡片背景图错误'" alt="卡片背景图" />
+                <img
+                  v-if="getProfileCardBackgroundUrl(userInfoComp?.avatarUrl)"
+                  :src="getProfileCardBackgroundUrl(userInfoComp?.avatarUrl)"
+                  alt="卡片背景图"
+                />
+                <div v-else class="avatar_placeholder">未设置卡片背景</div>
               </div>
               <input style="display: none" type="file" @change="handleFileChange" ref="fileInput" :accept="'.jpg,.jpeg,.png'" />
               <button type="button" @click="triggerUploadFile">选择图片</button>
@@ -180,20 +194,23 @@ watch(() => userStore.userInfo, (newValue) => {
 <style scoped lang="sass">
 .personal_box
   width: 80%
-  margin: 0 auto
+  margin: 0 auto 32px auto
+  color: var(--app-text-primary)
 
 .page-title
   text-align: center
   font-size: 24px
-  color: #005826
+  color: var(--app-brand)
   margin-bottom: 20px
   font-weight: bold
 
 .user_info_box
-  box-shadow: #005826 0 0 10px
-  border-radius: 10px
+  box-shadow: 0 20px 40px var(--app-shadow)
+  border-radius: 18px
+  border: 1px solid var(--app-border)
+  background: linear-gradient(180deg, var(--app-surface) 0%, var(--app-surface-elevated) 100%)
   width: 100%
-  padding: 20px
+  padding: 28px
   margin: 20px auto
   display: flex
   align-items: center
@@ -203,8 +220,20 @@ watch(() => userStore.userInfo, (newValue) => {
     overflow: hidden
     margin-left: 50px
     border-radius: 10px  // 设置为圆角
+    border: 1px solid var(--app-border)
     .avatar
       width: 100%  // 确保图片适应框宽度
+      height: 100%
+      object-fit: cover
+    .avatar_placeholder
+      width: 100%
+      height: 100%
+      display: flex
+      align-items: center
+      justify-content: center
+      font-size: 13px
+      color: var(--app-text-tertiary)
+      background: linear-gradient(135deg, color-mix(in srgb, var(--app-surface) 84%, #dce8f3 16%) 0%, color-mix(in srgb, var(--app-surface-elevated) 88%, #d1dfef 12%) 100%)
   ul
     padding: 20px 0 20px 0
     margin-left: 50px
@@ -212,12 +241,16 @@ watch(() => userStore.userInfo, (newValue) => {
       margin-top: 10px
       list-style: none
       font-weight: normal
+      color: var(--app-text-secondary)
     li:first-child
       margin: 0
+      color: var(--app-text-primary)
 .change_info_box
-  padding: 20px 0
-  box-shadow: #005826 0 0 10px
-  border-radius: 10px
+  padding: 24px 0
+  box-shadow: 0 20px 40px var(--app-shadow)
+  border-radius: 18px
+  border: 1px solid var(--app-border)
+  background: linear-gradient(180deg, var(--app-surface) 0%, var(--app-surface-elevated) 100%)
   width: 100%
   margin: 30px auto 0 auto
   form
@@ -228,57 +261,75 @@ watch(() => userStore.userInfo, (newValue) => {
         display: flex
         button
           margin: auto auto auto 5%
-          background-color: #005826
-          border: 1px solid #005826
-          color: white
+          background-color: var(--app-brand)
+          border: 1px solid var(--app-brand)
+          color: var(--app-text-inverse)
           width: 120px
           height: 36px
-          border-radius: 5px
+          border-radius: 10px
           font-size: 15px
           transition: .3s ease
         button:hover
           cursor: pointer
-          background-color: #0f7e3f
-          border: 1px solid #0f7e3f
+          background-color: var(--app-brand-hover)
+          border: 1px solid var(--app-brand-hover)
       li
         list-style: none
         margin-top: 20px
+        color: var(--app-text-primary)
         .avatar_box
           width: 200px  // 调整为宽高比2:1
           height: 100px
           overflow: hidden
+          border: 1px solid var(--app-border)
+          border-radius: 10px
           img
             width: 100%  // 确保图片适应框宽度
+            height: 100%
+            object-fit: cover
+          .avatar_placeholder
+            width: 100%
+            height: 100%
+            display: flex
+            align-items: center
+            justify-content: center
+            font-size: 13px
+            color: var(--app-text-tertiary)
+            background: linear-gradient(135deg, color-mix(in srgb, var(--app-surface) 84%, #dce8f3 16%) 0%, color-mix(in srgb, var(--app-surface-elevated) 88%, #d1dfef 12%) 100%)
         input
           width: 300px
           height: 36px
           transition: .3s ease
-          border: 1px solid #989898
-          border-radius: 5px
+          border: 1px solid var(--app-border)
+          border-radius: 10px
+          background-color: var(--app-surface)
+          color: var(--app-text-primary)
         input:hover
-          border: 1px solid #005826
+          border: 1px solid var(--app-brand)
         input:focus
           outline: none
-          box-shadow: #005826 0 0 5px
-          border: 1px #005826 solid
+          box-shadow: 0 0 0 3px var(--app-brand-ring)
+          border: 1px var(--app-brand) solid
+        input::placeholder
+          color: var(--app-text-secondary)
       li:first-child
         margin: 0 auto
       li:last-child
         margin: 20px auto
 .button
   margin: auto 5% auto auto
-  background-color: #005826
-  border: 1px solid #005826
-  color: white
+  background-color: var(--app-brand)
+  border: 1px solid var(--app-brand)
+  color: var(--app-text-inverse)
   width: 120px
   height: 36px
-  border-radius: 5px
+  border-radius: 10px
   font-size: 16px
   transition: .3s ease
 .button:hover
   cursor: pointer
-  background-color: #0f7e3f
-  border: 1px solid #0f7e3f
+  background-color: var(--app-brand-hover)
+  border: 1px solid var(--app-brand-hover)
 
 .container
   height: calc(100vh - 60px)  // 设置容器高度为视口高度减去标题栏高度
@@ -287,4 +338,6 @@ watch(() => userStore.userInfo, (newValue) => {
   margin-top: 60px  /* 向下移动60px */
   overflow-y: auto   /* 当内容超出页面范围时，显示滚动条 */
   height: calc(100vh - 120px)  /* 计算容器高度，减去顶部的60px */
+  background: transparent
+  padding-top: 18px
 </style>

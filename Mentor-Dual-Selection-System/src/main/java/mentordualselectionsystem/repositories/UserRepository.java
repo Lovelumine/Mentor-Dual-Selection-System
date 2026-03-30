@@ -16,7 +16,20 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // 根据 mentorId 查询已选择该导师的所有学生
     List<User> findByMentorId(Long mentorId);
+    List<User> findByMentorIdAndActiveTrue(Long mentorId);
+
+    // 查询所有已分配导师的学生
+    List<User> findByMentorIdIsNotNull();
+    List<User> findByMentorIdIsNotNullAndActiveTrue();
+
+    long countByMentorId(Long mentorId);
+    long countByMentorIdAndActiveTrue(Long mentorId);
 
     // 根据角色名称查询所有用户
     List<User> findAllByRole_RoleName(String roleName);
+    List<User> findAllByRole_RoleNameAndActiveTrue(String roleName);
+
+    // 根据姓名模糊查询指定角色用户
+    List<User> findByFullNameContainingAndRole_RoleName(String fullName, String roleName);
+    List<User> findByFullNameContainingAndRole_RoleNameAndActiveTrue(String fullName, String roleName);
 }

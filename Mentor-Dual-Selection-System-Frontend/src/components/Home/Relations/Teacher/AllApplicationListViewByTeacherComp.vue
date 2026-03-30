@@ -228,11 +228,13 @@ onMounted(() => {
 <style scoped lang="scss">
 .application_overview_box {
   padding: 20px;
+  color: var(--app-text-primary);
 
   h3 {
     text-align: center;
     margin-bottom: 30px;
     font-size: 24px;
+    color: var(--app-text-primary);
   }
 
   .content_box {
@@ -247,18 +249,20 @@ onMounted(() => {
 
     .box {
       width: 48%;
-      background-color: #f9f9f9;
+      background: linear-gradient(180deg, var(--app-surface) 0%, var(--app-surface-elevated) 100%);
       padding: 20px;
-      border-radius: 10px;
+      border-radius: 18px;
+      border: 1px solid var(--app-border);
       transition: transform 0.3s, box-shadow 0.3s;
       display: flex;
       flex-direction: column;
       justify-content: space-between; /* 调整内容位置 */
       align-items: center; /* 居中对齐 */
+      box-shadow: 0 20px 40px var(--app-shadow);
 
       &:hover {
         transform: translateY(-5px);
-        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 24px 42px var(--app-shadow-strong);
       }
 
       @media (max-width: 768px) {
@@ -277,6 +281,7 @@ onMounted(() => {
         font-size: 16px;
         font-weight: bold;
         text-align: center;
+        color: var(--app-text-primary);
       }
     }
   }

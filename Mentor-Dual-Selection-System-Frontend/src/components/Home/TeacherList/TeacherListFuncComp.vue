@@ -1,182 +1,486 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import * as XLSX from 'xlsx';
-import { http } from "@/utils/http";
+import { computed, ref } from "vue";
+import * as XLSX from "xlsx";
+import { ElMessage, ElMessageBox } from "element-plus";
+import { http, httpAdmin } from "@/utils/http";
 import { useRouter } from "vue-router";
-import axios from "axios";
-import { ElProgress } from 'element-plus';
+import { useTeacherListStore } from "@/stores/TeacherListStore";
+import type { TeachDetailsFullImpl } from "@/interfaces/TeachDetailsFullImpl";
+import { downloadBlob, downloadWorkbook, parseContentDispositionFilename } from "@/utils/fileDownload";
+import {
+  analyzeImportRows,
+  type ExistingImportUser,
+} from "@/utils/importUserPreview";
+import {
+  createImportColumnOptions,
+  getImportCellValue,
+  inferImportColumnMapping,
+  type ImportColumnRule,
+} from "@/utils/importColumnMapping";
+
+type TeacherUploadField =
+  | "role"
+  | "fullName"
+  | "email"
+  | "username"
+  | "teacherPosition"
+  | "researchDirection";
+
+interface TeacherUploadPreviewRow {
+  role: string;
+  fullName: string;
+  email: string;
+  username: string;
+  teacherPosition: string;
+  researchDirection: string;
+}
+
+interface TeacherImportPlanRow extends TeacherUploadPreviewRow {
+  rowIndex: number;
+  action: "create" | "overwrite" | "conflict";
+  actionLabel: string;
+  message: string;
+  existingUid: number | null;
+}
+
+const teacherImportRules: ImportColumnRule<TeacherUploadField>[] = [
+  { key: "role", label: "权限", aliases: ["权限", "角色", "role"], fallbackIndex: 0 },
+  { key: "fullName", label: "姓名", aliases: ["姓名", "导师姓名", "名称", "fullname", "name"], fallbackIndex: 1, required: true },
+  { key: "email", label: "电子邮箱", aliases: ["电子邮箱", "邮箱", "email"], fallbackIndex: 2 },
+  { key: "username", label: "工号", aliases: ["工号", "教师工号", "账号", "username"], fallbackIndex: 3, required: true },
+  { key: "teacherPosition", label: "职称", aliases: ["职称", "职位", "教师职称", "teacherposition", "position"], fallbackIndex: 4, required: true },
+  { key: "researchDirection", label: "研究方向", aliases: ["研究方向", "方向", "研究领域", "researchdirection"], fallbackIndex: 5 },
+];
+
 const router = useRouter();
+const teacherListStore = useTeacherListStore();
 
 const fileInput = ref<HTMLInputElement | null>(null);
-const excelData = ref<any[]>([]);
-const excelName = ref('');
+const excelName = ref("");
+const headerRow = ref<unknown[]>([]);
+const rawRows = ref<unknown[][]>([]);
+const existingUsers = ref<ExistingImportUser[]>([]);
+const currentTeachers = ref<TeachDetailsFullImpl[]>([]);
+const columnMapping = ref<Record<TeacherUploadField, number | null>>({
+  role: null,
+  fullName: null,
+  email: null,
+  username: null,
+  teacherPosition: null,
+  researchDirection: null,
+});
 const isUploadBoxShow = ref(false);
-const progressPercentage = ref(0); // 进度百分比
-const progressStatus = ref(''); // 当前正在处理的信息
-const total = ref(0); // 总条数
-const falCount = ref(0); // 失败的条数
+const isUploading = ref(false);
+const isDownloadingTemplate = ref(false);
+const isExporting = ref(false);
+const progressPercentage = ref(0);
+const progressStatus = ref("");
+const total = ref(0);
+const falCount = ref(0);
+
+const previewLimit = 8;
+const columnOptions = computed(() => createImportColumnOptions(headerRow.value));
+const missingRequiredLabels = computed(() =>
+  teacherImportRules
+    .filter((rule) => rule.required && columnMapping.value[rule.key] == null)
+    .map((rule) => rule.label),
+);
+
+const mappedRows = computed<TeacherUploadPreviewRow[]>(() =>
+  rawRows.value
+    .map((row) => ({
+      role: getImportCellValue(row, columnMapping.value.role) || "TEACHER",
+      fullName: getImportCellValue(row, columnMapping.value.fullName),
+      email: getImportCellValue(row, columnMapping.value.email),
+      username: getImportCellValue(row, columnMapping.value.username),
+      teacherPosition: getImportCellValue(row, columnMapping.value.teacherPosition),
+      researchDirection: getImportCellValue(row, columnMapping.value.researchDirection),
+    }))
+    .filter((row) => [row.fullName, row.email, row.username, row.teacherPosition, row.researchDirection].some(Boolean)),
+);
+
+const importPlans = computed<TeacherImportPlanRow[]>(() =>
+  analyzeImportRows({
+    rows: mappedRows.value,
+    existingUsers: existingUsers.value,
+    expectedRole: "TEACHER",
+    uniqueFieldLabel: "工号",
+    uniqueValue: (row) => row.username,
+    requiredFields: [
+      { label: "姓名", value: (row) => row.fullName },
+      { label: "工号", value: (row) => row.username },
+      { label: "职称", value: (row) => row.teacherPosition },
+    ],
+  }).map((plan) => ({
+    ...plan.row,
+    rowIndex: plan.rowIndex,
+    action: plan.action,
+    actionLabel: getActionLabel(plan.action),
+    message: plan.message,
+    existingUid: plan.existingUser?.uid ?? null,
+  })),
+);
+
+const previewRows = computed(() => importPlans.value.slice(0, previewLimit));
+const hasMorePreview = computed(() => importPlans.value.length > previewLimit);
+const uploadSummary = computed(() =>
+  importPlans.value.reduce(
+    (summary, row) => {
+      summary[row.action] += 1;
+      return summary;
+    },
+    { create: 0, overwrite: 0, conflict: 0 },
+  ),
+);
+const executableRows = computed(() => importPlans.value.filter((row) => row.action !== "conflict"));
+const canUpload = computed(() =>
+  !isUploading.value
+  && importPlans.value.length > 0
+  && missingRequiredLabels.value.length === 0
+  && uploadSummary.value.conflict === 0,
+);
+
+function authHeaders() {
+  return {
+    Accept: "*/*",
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  };
+}
+
+function getActionLabel(action: TeacherImportPlanRow["action"]) {
+  if (action === "overwrite") return "覆盖更新";
+  if (action === "conflict") return "存在冲突";
+  return "新增账号";
+}
+
+function getActionTagType(action: TeacherImportPlanRow["action"]) {
+  if (action === "overwrite") return "warning";
+  if (action === "conflict") return "danger";
+  return "success";
+}
+
+function getTimestamp() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = `${now.getMonth() + 1}`.padStart(2, "0");
+  const day = `${now.getDate()}`.padStart(2, "0");
+  const hour = `${now.getHours()}`.padStart(2, "0");
+  const minute = `${now.getMinutes()}`.padStart(2, "0");
+  return `${year}${month}${day}-${hour}${minute}`;
+}
+
+async function fetchExistingUsers() {
+  const res = await http({
+    url: "/user/all",
+    method: "POST",
+    headers: authHeaders(),
+  });
+
+  if (res.data.code !== 200 || !Array.isArray(res.data.data)) {
+    throw new Error("现有账号信息获取失败");
+  }
+
+  existingUsers.value = res.data.data;
+}
+
+async function fetchTeachersForExport() {
+  const cachedRows = Array.isArray(teacherListStore.teacherListSt) ? teacherListStore.teacherListSt : null;
+  if (cachedRows) {
+    currentTeachers.value = cachedRows;
+    return cachedRows;
+  }
+
+  const res = await http({
+    url: "/search/teachers",
+    method: "GET",
+    headers: authHeaders(),
+  });
+
+  if (res.data.code !== 200 || !Array.isArray(res.data.data)) {
+    throw new Error("导师列表获取失败");
+  }
+
+  teacherListStore.updateTeacherList(res.data.data);
+  currentTeachers.value = res.data.data;
+  return res.data.data;
+}
+
+function resetUploadProgress() {
+  isUploading.value = false;
+  progressPercentage.value = 0;
+  progressStatus.value = "";
+  total.value = 0;
+  falCount.value = 0;
+}
+
+function resetUploadPreview() {
+  excelName.value = "";
+  headerRow.value = [];
+  rawRows.value = [];
+  existingUsers.value = [];
+  isUploadBoxShow.value = false;
+  resetUploadProgress();
+  if (fileInput.value) {
+    fileInput.value.value = "";
+  }
+}
 
 function addSingleTeacherClicked() {
-  router.push('/add_single_teach');
+  router.push("/add_single_teach");
 }
 
-function downloadTeacherTemplate() {
-  window.location.href = 'https://minio.lumoxuan.cn/mentor-dual-selection-system/teacher0/导师表格模板.xlsx';
+async function downloadTeacherTemplate() {
+  if (isDownloadingTemplate.value) return;
+
+  isDownloadingTemplate.value = true;
+  try {
+    const response = await http({
+      url: "/import/template/teacher",
+      method: "GET",
+      responseType: "blob",
+      headers: authHeaders(),
+    });
+
+    const filename = parseContentDispositionFilename(response.headers["content-disposition"]) || "导师信息导入模板.xlsx";
+    downloadBlob(response.data, filename);
+    ElMessage.success("导师导入模板已开始下载");
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.data?.error || "导师模板下载失败");
+  } finally {
+    isDownloadingTemplate.value = false;
+  }
 }
 
-// 批量上传基本信息
+async function exportCurrentTeachers() {
+  if (isExporting.value) return;
+
+  isExporting.value = true;
+  try {
+    const teachers = await fetchTeachersForExport();
+    const rows = teachers.map((teacher: any) => ({
+      姓名: teacher.fullName ?? "",
+      工号: teacher.username ?? "",
+      电子邮箱: teacher.email ?? "",
+      职称: teacher.teacherposition ?? "",
+      研究方向: teacher.research_direction ?? "",
+      介绍: teacher.resume ?? "",
+    }));
+
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(workbook, worksheet, "导师信息");
+    downloadWorkbook(workbook, `导师信息导出-${getTimestamp()}.xlsx`);
+    ElMessage.success("导师信息已导出");
+  } catch (error: any) {
+    ElMessage.error(error?.message || "导师信息导出失败");
+  } finally {
+    isExporting.value = false;
+  }
+}
+
+function inferTeacherMapping() {
+  columnMapping.value = inferImportColumnMapping(columnOptions.value, teacherImportRules);
+}
+
+function buildHeaderRow(rows: unknown[][]) {
+  const widestColumnCount = rows.reduce((max, row) => Math.max(max, row.length), 0);
+  const sourceHeader = rows[0] ?? [];
+  return Array.from({ length: widestColumnCount }, (_, index) => sourceHeader[index] ?? "");
+}
+
 async function checkUpload() {
-  if (excelData.value.length <= 1) {
-    alert('没有可上传的数据');
+  if (missingRequiredLabels.value.length > 0) {
+    ElMessage.warning(`请先完成必填列映射：${missingRequiredLabels.value.join("、")}`);
     return;
   }
-  falCount.value = 0;
-  total.value = excelData.value.length - 1; // 总条数
 
-  for (let i = 1; i < excelData.value.length; i++) {
+  if (importPlans.value.length === 0) {
+    ElMessage.warning("没有可上传的数据");
+    return;
+  }
+
+  if (uploadSummary.value.conflict > 0) {
+    ElMessage.warning(`当前有 ${uploadSummary.value.conflict} 条冲突数据，请先修正后再上传`);
+    return;
+  }
+
+  if (uploadSummary.value.overwrite > 0) {
     try {
-      const currentName = excelData.value[i][1];
-      progressStatus.value = `正在处理第 ${i} 条数据：${currentName}`;
-
-      // 上传基本信息
-      await uploadBasicInfo(excelData.value[i], i);
-
-      // 获取教师 UID 并上传职位和研究方向
-      await updateTeacherDetails(excelData.value[i], i);
-
-    } catch (err) {
-      console.error(`第 ${i} 条数据上传失败`, err);
-      falCount.value++;
-    } finally {
-      // 更新进度
-      progressPercentage.value = Math.round((i / total.value) * 100);
+      await ElMessageBox.confirm(
+        `检测到 ${uploadSummary.value.overwrite} 条工号已存在，确认上传后会覆盖更新原导师信息，不会新建重复账号。是否继续？`,
+        "确认覆盖更新",
+        {
+          confirmButtonText: "继续上传",
+          cancelButtonText: "取消",
+          type: "warning",
+          closeOnClickModal: false,
+        },
+      );
+    } catch {
+      return;
     }
   }
 
+  try {
+    await fetchTeachersForExport();
+  } catch (error: any) {
+    ElMessage.error(error?.message || "当前导师信息获取失败，无法执行覆盖更新");
+    return;
+  }
+
+  isUploading.value = true;
+  falCount.value = 0;
+  total.value = executableRows.value.length;
+
+  for (let i = 0; i < executableRows.value.length; i += 1) {
+    const row = executableRows.value[i];
+
+    try {
+      const currentName = row.fullName || row.username || `第 ${i + 1} 条`;
+      progressStatus.value = `正在处理第 ${i + 1} 条数据：${currentName}`;
+
+      const uid = await uploadBasicInfo(row, i + 1);
+      await uploadAdditionalInfo(uid, row, i + 1);
+    } catch (error) {
+      console.error(`第 ${i + 1} 条数据上传失败`, error);
+      falCount.value += 1;
+    } finally {
+      progressPercentage.value = Math.round(((i + 1) / Math.max(total.value, 1)) * 100);
+    }
+  }
+
+  isUploading.value = false;
   progressStatus.value = `上传完成，成功 ${total.value - falCount.value} 条，失败 ${falCount.value} 条`;
 
-  // 上传完成后刷新页面
-  setTimeout(() => {
-    window.location.reload();
-  }, 2000); // 延迟2秒刷新，便于用户查看上传结果
-}
-
-async function uploadBasicInfo(rowData: any, index: number) {
-  return http({
-    url: '/user/update',
-    method: 'POST',
-    headers: {
-      Accept: '*/*',
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-      'Content-Type': 'application/json',
-    },
-    data: {
-      role: String(rowData[0]).trim(),        // '权限（导师请大写TEACHER）' 去掉多余空格
-      fullName: String(rowData[1]).trim(),    // '姓名' 去掉多余空格
-      email: String(rowData[2]).trim(),       // '电子邮箱' 去掉多余空格
-      username: String(rowData[3]).trim(),    // '工号' 去掉多余空格
-    }
-  }).then(res => {
-    if (res.data.code !== 200) {
-      throw new Error(`第 ${index} 条数据上传失败`);
-    }
-  }).catch(err => {
-    throw err;
-  });
-}
-
-async function updateTeacherDetails(rowData: any, index: number) {
   try {
-    // 获取教师列表
-    const res = await http({
-      url: '/search/teachers',
-      method: 'GET',
-      headers: {
-        Accept: '*/*',
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
+    const latestTeachers = await fetchTeachersForExport();
+    teacherListStore.updateTeacherList(latestTeachers);
+  } catch (error) {
+    console.error("导师列表刷新失败", error);
+  }
 
-    if (res.data.code === 200) {
-      const allTeachers = res.data.data;
-      const fullName = String(rowData[1]).trim();
-      const username = String(rowData[3]).trim();
-
-      // 为 t 参数指定类型
-      const teacher = allTeachers.find((t: { username: string; fullName: string }) => t.username === username && t.fullName === fullName);
-
-      if (teacher && teacher.uid) {
-        // 上传职位、研究方向
-        await uploadAdditionalInfo(teacher.uid, rowData, index);
-      } else {
-        console.error(`未找到第 ${index} 条教师的 UID, 工号: ${username}, 姓名: ${fullName}`);
-        throw new Error(`未找到第 ${index} 条教师的 UID`);
-      }
-    } else {
-      throw new Error('教师信息获取失败');
-    }
-  } catch (err) {
-    throw new Error(`获取教师 UID 失败: ${err}`);
+  if (falCount.value === 0) {
+    ElMessage.success("导师信息已全部上传完成");
+    resetUploadPreview();
+  } else {
+    ElMessage.warning(`导师信息上传完成，但有 ${falCount.value} 条失败`);
   }
 }
 
-async function uploadAdditionalInfo(uid: number | undefined,
-                                    rowData: any,
-                                    index: number) {
-  try {
-    const res = await axios({
-      url: `/admin/update/${uid}`,
-      method: 'PUT',
-      headers: {
-        Accept: '*/*',
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      data: {
-        teacherPosition: rowData[4] ? String(rowData[4]).trim() : '',   // '职位'
-        researchDirection: rowData[5] ? String(rowData[5]).trim() : '', // '研究方向'
-        resume: '', // 简历可以留空
-        studentGrade: '' // 必传的空年级信息
-      }
-    });
+async function uploadBasicInfo(rowData: TeacherImportPlanRow, index: number) {
+  const existingUser = rowData.existingUid
+    ? existingUsers.value.find((user) => user.uid === rowData.existingUid)
+    : null;
+  const mergedEmail = rowData.email || existingUser?.email || null;
 
-    if (res.data.code !== 200) {
-      throw new Error(`第 ${index} 条详细信息上传失败`);
-    }
-  } catch (err) {
-    console.error(`第 ${index} 条数据上传详细信息异常`, err);
-    throw err;
+  const res = await http({
+    url: "/user/update",
+    method: "POST",
+    headers: {
+      ...authHeaders(),
+      "Content-Type": "application/json",
+    },
+    data: {
+      uid: rowData.existingUid ?? undefined,
+      role: rowData.role || "TEACHER",
+      fullName: rowData.fullName,
+      email: mergedEmail,
+      username: rowData.username,
+    },
+  });
+
+  if (res.data.code !== 200) {
+    throw new Error(`第 ${index} 条基础信息上传失败`);
+  }
+
+  const uid = Number(res.data?.data?.uid);
+  if (!Number.isFinite(uid) || uid <= 0) {
+    throw new Error(`第 ${index} 条基础信息返回的 UID 无效`);
+  }
+
+  return uid;
+}
+
+async function uploadAdditionalInfo(uid: number, rowData: TeacherUploadPreviewRow, index: number) {
+  const currentTeacher = currentTeachers.value.find(
+    (teacher) => teacher.uid === uid || teacher.username === rowData.username,
+  );
+
+  const res = await httpAdmin({
+    url: `/update/${uid}`,
+    method: "PUT",
+    headers: authHeaders(),
+    data: {
+      photoUrl: currentTeacher?.photourl ?? null,
+      teacherPosition: rowData.teacherPosition || currentTeacher?.teacherposition || "",
+      researchDirection: rowData.researchDirection || currentTeacher?.research_direction || "",
+      professionalDirection: currentTeacher?.professionalDirection || "",
+      resume: currentTeacher?.resume || "",
+      netid: currentTeacher?.netid || "",
+      studentClass: null,
+      studentGrade: "",
+    },
+  });
+
+  if (res.data.code !== 200) {
+    throw new Error(`第 ${index} 条详细信息上传失败`);
   }
 }
 
 const triggerFileInput = () => {
-  if (fileInput.value) fileInput.value.click();
-}
+  fileInput.value?.click();
+};
 
-// 处理文件选择后的变化
 function handleFileChange(event: Event) {
   const inputElement = event.target as HTMLInputElement | null;
-  let file: any;
-  if (inputElement && inputElement.files) {
-    file = inputElement.files[0];
-  }
+  const file = inputElement?.files?.[0];
+
   if (!file) return;
-  excelName.value = file.name;
-  if (!['xlsx', 'xls'].includes(file.name.toString().split('.').pop())) {
-    alert('您选择的不是Excel表格文档！');
+
+  const fileExtension = file.name.toLowerCase().split(".").pop();
+  if (!fileExtension || !["xlsx", "xls"].includes(fileExtension)) {
+    ElMessage.warning("您选择的不是 Excel 表格文档");
+    resetUploadPreview();
     return;
   }
+
+  excelName.value = file.name;
+  resetUploadProgress();
+
   const reader = new FileReader();
-  reader.onload = (e: Event) => {
-    const loadEvent = e as ProgressEvent<FileReader>;
-    const arrayBuffer = loadEvent.target?.result as ArrayBuffer;
+  reader.onload = async (loadEvent) => {
+    const arrayBuffer = loadEvent.target?.result as ArrayBuffer | null;
     if (!arrayBuffer) return;
-    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+
+    const workbook = XLSX.read(arrayBuffer, { type: "array" });
     const firstSheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[firstSheetName];
+    const parsedRows = XLSX.utils.sheet_to_json<unknown[]>(worksheet, { header: 1, raw: false })
+      .map((row) => (Array.isArray(row) ? row : []));
 
-    excelData.value = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-    if (excelData.value.length > 0) isUploadBoxShow.value = true;
+    if (parsedRows.length <= 1) {
+      ElMessage.warning("Excel 中没有可预览的数据");
+      resetUploadPreview();
+      return;
+    }
+
+    headerRow.value = buildHeaderRow(parsedRows);
+    rawRows.value = parsedRows.slice(1);
+    inferTeacherMapping();
+
+    try {
+      await fetchExistingUsers();
+    } catch (error: any) {
+      ElMessage.error(error?.message || "现有账号信息获取失败");
+      resetUploadPreview();
+      return;
+    }
+
+    isUploadBoxShow.value = true;
+
+    ElMessage.success(`已读取 ${mappedRows.value.length} 条导师数据，请核对预览后再确认上传`);
   };
+
   reader.readAsArrayBuffer(file);
 }
 </script>
@@ -184,25 +488,84 @@ function handleFileChange(event: Event) {
 <template>
   <div class="button_box">
     <button @click="addSingleTeacherClicked">添加单条导师信息</button>
-    <button @click="downloadTeacherTemplate">下载导师表格模板</button>
-    <input type="file" @change="handleFileChange" ref="fileInput" style="display: none;" accept=".xlsx, .xls">
+    <button :disabled="isDownloadingTemplate" @click="downloadTeacherTemplate">
+      {{ isDownloadingTemplate ? "下载中..." : "下载导师表格模板" }}
+    </button>
+    <button :disabled="isExporting" @click="exportCurrentTeachers">
+      {{ isExporting ? "导出中..." : "导出当前导师信息" }}
+    </button>
+    <input ref="fileInput" type="file" style="display: none" accept=".xlsx, .xls" @change="handleFileChange" />
     <button @click="triggerFileInput">批量上传导师信息</button>
   </div>
 
   <div v-if="isUploadBoxShow" class="excel_status">
-    <p>{{excelData.length > 0 ? `文件已准备就绪：${excelName}` : ''}}</p>
-    <button @click="checkUpload">确认上传</button>
-    <button @click="triggerFileInput">重新上传</button>
+    <div class="excel_status__summary">
+      <p>已读取文件：{{ excelName }}，当前映射后共 {{ importPlans.length }} 条导师数据</p>
+      <span>系统会自动匹配列，但你可以在下面手动修正；点击“确认上传”后才会正式写入系统</span>
+      <span>新增 {{ uploadSummary.create }} 条，覆盖 {{ uploadSummary.overwrite }} 条，冲突 {{ uploadSummary.conflict }} 条</span>
+      <span v-if="missingRequiredLabels.length" class="excel_status__warning">待补充映射：{{ missingRequiredLabels.join("、") }}</span>
+      <span v-else-if="uploadSummary.conflict > 0" class="excel_status__warning">存在冲突数据，需先修正原表格再上传</span>
+    </div>
+    <div class="excel_status__actions">
+      <button :disabled="!canUpload" @click="checkUpload">确认上传</button>
+      <button :disabled="isUploading" @click="triggerFileInput">重新上传</button>
+      <button v-if="!isUploading" class="button_danger" @click="resetUploadPreview">取消</button>
+    </div>
   </div>
 
-  <!-- 进度条 -->
-  <div v-if="progressPercentage > 0" class="progress-container">
+  <div v-if="isUploadBoxShow" class="mapping_panel">
+    <div class="mapping_panel__header">
+      <span>列映射</span>
+      <span>如果系统自动识别不准确，可以在这里纠正</span>
+    </div>
+
+    <div class="mapping_grid">
+      <div v-for="rule in teacherImportRules" :key="rule.key" class="mapping_item">
+        <label :for="`teacher-mapping-${rule.key}`">
+          {{ rule.label }}
+          <span v-if="rule.required">*</span>
+        </label>
+        <el-select :id="`teacher-mapping-${rule.key}`" v-model="columnMapping[rule.key]" clearable placeholder="请选择列">
+          <el-option
+            v-for="option in columnOptions"
+            :key="option.index"
+            :label="`${option.label}（第 ${option.index + 1} 列）`"
+            :value="option.index"
+          />
+        </el-select>
+      </div>
+    </div>
+  </div>
+
+  <div v-if="isUploadBoxShow" class="preview_panel">
+    <div class="preview_panel__header">
+      <span>上传预览</span>
+      <span v-if="hasMorePreview">仅显示前 {{ previewRows.length }} 条，剩余 {{ importPlans.length - previewRows.length }} 条将在上传时一并处理</span>
+    </div>
+
+    <el-table :data="previewRows" border size="small" class="preview_table">
+      <el-table-column prop="rowIndex" label="序号" width="70" />
+      <el-table-column label="导入动作" min-width="110">
+        <template #default="{ row }">
+          <el-tag :type="getActionTagType(row.action)" effect="light">{{ row.actionLabel }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="fullName" label="姓名" min-width="120" />
+      <el-table-column prop="email" label="电子邮箱" min-width="220" />
+      <el-table-column prop="username" label="工号" min-width="120" />
+      <el-table-column prop="teacherPosition" label="职称" min-width="120" />
+      <el-table-column prop="researchDirection" label="研究方向" min-width="260" show-overflow-tooltip />
+      <el-table-column prop="message" label="说明" min-width="260" show-overflow-tooltip />
+    </el-table>
+  </div>
+
+  <div v-if="progressPercentage > 0" class="progress_container">
     <el-progress
       :percentage="progressPercentage"
       :text-inside="true"
       :stroke-width="30"
       color="#7ED321"
-    ></el-progress>
+    />
     <p>{{ progressStatus }}</p>
   </div>
 </template>
@@ -210,57 +573,149 @@ function handleFileChange(event: Event) {
 <style scoped lang="sass">
 .button_box
   width: 100%
-  height: 80px
+  min-height: 80px
   display: flex
   align-items: center
+  flex-wrap: wrap
+  gap: 18px
   button
     padding: 0 20px
-    height: 32px
-    width: 160px
+    height: 40px
+    min-width: 160px
     font-size: 14px
-    border-radius: 5px
+    border-radius: 8px
     border: none
     color: white
     margin-left: 32px
-    background-color: #005826
+    background-color: var(--app-brand)
     transition: .3s ease
   button:hover
-    background-color: #0f7e3f
+    background-color: var(--app-brand-hover)
+  button:disabled
+    cursor: not-allowed
+    opacity: 0.7
 
 .excel_status
-  background-color: #005826
-  padding-left: 20px
+  margin-top: 8px
+  padding: 18px 24px
   width: 100%
-  height: 60px
   display: flex
   align-items: center
-  p
-    color: white
-  button
-    padding: 0 20px
-    height: 32px
-    width: 120px
-    font-size: 14px
-    border-radius: 5px
-    border: none
-    color: #005826
-    margin-left: 32px
-    background-color: white
-    transition: .3s ease
-  button:hover
-    background-color: #0f7e3f
-    color: white
-  button:last-child
-    background-color: white
-    border: 1px solid #bd0000
-    color: #bd0000
-  button:last-child:hover
-    background-color: #bd0000
-    color: white
+  justify-content: space-between
+  gap: 20px
+  background: linear-gradient(135deg, var(--app-brand) 0%, var(--app-brand-hover) 100%)
+  border-radius: 14px
+  color: white
 
-.progress-container
-  margin-top: 20px
-  padding: 0 20px
+.excel_status__summary
+  display: flex
+  flex-direction: column
+  gap: 4px
   p
-    margin-top: 10px
+    font-size: 15px
+    font-weight: 600
+  span
+    font-size: 13px
+    color: rgba(255, 255, 255, 0.86)
+
+.excel_status__warning
+  color: #fff3d1 !important
+
+.excel_status__actions
+  display: flex
+  align-items: center
+  gap: 12px
+  button
+    height: 38px
+    min-width: 112px
+    padding: 0 18px
+    border-radius: 10px
+    border: 1px solid rgba(255, 255, 255, 0.35)
+    background-color: rgba(255, 255, 255, 0.14)
+    color: white
+    transition: .2s ease
+  button:hover
+    background-color: rgba(255, 255, 255, 0.22)
+  button:disabled
+    cursor: not-allowed
+    opacity: 0.6
+  .button_danger
+    border-color: rgba(255, 214, 214, 0.68)
+    color: #ffe4e4
+  .button_danger:hover
+    background-color: rgba(189, 0, 0, 0.28)
+
+.mapping_panel,
+.preview_panel
+  margin-top: 18px
+  padding: 18px
+  border: 1px solid var(--app-border)
+  border-radius: 14px
+  background: var(--app-surface)
+  box-shadow: 0 16px 32px var(--app-shadow)
+
+.mapping_panel__header,
+.preview_panel__header
+  display: flex
+  align-items: center
+  justify-content: space-between
+  gap: 12px
+  margin-bottom: 14px
+  font-size: 15px
+  font-weight: 600
+  color: var(--app-text-primary)
+  span:last-child
+    font-size: 13px
+    font-weight: 400
+    color: var(--app-text-secondary)
+
+.mapping_grid
+  display: grid
+  grid-template-columns: repeat(3, minmax(0, 1fr))
+  gap: 16px
+
+.mapping_item
+  display: flex
+  flex-direction: column
+  gap: 8px
+  label
+    font-size: 13px
+    font-weight: 600
+    color: var(--app-text-primary)
+  span
+    color: var(--app-danger)
+
+.preview_table
+  width: 100%
+
+.progress_container
+  margin-top: 18px
+  display: flex
+  flex-direction: column
+  gap: 10px
+  p
+    color: var(--app-text-secondary)
+
+@media (max-width: 980px)
+  .button_box
+    gap: 12px
+    button
+      margin-left: 0
+      width: 100%
+
+  .excel_status
+    flex-direction: column
+    align-items: flex-start
+
+  .excel_status__actions
+    flex-wrap: wrap
+    width: 100%
+
+  .mapping_panel__header,
+  .preview_panel__header
+    flex-direction: column
+    align-items: flex-start
+
+  .mapping_grid
+    grid-template-columns: 1fr
 </style>

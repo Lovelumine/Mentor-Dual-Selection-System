@@ -5,9 +5,9 @@ import vue from '@vitejs/plugin-vue'
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const apiBase = (env.VITE_API_PROXY_TARGET || 'http://223.82.75.76:50000').replace(/\/$/, '')
-  const devHost = env.VITE_DEV_HOST || '0.0.0.0'
-  const devPort = Number(env.VITE_DEV_PORT || '5173')
+  const apiBase = (env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:18080').replace(/\/$/, '')
+  const devHost = env.VITE_DEV_HOST || '127.0.0.1'
+  const devPort = Number(env.VITE_DEV_PORT || '5174')
 
   return {
     plugins: [

@@ -1,16 +1,11 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { http } from "@/utils/http";
-import { useRouter } from "vue-router";
-const router = useRouter();
 import { useUserInfoStore } from "@/stores/user/UserBasicInformation";
-import { ElMessageBox } from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
 const userStore = useUserInfoStore();
 
 const pendingList = ref<any[]>([]);
-const allUser = ref<any[]>([]);
-const allStudent = ref<any[]>([]);
-const allTeacher = ref<any[]>([]);
 const userRole = ref<string | null>(null);
 const dialogVisible = ref<boolean>(false);
 const studentInfoVisible = ref<boolean>(false);
@@ -40,9 +35,55 @@ const handleStudentInfoClose = (done: () => void) => {
   done();
 };
 
+const canAdminHandleSelectedPending = computed(() => {
+  return (
+    userRole.value === "ADMIN" &&
+    scopeRowGetStatus(studentApplicationInfo.value) &&
+    !isAdminUnbindRecord(studentApplicationInfo.value)
+  );
+});
+
+function translateStatus(status: string | null | undefined) {
+  switch (status) {
+    case "REJECTED":
+      return "已拒绝";
+    case "PENDING":
+      return "待审核";
+    case "ACCEPTED":
+      return "已通过";
+    case "ADMIN_UNBOUND":
+      return "已解除";
+    default:
+      return status || "未知状态";
+  }
+}
+
+function formatDateTime(value: string | null | undefined) {
+  if (!value) {
+    return "—";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+
+  return date
+    .toLocaleString("zh-CN", {
+      hour12: false,
+      timeZone: "Asia/Shanghai",
+    })
+    .replace(/\//g, "-");
+}
+
+function isAdminUnbindRecord(row: any) {
+  return row.recordType === "ADMIN_UNBIND";
+}
+
 function handleAccept(index: number, row: any) {
   pendingUtilForm.value.applicationId = row.id;
   pendingUtilForm.value.approved = true;
+  pendingUtilForm.value.rejectionReason = null;
   http({
     url: "/application/approve",
     method: "POST",
@@ -58,20 +99,27 @@ function handleAccept(index: number, row: any) {
   })
     .then((res) => {
       if (res.status === 200 || res.data.code === 200) {
-        alert("该申请处理完成！");
+        ElMessage.success("该申请处理完成！");
+        studentInfoVisible.value = false;
         fetchApplicationList();
       } else {
-        alert(res.data.error);
+        ElMessage.error(res.data.error || "处理申请失败");
       }
     })
     .catch((err) => {
-      alert(JSON.parse(err.request.responseText).data.error);
+      const errorMessage =
+        err?.response?.data?.data?.error ||
+        err?.response?.data?.error ||
+        "处理申请失败";
+      ElMessage.error(errorMessage);
     });
 }
 
 function handleReject(index: number, row: any) {
   pendingUtilForm.value.applicationId = row.id;
   pendingUtilForm.value.approved = false;
+  pendingUtilForm.value.rejectionReason = null;
+  skipRejectionReason.value = false;
   dialogVisible.value = true;
 }
 
@@ -79,7 +127,10 @@ function handleReject(index: number, row: any) {
 function checkReject() {
   // If skipRejectionReason is checked or no reason provided, set default reason
   if (skipRejectionReason.value || !pendingUtilForm.value.rejectionReason) {
-    pendingUtilForm.value.rejectionReason = "导师未填写拒绝理由";
+    pendingUtilForm.value.rejectionReason =
+      userRole.value === "ADMIN"
+        ? "管理员未填写拒绝理由"
+        : "导师未填写拒绝理由";
   }
 
   http({
@@ -97,20 +148,35 @@ function checkReject() {
   })
     .then((res) => {
       if (res.status === 200 || res.data.code === 200) {
-        alert("该申请处理完成！");
+        ElMessage.success("该申请处理完成！");
         dialogVisible.value = false;
+        studentInfoVisible.value = false;
         fetchApplicationList();
       } else {
-        alert(res.data.error);
+        ElMessage.error(res.data.error || "处理申请失败");
       }
     })
     .catch((err) => {
-      alert(JSON.parse(err.request.responseText).data.error);
+      const errorMessage =
+        err?.response?.data?.data?.error ||
+        err?.response?.data?.error ||
+        "处理申请失败";
+      ElMessage.error(errorMessage);
     });
 }
 
-function scopeIndexGetStatus(index: number) {
-  return pendingList.value[index].status === "PENDING";
+function scopeRowGetStatus(row: any) {
+  return row.status === "PENDING" && !isAdminUnbindRecord(row);
+}
+
+function getProcessStatusLabel(row: any) {
+  if (isAdminUnbindRecord(row)) {
+    return row.processingStatusLabel || "管理员解除";
+  }
+  if (row.status === "PENDING") {
+    return userRole.value === "ADMIN" ? "待审核，可在详情中处理" : "待处理";
+  }
+  return row.processingStatusLabel || "已完成";
 }
 
 function handleViewStudentInfo(row: any) {
@@ -121,12 +187,12 @@ function handleViewStudentInfo(row: any) {
         studentApplicationInfo.value = row;
         studentInfoVisible.value = true;
       } else {
-        alert("获取学生详情失败！");
+        ElMessage.error("获取学生详情失败！");
       }
     })
     .catch((err) => {
       console.error(err);
-      alert("请求学生详情出错或当前学生未完善详情信息！");
+      ElMessage.error("请求学生详情出错或当前学生未完善详情信息！");
     });
 }
 
@@ -143,78 +209,29 @@ function getStudentInfo(uid: number) {
 
 function fetchApplicationList() {
   http({
-    url: "/user/all",
-    method: "POST",
+    url: "/application/pending",
+    method: "GET",
     headers: {
-      "Content-Type": "*/*",
+      Accept: "*/*",
       Authorization: "Bearer " + localStorage.getItem("token"),
+    },
+    params: {
+      Authorization: localStorage.getItem("token"),
     },
   })
     .then((res) => {
       if (res.data.code === 200) {
-        allUser.value = res.data.data;
-        allStudent.value = allUser.value.filter((user) => user.role === "STUDENT");
-        allTeacher.value = allUser.value.filter((user) => user.role === "TEACHER");
-
-        http({
-          url: "/application/pending",
-          method: "GET",
-          headers: {
-            "Content-Type": "*/*",
-            Authorization: "Bearer " + localStorage.getItem("token"),
-          },
-          params: {
-            Authorization: localStorage.getItem("token"),
-          },
-        })
-          .then((res) => {
-            if (res.data.code === 200) {
-              pendingList.value = res.data.data;
-              for (let i = 0; i < pendingList.value.length; i++) {
-                switch (pendingList.value[i].status) {
-                  case "REJECTED":
-                    pendingList.value[i].statusCN = "已拒绝";
-                    break;
-                  case "PENDING":
-                    pendingList.value[i].statusCN = "待审核";
-                    break;
-                  case "ACCEPTED":
-                    pendingList.value[i].statusCN = "已通过";
-                    break;
-                  default:
-                    break;
-                }
-                const student = allStudent.value.find(
-                  (stu) => stu.uid === pendingList.value[i].studentId
-                );
-                if (student) {
-                  pendingList.value[i].studentName = student.fullName;
-                }
-                const teacher = allTeacher.value.find(
-                  (tea) => tea.uid === pendingList.value[i].mentorId
-                );
-                if (teacher) {
-                  pendingList.value[i].teacherName = teacher.fullName;
-                }
-              }
-            } else {
-              alert("获取申请列表失败，请联系管理员！");
-            }
-          })
-          .catch((err) => {
-            console.error(err);
-            alert("出现错误，请重新登录！");
-          });
+        pendingList.value = (res.data.data || []).map((item: any) => ({
+          ...item,
+          statusCN: item.statusCN || translateStatus(item.status),
+        }));
       } else {
-        alert("身份验证出错！请重新登录");
-        localStorage.removeItem("token");
-        window.location.reload();
+        ElMessage.error("获取申请列表失败，请联系管理员！");
       }
     })
     .catch((err) => {
       console.error(err);
-      alert("请求用户信息出错！");
-      router.back();
+      ElMessage.error("出现错误，请重新登录！");
     });
 }
 
@@ -270,12 +287,32 @@ watch(
         <p><strong>学号：</strong>{{ studentInfo.username }}</p>
         <p><strong>年级：</strong>{{ studentInfo.grade }}</p>
         <p><strong>意向研究方向：</strong>{{ studentInfo.research_direction }}</p>
-        <p><strong>班级：</strong>{{ studentInfo.class }}</p>
         <p><strong>邮箱：</strong>{{ studentInfo.email }}</p>
         <p><strong>个人简介：</strong>{{ studentInfo.resume }}</p>
-        <p><strong>申请理由：</strong>{{ studentApplicationInfo.applicationReason }}</p>
+        <p>
+          <strong>{{ studentApplicationInfo.recordType === 'ADMIN_UNBIND' ? '记录说明：' : '申请理由：' }}</strong>
+          {{ studentApplicationInfo.applicationReason || "无" }}
+        </p>
         <p><strong>申请状态：</strong>{{ studentApplicationInfo.statusCN }}</p>
-        <p><strong>拒绝理由：</strong>{{ studentApplicationInfo.rejectionReason || '无' }}</p>
+        <p><strong>申请时间：</strong>{{ formatDateTime(studentApplicationInfo.applicationDate) }}</p>
+        <p><strong>处理时间：</strong>{{ formatDateTime(studentApplicationInfo.decisionDate) }}</p>
+        <p v-if="studentApplicationInfo.operatorName">
+          <strong>操作人：</strong>{{ studentApplicationInfo.operatorName }}
+        </p>
+        <p v-if="studentApplicationInfo.recordType !== 'ADMIN_UNBIND'">
+          <strong>拒绝理由：</strong>{{ studentApplicationInfo.rejectionReason || "无" }}
+        </p>
+        <div v-if="canAdminHandleSelectedPending" class="detail-action-row">
+          <button class="button" @click="handleAccept(0, studentApplicationInfo)">
+            同意
+          </button>
+          <button
+            class="button reject-button"
+            @click="handleReject(0, studentApplicationInfo)"
+          >
+            拒绝
+          </button>
+        </div>
       </div>
     </div>
   </el-dialog>
@@ -289,14 +326,24 @@ watch(
       <span>所有申请</span>
     </div>
     <el-table :data="pendingList" stripe class="table">
-      <el-table-column prop="id" label="申请编号" />
+      <el-table-column :label="userRole === 'ADMIN' ? '记录编号' : '申请编号'" prop="id" />
       <el-table-column prop="studentName" label="学生姓名" />
       <el-table-column
         prop="teacherName"
         label="导师姓名"
         v-if="userRole === 'ADMIN'"
       />
-      <el-table-column prop="applicationReason" label="申请理由" show-overflow-tooltip />
+      <el-table-column prop="applicationReason" label="申请理由 / 记录说明" show-overflow-tooltip />
+      <el-table-column label="申请时间" min-width="168">
+        <template #default="scope">
+          <span>{{ formatDateTime(scope.row.applicationDate) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="处理时间" min-width="168">
+        <template #default="scope">
+          <span>{{ formatDateTime(scope.row.decisionDate) }}</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="statusCN" label="当前状态" />
       <el-table-column label="详细信息">
         <template #default="scope">
@@ -310,7 +357,7 @@ watch(
         label="处理状态"
       >
         <template #default="scope">
-          <div v-if="scopeIndexGetStatus(scope.$index)">
+          <div v-if="userRole === 'TEACHER' && scopeRowGetStatus(scope.row)">
             <button
               class="button"
               @click="handleAccept(scope.$index, scope.row)"
@@ -325,7 +372,7 @@ watch(
             </button>
           </div>
           <div v-else>
-            <span>已完成</span>
+            <span>{{ getProcessStatusLabel(scope.row) }}</span>
           </div>
         </template>
       </el-table-column>
@@ -400,6 +447,17 @@ input:focus
     p
       font-size: 16px
       margin: 5px 0
+    .detail-action-row
+      margin-top: 18px
+      display: flex
+      gap: 12px
+    .reject-button
+      border: 1px solid #bd0000
+      background-color: #bd000000
+      color: #bd0000
+    .reject-button:hover
+      background-color: #bd0000
+      color: white
 .spacer
   height: 100px
 </style>

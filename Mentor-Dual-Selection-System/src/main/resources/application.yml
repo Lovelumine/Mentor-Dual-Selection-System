@@ -11,10 +11,10 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: ${SPRING_JPA_SHOW_SQL:false}
     properties:
       hibernate:
-        format_sql: true
+        format_sql: ${SPRING_JPA_FORMAT_SQL:false}
     database-platform: org.hibernate.dialect.MySQLDialect
 
   mvc:
@@ -68,11 +68,16 @@ knife4j:
     enable-footer: false
     enable-footer-custom: true
     footer-custom-content: Copyright © 2023-2024 Yongxin County Lovelumine Technology Co., Ltd.
-debug: true
+debug: ${APP_DEBUG:false}
 
 app:
   mail:
     from: ${APP_MAIL_FROM:no-reply@example.com}
+  ai:
+    deepseek:
+      base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+      api-key: ${DEEPSEEK_API_KEY:}
+      model: ${DEEPSEEK_MODEL:deepseek-chat}
 
 minio:
   url: ${MINIO_URL:http://localhost:9000}

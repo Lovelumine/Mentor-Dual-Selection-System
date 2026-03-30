@@ -20,15 +20,15 @@ public class UserDetail {
     private String teacherPosition; // 教师职位
 
     @Lob
-    @Column(name = "research_direction")
+    @Column(name = "research_direction", columnDefinition = "TEXT")
     private String researchDirection; // 研究方向
 
     @Lob
-    @Column(name = "professional_direction")
+    @Column(name = "professional_direction", columnDefinition = "TEXT")
     private String professionalDirection; // 专业方向
 
     @Lob
-    @Column(name = "resume")
+    @Column(name = "resume", columnDefinition = "TEXT")
     private String resume; // 个人简历
 
     @Size(max = 255)

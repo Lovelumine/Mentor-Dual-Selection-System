@@ -47,6 +47,10 @@ function uploadClicked() {
     alert('请填写电子邮箱！');
     return;
   }
+  if (!uploadForm.value.teacherPosition.trim()) {
+    alert('请填写职位信息！');
+    return;
+  }
   // 先上传基本信息
   http({
     url: '/user/update',
@@ -173,7 +177,13 @@ watch(() => userInfoStore.userInfo, (newVal) => {
         <el-input v-model="uploadForm.teacherPosition" />
       </el-form-item>
       <el-form-item label="研究方向：">
-        <el-input v-model="uploadForm.researchDirection" />
+        <el-input
+          v-model="uploadForm.researchDirection"
+          type="textarea"
+          :rows="4"
+          maxlength="5000"
+          show-word-limit
+        />
       </el-form-item>
       <el-form-item label="简历：">
         <el-input type="textarea" v-model="uploadForm.resume" />

@@ -130,6 +130,7 @@ import {
 } from 'element-plus';
 import { http, httpStudent } from '@/utils/http';
 import type {TeacherDetailImpl} from "@/interfaces/TeachDetailsImpl";
+import { getCardBackgroundImageUrl, getPortraitImageUrl } from "@/utils/media";
 
 
 // 状态变量
@@ -225,6 +226,10 @@ const showDetails = (teacher: TeacherDetailImpl) => {
 const handlePageChange = (page: number) => {
   currentPage.value = page;
 };
+
+const getCardImageUrl = (url?: string | null) => getCardBackgroundImageUrl(url);
+const getPhotoImageUrl = (url?: string | null) => getPortraitImageUrl(url);
+const getTeacherInitial = (name?: string | null) => name?.trim()?.slice(0, 1) || '师';
 </script>
 
 <template>
@@ -254,7 +259,7 @@ const handlePageChange = (page: number) => {
         <el-button @click="resetFilter" type="warning">重置</el-button>
       </div>
       <!-- 分页控件 -->
-      <div class="pagination-controls">
+      <div v-if="filteredTeachers.length > 0" class="pagination-controls">
         <el-pagination
           background
           layout="prev, pager, next"
@@ -269,14 +274,19 @@ const handlePageChange = (page: number) => {
 
     <!-- 内容的容器 -->
     <div class="content-wrapper">
-      <div class="container">
+      <div v-if="filteredTeachers.length === 0" class="empty-state">
+        <div class="empty-state__title">暂时没有结果</div>
+        <div class="empty-state__desc">当前筛选条件下没有匹配的导师，试试切换职称或点击重置。</div>
+      </div>
+      <div v-else class="container">
         <div
           class="teacher_resume_item"
           v-for="(item, index) in paginatedTeachers"
           :key="index"
         >
-        <div class="photo">
-            <img :src="item.photoUrl" alt="photo" />
+        <div class="photo" :class="{ 'photo--placeholder': !getPhotoImageUrl(item.photoUrl) }">
+            <img v-if="getPhotoImageUrl(item.photoUrl)" :src="getPhotoImageUrl(item.photoUrl)" alt="photo" />
+            <span v-else>{{ getTeacherInitial(item.fullName) }}</span>
           </div>
           <div class="item_box">
             <span class="fullname">{{
@@ -297,8 +307,8 @@ const handlePageChange = (page: number) => {
               <!-- 显示详情按钮 -->
               <el-button type="primary" size="small" @click="showDetails(item)">了解更多</el-button>
             </div>
-            <div class="avatar">
-              <img :src="item.avatarUrl" alt="avatar" />
+            <div class="avatar" :class="{ 'avatar--empty': !getCardImageUrl(item.avatarUrl) }">
+              <img v-if="getCardImageUrl(item.avatarUrl)" :src="getCardImageUrl(item.avatarUrl)" alt="avatar" />
             </div>
           </div>
         </div>
@@ -356,6 +366,26 @@ const handlePageChange = (page: number) => {
 .content-wrapper
   padding: 0 20px
 
+.empty-state
+  display: flex
+  flex-direction: column
+  align-items: center
+  justify-content: center
+  min-height: 360px
+  border: 1px dashed rgba(0, 88, 38, .18)
+  border-radius: 16px
+  background: rgba(255, 255, 255, .42)
+  color: #355345
+
+.empty-state__title
+  font-size: 24px
+  font-weight: 600
+
+.empty-state__desc
+  margin-top: 10px
+  font-size: 14px
+  color: #688171
+
 .container
   display: flex
   padding-left: 10vw
@@ -381,49 +411,68 @@ const handlePageChange = (page: number) => {
       width: 90%
       left: 50%
       transform: translateX(-50%)
+      z-index: 2
     .fullname
       position: absolute
       top: -13%
       left: 22%
       font-size: 18px
+      z-index: 2
     .email
       position: absolute
       left: 22%
       display: flex
       align-items: center
       top: 2%
+      z-index: 2
     .professional
       position: absolute
       left: 22%
       top: 12%
+      z-index: 2
     .detail_box
       position: absolute
       top: 30%
       left: 5%
+      z-index: 2
     .avatar
-      z-index: -1
+      z-index: 0
       width: 100%
       height: 100%
       overflow: hidden
-      position: relative
+      position: absolute
+      inset: 0
       border-radius: 10px
       img
-        position: absolute
-        top: 50%
-        left: 50%
-        transform: translate(-50%, -50%)
         width: 100%
-        opacity: .2
+        height: 100%
+        object-fit: cover
+        opacity: .26
   .photo
     box-shadow: #00000030 0 0 5px
     background-color: white
     border-radius: 10px
-    z-index: 1
+    z-index: 3
     left: 5%
     width: 75px
     height: 99px
     overflow: hidden
     position: absolute
+    display: flex
+    align-items: center
+    justify-content: center
     img
       width: 100%
+      height: 100%
+      object-fit: cover
+
+  .photo--placeholder
+    background: linear-gradient(160deg, rgba(255, 255, 255, .92) 0%, rgba(230, 237, 244, .98) 100%)
+    color: #5f7180
+    font-size: 34px
+    font-weight: 700
+    letter-spacing: .08em
+
+  .avatar--empty
+    background: linear-gradient(135deg, rgba(228, 238, 246, .86) 0%, rgba(212, 225, 241, .78) 100%)
 </style>

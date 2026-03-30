@@ -2,22 +2,14 @@
 import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
 const userInfoStore = useUserInfoStore();
 import {useRouter} from "vue-router";
-import {onMounted, ref, watch} from "vue";
+import {computed} from "vue";
 const router = useRouter();
 
-const isFuncShow = ref(false);
+const isFuncShow = computed(() => userInfoStore.userInfo.role === 'ADMIN');
 
 function releaseNoticeClicked(){
   router.push('/notice/release');
 }
-
-onMounted(() => {
-  if (userInfoStore.userInfo) isFuncShow.value = userInfoStore.userInfo.role === 'ADMIN';
-})
-
-watch(() => userInfoStore.userInfo, (newVal) => {
-  isFuncShow.value = newVal.role === 'ADMIN';
-})
 </script>
 
 <template>
@@ -34,28 +26,31 @@ watch(() => userInfoStore.userInfo, (newVal) => {
 .title
   width: 100%
   height: 60px
-  background-color: #e2e2e2
+  background-color: var(--app-surface-muted)
   line-height: 60px
   padding-left: 20px
   font-size: 20px
   display: flex
   align-items: center
+  color: var(--app-text-primary)
+  border-bottom: 1px solid var(--app-border)
+  box-shadow: 0 12px 24px var(--app-shadow)
   .button
     margin: auto 32px auto auto
     padding: 0 20px
     height: 32px
     width: 120px
     font-size: 14px
-    border-radius: 5px
+    border-radius: 10px
     border: none
-    color: white
-    background-color: #005826
+    color: var(--app-text-inverse)
+    background-color: var(--app-brand)
     transition: .3s ease
   button:hover
-    background-color: #0f7e3f
+    background-color: var(--app-brand-hover)
 .container
-  padding-top: 30px
+  padding: 24px 0 32px
   width: 100%
   min-height: calc(100vh - 120px)
-  background-color: #d5ddda
+  background: linear-gradient(180deg, var(--app-page-bg-alt) 0%, var(--app-page-bg) 100%)
 </style>

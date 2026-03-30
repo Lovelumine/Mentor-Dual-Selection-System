@@ -2,7 +2,7 @@
 import { onMounted, ref, watch } from "vue";
 import { useUserInfoStore } from "@/stores/user/UserBasicInformation";
 import { Right } from "@element-plus/icons-vue";
-import { ElDialog, ElButton } from "element-plus";
+import { ElDialog, ElButton, ElMessage } from "element-plus";
 import { http } from "@/utils/http";
 
 import axios from "axios";
@@ -14,7 +14,6 @@ interface UserInfo {
   email: string;
   avatarUrl: string;
   grade: string;
-  class: string;
   researchDirection: string;
   resume: string;
 }
@@ -28,6 +27,21 @@ interface TeacherInfo {
   resume: string;
 }
 
+interface MentorHistoryItem {
+  mentorId: number;
+  mentorName: string;
+  mentorEmail: string;
+  photoUrl: string;
+  teacherPosition: string;
+  researchDirection: string;
+  resume: string;
+  startDate: string | null;
+  endDate: string | null;
+  endReason: string | null;
+  operatorName: string | null;
+  current: boolean;
+}
+
 interface SelectedPerson {
   fullName: string;
   email: string;
@@ -35,7 +49,6 @@ interface SelectedPerson {
   teacher_position?: string; // 导师特有属性
   research_direction?: string; // 导师特有属性
   grade?: string; // 学生特有属性
-  class?: string; // 学生特有属性
   researchDirection?: string; // 学生特有属性
   resume: string;
 }
@@ -45,7 +58,6 @@ const userInfoComp = ref<UserInfo>({
   email: "",
   avatarUrl: "",
   grade: "",
-  class: "",
   researchDirection: "",
   resume: "",
 });
@@ -62,6 +74,8 @@ const targetTeacher = ref<TeacherInfo>({
 const errorShow = ref(0);
 const dialogVisible = ref(false); // 控制对话框的显示
 const selectedPerson = ref<SelectedPerson>({} as SelectedPerson); // 存储选中的导师或学生信息
+const mentorHistory = ref<MentorHistoryItem[]>([]);
+const currentMentorStartDate = ref<string | null>(null);
 
 // 打开详细信息弹窗
 function viewDetail(person: any, role: string) {
@@ -82,7 +96,6 @@ function viewDetail(person: any, role: string) {
         fullName: person.fullName || "",
         email: person.email || "",
         grade: person.studentGrade || "", // 正确映射年级
-        class: person.studentClass || "", // 正确映射班级
         researchDirection: person.researchDirection || "未提供", // 学生意向研究方向
         resume: person.resume || "未提供",
         avatarUrl: person.photoUrl ? `${person.photoUrl}?t=${new Date().getTime()}` : "",
@@ -95,6 +108,24 @@ function viewDetail(person: any, role: string) {
 // 头像加载失败处理函数
 function handleImageError(event: Event) {
   (event.target as HTMLImageElement).src = "https://via.placeholder.com/100";  // 设置默认图片
+}
+
+function formatDateTime(value: string | null | undefined) {
+  if (!value) {
+    return "—";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+
+  return date
+    .toLocaleString("zh-CN", {
+      hour12: false,
+      timeZone: "Asia/Shanghai",
+    })
+    .replace(/\//g, "-");
 }
 
 onMounted(() => {
@@ -129,59 +160,63 @@ onMounted(() => {
               researchDirection: res.data.data.researchDirection || "未提供",  // 学生意向研究方向
               resume: res.data.data.resume || "未提供",
               grade: res.data.data.studentGrade || "",  // 正确映射年级
-              class: res.data.data.studentClass || "",  // 正确映射班级
             };
           } else {
-            alert("获取学生详细信息失败，请检查网络和登录状态！");
+            ElMessage.warning("获取学生详细信息失败，已使用基础信息继续显示");
           }
         }).catch((err) => {
             console.error(err);
-            errorShow.value = err.response ? err.response.status : 500;
+            ElMessage.warning("获取学生详细信息失败，已使用基础信息继续显示");
           })
       } else {
-        alert("获取学生基本信息失败，请检查网络和登录状态！");
+        ElMessage.error("获取学生基本信息失败，请检查网络和登录状态！");
       }
     })
     .catch((err) => {
       console.error(err);
-      errorShow.value = err.response ? err.response.status : 500;
+      ElMessage.error("获取学生基本信息失败，请检查网络和登录状态！");
     });
 
-  // 获取导师信息 (通过 mentor-student-relations 获取导师uid，再获取详细信息)
+  // 获取当前导师和历史导师关系
   http({
-    url: "/application/mentor-student-relations",
+    url: "/application/student/relationship-history",
     method: "GET",
     headers: {
       Authorization: "Bearer " + localStorage.getItem("token"),
     },
   })
     .then((res) => {
-      if (res.data.code === 200 && res.data.data.length > 0) {
-        const mentorUid = res.data.data[0].mentor.uid;
-        return http({
-          url: `/search/teacher`,
-          method: "GET",
-          params: { uid: mentorUid },
-          headers: {
-            Authorization: "Bearer " + localStorage.getItem("token"),
-          },
-        });
-      } else {
-        throw new Error("导师信息未找到");
-      }
-    })
-    .then((res) => {
       if (res.data.code === 200) {
-        targetTeacher.value = {
-          fullName: res.data.data.fullName || "",
-          teacher_position: res.data.data.teacher_position || "",  // 获取职称
-          email: res.data.data.email || "",
-          avatarUrl: res.data.data.photourl ? `${res.data.data.photourl}?t=${new Date().getTime()}` : "",
-          research_direction: res.data.data.research_direction || "未提供",  // 导师研究方向
-          resume: res.data.data.resume || "未提供",
-        };
+        const currentRelationship = res.data.data.currentRelationship;
+        mentorHistory.value = res.data.data.historicalRelationships || [];
+
+        if (currentRelationship) {
+          currentMentorStartDate.value = currentRelationship.startDate || null;
+          targetTeacher.value = {
+            fullName: currentRelationship.mentorName || "",
+            teacher_position: currentRelationship.teacherPosition || "",
+            email: currentRelationship.mentorEmail || "",
+            avatarUrl: currentRelationship.photoUrl
+              ? `${currentRelationship.photoUrl}?t=${new Date().getTime()}`
+              : "",
+            research_direction: currentRelationship.researchDirection || "未提供",
+            resume: currentRelationship.resume || "未提供",
+          };
+          errorShow.value = 0;
+        } else {
+          currentMentorStartDate.value = null;
+          targetTeacher.value = {
+            fullName: "",
+            teacher_position: "",
+            email: "",
+            avatarUrl: "",
+            research_direction: "",
+            resume: "",
+          };
+          errorShow.value = 404;
+        }
       } else {
-        alert("获取导师信息失败，请检查网络和登录状态！");
+        ElMessage.error("获取导师信息失败，请检查网络和登录状态！");
       }
     })
     .catch((err) => {
@@ -211,7 +246,7 @@ onMounted(() => {
           <el-button type="primary" @click="viewDetail(userInfoComp, 'student')">详细信息</el-button>
         </div>
       </div>
-      <el-icon :size="48" :color="'#005826'" class="center-icon"><Right /></el-icon>
+      <el-icon :size="48" :color="'var(--app-brand)'" class="center-icon"><Right /></el-icon>
       <div class="item_box">
         <!-- 右侧导师信息 -->
         <div class="item">
@@ -227,6 +262,7 @@ onMounted(() => {
             <div>导师姓名：{{ targetTeacher.fullName }}</div>
             <div>导师职称：{{ targetTeacher.teacher_position }}</div> <!-- 显示职称 -->
             <div>导师邮箱：{{ targetTeacher.email }}</div>
+            <div>绑定时间：{{ formatDateTime(currentMentorStartDate) }}</div>
           </div>
           <el-button type="primary" @click="viewDetail(targetTeacher, 'teacher')">详细信息</el-button>
         </div>
@@ -237,6 +273,32 @@ onMounted(() => {
     </div>
     <div class="student_to_teacher_box" v-else>
       <h3>获取信息出错，请稍后重试</h3>
+    </div>
+
+    <div class="history_box" v-if="mentorHistory.length > 0">
+      <h3>历史导师</h3>
+      <el-table :data="mentorHistory" stripe class="history_table">
+        <el-table-column prop="mentorName" label="导师姓名" min-width="140" />
+        <el-table-column prop="teacherPosition" label="导师职称" min-width="120" />
+        <el-table-column label="绑定时间" min-width="168">
+          <template #default="scope">
+            {{ formatDateTime(scope.row.startDate) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="解除时间" min-width="168">
+          <template #default="scope">
+            {{ formatDateTime(scope.row.endDate) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="处理说明" min-width="280" show-overflow-tooltip>
+          <template #default="scope">
+            <div>{{ scope.row.endReason || "历史导师关系保留记录" }}</div>
+            <div v-if="scope.row.operatorName" class="history_operator">
+              操作人：{{ scope.row.operatorName }}
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
     </div>
 
     <!-- 详细信息对话框 -->
@@ -255,7 +317,6 @@ onMounted(() => {
           <div v-if="selectedPerson.teacher_position"><strong>职称：</strong>{{ selectedPerson.teacher_position }}</div> <!-- 导师显示职称 -->
           <div><strong>邮箱：</strong>{{ selectedPerson.email }}</div>
           <div v-if="selectedPerson.grade"><strong>年级：</strong>{{ selectedPerson.grade }}</div> <!-- 学生显示年级 -->
-          <div v-if="selectedPerson.class"><strong>班级：</strong>{{ selectedPerson.class }}</div>
           <div>
             <strong v-if="selectedPerson.research_direction">研究方向：</strong>
             <strong v-else-if="selectedPerson.researchDirection">意向研究方向：</strong>
@@ -276,6 +337,7 @@ onMounted(() => {
 .container
   margin-top: 60px
   overflow-y: auto
+  color: var(--app-text-primary)
 
 .student_to_teacher_box
   display: flex
@@ -288,6 +350,7 @@ onMounted(() => {
     position: absolute
     top: -40px
     font-weight: bold
+    color: var(--app-text-primary)
   .item_box
     display: flex
     align-items: stretch  // 确保左右两边的卡片高度相同
@@ -296,9 +359,10 @@ onMounted(() => {
     .item
       width: 320px
       min-height: 140px
-      background: linear-gradient(145deg, #f0f0f0, #fafafa)
-      box-shadow: 0px 10px 15px rgba(0, 0, 0, 0.1)
-      border-radius: 12px
+      background: linear-gradient(145deg, var(--app-surface) 0%, var(--app-surface-elevated) 100%)
+      box-shadow: 0px 14px 28px var(--app-shadow)
+      border: 1px solid var(--app-border)
+      border-radius: 16px
       padding: 20px
       display: flex
       flex-direction: column
@@ -306,18 +370,40 @@ onMounted(() => {
       transition: transform 0.3s ease
       &:hover
         transform: translateY(-5px)
-        box-shadow: 0px 15px 25px rgba(0, 0, 0, 0.15)
+        box-shadow: 0px 20px 36px var(--app-shadow-strong)
       .avatar
         height: 100px
         margin-bottom: 10px
+        border-radius: 12px
       .info
         flex: 1
         text-align: center
         margin-bottom: 10px
+        color: var(--app-text-primary)
 
 .el-icon
   margin: 100px 20px
   transition: transform 0.3s ease
   &:hover
     transform: rotate(90deg)
+
+.history_box
+  width: 70%
+  margin: 20px auto 0 auto
+  h3
+    margin-bottom: 16px
+    color: var(--app-text-primary)
+  .history_table
+    border: 1px solid var(--app-border)
+    border-radius: 16px
+    overflow: hidden
+  .history_operator
+    margin-top: 4px
+    color: var(--app-text-secondary)
+    font-size: 13px
+
+.person-detail
+  color: var(--app-text-primary)
+  .avatar
+    border-radius: 12px
 </style>

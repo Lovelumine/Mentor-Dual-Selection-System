@@ -3,7 +3,10 @@ import {Avatar, Menu} from "@element-plus/icons-vue";
 import {ref} from "vue";
 import {http} from "@/utils/http";
 import {useRouter} from "vue-router";
+import {ElMessage} from "element-plus";
+import {useUserInfoStore} from "@/stores/user/UserBasicInformation";
 const router = useRouter();
+const userInfoStore = useUserInfoStore();
 
 const signinForm = ref({
   username: '',
@@ -15,7 +18,6 @@ const forgetPwdClicked = () => {
 }
 
 function singinClicked(){
-  console.log(signinForm.value);
   http({
     url: '/auth/login',
     method: 'POST',
@@ -25,13 +27,20 @@ function singinClicked(){
     },
     data: signinForm.value
   }).then(res => {
-    console.log(res.status);
     if (res.status === 200) {
       localStorage.setItem('token', res.data.data.token);
-      window.location.reload();
+      userInfoStore.fetchUserInfo().then((success) => {
+        if (success) {
+          ElMessage.success('登录成功');
+          router.replace('/notice');
+          return;
+        }
+
+        ElMessage.error('登录状态初始化失败，请重新登录');
+      });
     }
   }).catch((err) => {
-    alert(JSON.parse(err.request.responseText).data.error);
+    ElMessage.error(err?.response?.data?.data?.error || '登录失败，请检查账号和密码');
   })
 }
 
@@ -44,27 +53,30 @@ function singinClicked(){
     </h3>
     <form @submit.prevent="singinClicked">
       <div class="input_box">
-        <el-icon size="25" color="#005826"><Avatar /></el-icon>
+        <el-icon size="25" color="var(--app-brand)"><Avatar /></el-icon>
         <input placeholder="工号 / 学号" type="text" required v-model="signinForm.username" />
       </div>
       <div class="input_box">
-        <el-icon size="25" color="#005826"><Menu /></el-icon>
+        <el-icon size="25" color="var(--app-brand)"><Menu /></el-icon>
         <input placeholder="密码" type="password" required v-model="signinForm.password" />
       </div>
-      <button type="submit" class="register_button">登录</button>
+      <div class="action_box">
+        <button type="submit" class="register_button">登录</button>
+        <button type="button" class="forget_button" @click="forgetPwdClicked">忘记密码</button>
+      </div>
     </form>
-    <button type="button" class="forget_button" @click="forgetPwdClicked">忘记密码</button>
   </div>
 </template>
 
 <style scoped lang="sass">
 .container
   width: 400px
-  height: 300px
+  min-height: 340px
   position: relative
   margin: 15vh auto 0 auto
+  color: var(--app-text-primary)
   h3
-    color: #005826
+    color: var(--app-brand)
     text-align: center
     font-weight: bold
   .input_box
@@ -72,47 +84,51 @@ function singinClicked(){
     margin: 30px 0 30px 0
     display: flex
     align-items: center
-    border-bottom: 1px solid #005826
+    border-bottom: 1px solid var(--app-brand)
     input
       margin-left: 20px
       width: 80%
       border: none
+      color: var(--app-text-primary)
+      background: transparent
     input:focus
       outline: none
       border: none
     input::placeholder
       font-size: 15px
+      color: var(--app-text-secondary)
+  .action_box
+    margin-top: 16px
   .register_button
     border-radius: 5px
     border: none
-    background-color: #005826
-    color: white
+    background-color: var(--app-brand)
+    color: var(--app-text-inverse)
     width: 50%
     height: 35px
     font-size: 16px
     font-weight: bold
     letter-spacing: 5px
-    margin-top: 20px
-    position: absolute
-    left: 50%
-    transform: translate(-50%)
+    margin: 0 auto
+    display: block
     transition: .3s ease
-  .register_button:hover, .forget_button:hover
-    background-color: #0f7e3f
+  .register_button:hover
+    background-color: var(--app-brand-hover)
   .forget_button
     border-radius: 5px
-    border: none
-    background-color: #005826
-    color: white
+    border: 1px solid var(--app-border-strong)
+    background-color: var(--app-surface-muted)
+    color: var(--app-text-primary)
     width: 50%
     height: 35px
     font-size: 16px
     font-weight: bold
     letter-spacing: 5px
-    margin-top: 20px
-    position: absolute
-    left: 50%
-    transform: translate(-50%)
-    bottom: 0
+    margin: 14px auto 0 auto
+    display: block
     transition: .3s ease
+  .forget_button:hover
+    border-color: var(--app-brand)
+    background-color: var(--app-brand-soft)
+    color: var(--app-brand)
 </style>

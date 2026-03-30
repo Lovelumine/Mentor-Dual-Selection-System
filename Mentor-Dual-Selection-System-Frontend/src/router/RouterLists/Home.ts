@@ -1,11 +1,11 @@
 import HomeView from "@/views/HomeView.vue";
 import TeacherListComp from "@/components/Home/TeacherList/TeacherListComp.vue";
+import StudentListPage from "@/components/Home/StudentList/StudentListPage.vue";
 
 export default {
     path: '/',
     name: 'home',
     component: HomeView,
-    redirect: '/notice',
     children: [
         {
             path: 'teach_list',
@@ -31,22 +31,32 @@ export default {
         {
             path: 'stu_list1',
             name: 'stuList1',
-            component: () => import('@/components/Home/StudentList1/StudentList1Comp.vue')
+            component: StudentListPage,
+            props: { listKey: "1" }
         },
         {
             path: 'stu_list2',
             name: 'stuList2',
-            component: () => import('@/components/Home/StudentList2/StudentList2Comp.vue')
+            component: StudentListPage,
+            props: { listKey: "2" }
         },
         {
             path: 'stu_list3',
             name: 'stuList3',
-            component: () => import('@/components/Home/StudentList3/StudentList3Comp.vue')
+            component: StudentListPage,
+            props: { listKey: "3" }
         },
         {
             path: 'stu_list4',
             name: 'stuList4',
-            component: () => import('@/components/Home/StudentList4/StudentList4Comp.vue')
+            component: StudentListPage,
+            props: { listKey: "4" }
+        },
+        {
+            path: 'stu_list_graduated',
+            name: 'stuListGraduated',
+            component: StudentListPage,
+            props: { listKey: "graduated" }
         },
         {
             path: 'select_teacher',
