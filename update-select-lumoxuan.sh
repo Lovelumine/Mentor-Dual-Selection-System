@@ -25,7 +25,7 @@ echo "Running backend tests..."
 (cd "$BACKEND_DIR" && ./mvnw test)
 
 echo "Building frontend..."
-(cd "$FRONTEND_DIR" && npm ci && npm run build)
+(cd "$FRONTEND_DIR" && pnpm install --frozen-lockfile && pnpm build)
 
 echo "Syncing frontend assets to $SITE_ROOT ..."
 sudo mkdir -p "$SITE_ROOT"
