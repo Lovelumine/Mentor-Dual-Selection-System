@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import mentordualselectionsystem.dto.StudentArchiveRequest;
+import mentordualselectionsystem.dto.StudentBatchArchiveRequest;
 import mentordualselectionsystem.dto.TeacherArchiveRequest;
 import mentordualselectionsystem.dto.UserRequest;
 import mentordualselectionsystem.mysql.User;
@@ -442,6 +443,36 @@ public class UserController {
             Map<String, Object> responseBody = new HashMap<>();
             responseBody.put("code", 200);
             responseBody.put("message", "学生已转出停用，历史记录已保留");
+            return ResponseEntity.ok(responseBody);
+        } catch (IllegalArgumentException e) {
+            return buildErrorResponse(400, e.getMessage());
+        } catch (Exception e) {
+            return buildErrorResponse(500, "服务器内部错误");
+        }
+    }
+
+    @PostMapping("/students/archive")
+    public ResponseEntity<?> archiveStudents(@RequestBody StudentBatchArchiveRequest request) {
+        try {
+            String token = SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
+            String jwtToken = token.replace("Bearer ", "");
+            Long currentUid = jwtUtils.validateTokenAndGetUid(jwtToken);
+            User currentUser = userService.getUserByUid(currentUid);
+
+            if (!"ADMIN".equals(currentUser.getRole().getRoleName())) {
+                return buildErrorResponse(403, "仅管理员可以转出学生");
+            }
+
+            Map<String, Object> result = userService.archiveStudentsByUids(
+                    request == null ? null : request.getStudentIds(),
+                    currentUser,
+                    request == null ? null : request.getReason()
+            );
+
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("code", 200);
+            responseBody.put("message", "所选学生已转出停用，历史记录已保留");
+            responseBody.put("data", result);
             return ResponseEntity.ok(responseBody);
         } catch (IllegalArgumentException e) {
             return buildErrorResponse(400, e.getMessage());

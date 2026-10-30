@@ -78,24 +78,74 @@ const returnClicked = () => {
 </script>
 
 <template>
-  <h1 style="text-align: center; margin-top: 20px">重置密码</h1>
-  <el-form label-width="auto" style="width: 500px; margin: 5% auto 0 auto;" :model="repwdForm" @submit.prevent="repwdClicked">
-    <el-form-item label="电子邮箱：">
-      <el-input type="text" placeholder="请输入" v-model="repwdForm.email"/>
-      <el-button type="primary" native-type="button" @click="getEmailToken" style="margin-top: 10px">发送验证码</el-button>
-    </el-form-item>
-    <el-form-item label="邮箱令牌：">
-      <el-input type="text" placeholder="请输入" v-model="repwdForm.token" required/>
-    </el-form-item>
-    <el-form-item label="新密码：">
-      <el-input type="password" placeholder="请输入" v-model="repwdForm.password" required/>
-    </el-form-item>
-    <el-button native-type="submit" type="danger">重置密码</el-button>
-    <el-button native-type="button" type="primary" @click="returnClicked">返回登录</el-button>
-  </el-form>
-  <FooterComp/>
+  <div class="forget_page">
+    <h1>重置密码</h1>
+    <el-form class="forget_form" label-width="auto" :model="repwdForm" @submit.prevent="repwdClicked">
+      <el-form-item label="电子邮箱：">
+        <div class="email_group">
+          <el-input type="text" placeholder="请输入" v-model="repwdForm.email" />
+          <el-button type="primary" native-type="button" @click="getEmailToken">发送验证码</el-button>
+        </div>
+      </el-form-item>
+      <el-form-item label="邮箱令牌：">
+        <el-input type="text" placeholder="请输入" v-model="repwdForm.token" required />
+      </el-form-item>
+      <el-form-item label="新密码：">
+        <el-input type="password" placeholder="请输入" v-model="repwdForm.password" required />
+      </el-form-item>
+      <div class="form_actions">
+        <el-button native-type="submit" type="danger">重置密码</el-button>
+        <el-button native-type="button" type="primary" @click="returnClicked">返回登录</el-button>
+      </div>
+    </el-form>
+    <FooterComp />
+  </div>
 </template>
 
 <style scoped lang="sass">
+.forget_page
+  min-height: calc(100vh - 60px)
+  padding: 28px 16px 48px
+  display: flex
+  flex-direction: column
+  align-items: center
+  box-sizing: border-box
+  h1
+    text-align: center
+    margin: 0
+    color: var(--app-text-primary)
 
+.forget_form
+  width: min(500px, calc(100vw - 32px))
+  margin: 40px auto 0
+  padding: 28px 24px
+  border-radius: 20px
+  border: 1px solid var(--app-border)
+  background: linear-gradient(180deg, var(--app-surface) 0%, var(--app-surface-elevated) 100%)
+  box-shadow: 0 20px 40px var(--app-shadow)
+
+.email_group
+  display: flex
+  flex-direction: column
+  gap: 10px
+  width: 100%
+
+.form_actions
+  display: flex
+  flex-wrap: wrap
+  gap: 10px
+  justify-content: flex-start
+
+@media (max-width: 767px)
+  .forget_page
+    padding: 24px 12px 40px
+
+  .forget_form
+    width: min(100%, calc(100vw - 24px))
+    padding: 22px 16px
+
+  .form_actions
+    flex-direction: column
+    :deep(.el-button)
+      margin-left: 0
 </style>

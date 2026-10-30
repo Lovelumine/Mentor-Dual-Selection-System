@@ -2,6 +2,7 @@
 import { onMounted, ref } from "vue";
 import { http } from "@/utils/http";
 import { useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
 
 const router = useRouter();
 
@@ -29,7 +30,6 @@ interface MentorHistoryItem {
   current: boolean;
 }
 
-const allUser = ref<User[]>([]);
 const allTeacher = ref<User[]>([]);
 const pendingList = ref<Application[]>([]);
 const nowStatus = ref('未选择');
@@ -54,20 +54,15 @@ function formatDateTime(value: string | null | undefined) {
 
 onMounted(() => {
   http({
-    url: '/user/all',
-    method: 'POST',
+    url: '/user/allteacher',
+    method: 'GET',
     headers: {
       'Content-Type': '*/*',
       'Authorization': 'Bearer ' + localStorage.getItem('token')
     }
   }).then(res => {
     if (res.data.code === 200) {
-      allUser.value = res.data.data;
-      for (let i = 0; i < allUser.value.length; i++) {
-        if (allUser.value[i].role === 'TEACHER') {
-          allTeacher.value.push(allUser.value[i]);
-        }
-      }
+      allTeacher.value = res.data.data;
       http({
         url: '/application/pending',
         method: 'GET',
@@ -128,26 +123,26 @@ onMounted(() => {
                 nowStatus.value = '未选择';
               }
             } else {
-              alert(historyRes.data.data.error);
+              ElMessage.error(historyRes.data.data.error || "获取师生关系信息失败");
             }
           }).catch(err => {
             console.error(err);
-            alert(JSON.parse(err.request.responseText).data.error);
+            ElMessage.error(JSON.parse(err.request.responseText).data.error || "获取师生关系信息失败");
           });
         } else {
-          alert(res.data.data.error);
+          ElMessage.error(res.data.data.error || "获取申请列表失败");
         }
       }).catch(err => {
         console.error(err);
-        alert(JSON.parse(err.request.responseText).data.error);
+        ElMessage.error(JSON.parse(err.request.responseText).data.error || "获取申请列表失败");
       });
     } else {
-      alert(res.data.data.error);
+      ElMessage.error(res.data.data.error || "获取用户信息失败");
       localStorage.removeItem('token');
       window.location.reload();
     }
   }).catch(err => {
-    alert(JSON.parse(err.request.responseText).data.error);
+    ElMessage.error(JSON.parse(err.request.responseText).data.error || "获取用户信息失败");
     router.back();
   });
 });
@@ -172,32 +167,32 @@ function statusClass(statusCN: string) {
     <div class="title">
       <span>所有申请&nbsp;&nbsp;&nbsp;当前状态：{{nowStatus}}</span>
     </div>
-    <el-table :data="pendingList" stripe class="table">
-      <el-table-column prop="id" label="申请编号"/>
-      <el-table-column prop="teacherName" label="导师姓名"/>
-      <el-table-column label="申请时间" min-width="168">
-        <template #default="scope">
-          {{ formatDateTime(scope.row.applicationDate) }}
-        </template>
-      </el-table-column>
-      <el-table-column label="处理时间" min-width="168">
-        <template #default="scope">
-          {{ formatDateTime(scope.row.decisionDate) }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="applicationReason" label="申请理由" show-overflow-tooltip/>
-      
-      <!-- 动态改变状态栏颜色 -->
-      <el-table-column prop="statusCN" label="当前状态">
-        <template #default="scope">
-          <span :class="statusClass(scope.row.statusCN)">
-            {{ scope.row.statusCN }}
-          </span>
-        </template>
-      </el-table-column>
-
-      <el-table-column prop="rejectionReason" label="拒绝理由"/>
-    </el-table>
+    <div class="table_shell">
+      <p class="table_scroll_hint">左右滑动表格可查看完整申请记录</p>
+      <el-table :data="pendingList" stripe class="table">
+        <el-table-column prop="id" label="申请编号" min-width="110" />
+        <el-table-column prop="teacherName" label="导师姓名" min-width="130" />
+        <el-table-column label="申请时间" min-width="168">
+          <template #default="scope">
+            {{ formatDateTime(scope.row.applicationDate) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="处理时间" min-width="168">
+          <template #default="scope">
+            {{ formatDateTime(scope.row.decisionDate) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="applicationReason" label="申请理由" min-width="260" show-overflow-tooltip />
+        <el-table-column prop="statusCN" label="当前状态" min-width="120">
+          <template #default="scope">
+            <span :class="statusClass(scope.row.statusCN)">
+              {{ scope.row.statusCN }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="rejectionReason" label="拒绝理由" min-width="220" />
+      </el-table>
+    </div>
   </div>
 </template>
 
@@ -205,10 +200,11 @@ function statusClass(statusCN: string) {
 .application_list_box
   .title
     width: 100%
-    height: 40px
+    min-height: 40px
     background-color: var(--app-surface-muted)
-    line-height: 40px
-    padding-left: 20px
+    display: flex
+    align-items: center
+    padding: 0 20px
     font-size: 16px
     margin-bottom: 20px
     font-family: 'Microsoft YaHei', sans-serif // 确保和前面统一的字体
@@ -218,6 +214,8 @@ function statusClass(statusCN: string) {
 
   .table
     font-family: 'Microsoft YaHei', sans-serif // 确保表格字体统一
+    width: 100%
+    min-width: 0
     .accepted-status
       background-color: color-mix(in srgb, var(--app-brand-soft) 72%, var(--app-surface) 28%)
       color: var(--app-brand)
@@ -241,4 +239,28 @@ function statusClass(statusCN: string) {
       padding: 5px 10px
       border-radius: 999px
       font-family: 'Microsoft YaHei', sans-serif // 确保状态文本的字体统一
+
+.table_shell
+  width: 100%
+  overflow-x: auto
+  -webkit-overflow-scrolling: touch
+
+.table_scroll_hint
+  display: none
+
+@media (max-width: 768px)
+  .application_list_box .title
+    min-height: 48px
+    height: auto
+    line-height: 1.5
+    padding: 12px 16px
+
+  .application_list_box .table
+    min-width: 0
+
+  .table_scroll_hint
+    display: block
+    margin: 0 12px 8px
+    color: var(--app-text-secondary)
+    font-size: 12px
 </style>

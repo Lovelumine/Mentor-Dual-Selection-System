@@ -182,53 +182,114 @@ public class UserService implements UserDetailsService {
 
     @Transactional
     public void archiveStudentByUid(Long uid, User adminOperator, String reason) {
-        User student = getUserByUid(uid);
-        if (!"STUDENT".equals(student.getRole().getRoleName())) {
-            throw new IllegalArgumentException("仅允许转出学生账号");
+        archiveStudentsByUids(Collections.singletonList(uid), adminOperator, reason);
+    }
+
+    @Transactional
+    public Map<String, Object> archiveStudentsByUids(List<Long> studentIds, User adminOperator, String reason) {
+        LinkedHashSet<Long> uniqueStudentIds = studentIds == null
+                ? new LinkedHashSet<>()
+                : new LinkedHashSet<>(studentIds);
+        if (uniqueStudentIds.isEmpty()) {
+            throw new IllegalArgumentException("请至少选择一名学生");
         }
 
-        if (!student.isEnabled()) {
-            throw new IllegalArgumentException("该学生账号已停用");
+        List<User> students = userRepository.findAllById(uniqueStudentIds);
+        if (students.size() != uniqueStudentIds.size()) {
+            throw new IllegalArgumentException("存在无效的学生记录，请刷新后重试");
+        }
+
+        Map<Long, User> studentMap = students.stream()
+                .collect(Collectors.toMap(User::getUid, student -> student));
+        Set<Long> mentorIds = new LinkedHashSet<>();
+
+        for (Long studentId : uniqueStudentIds) {
+            User student = studentMap.get(studentId);
+            if (student == null) {
+                throw new IllegalArgumentException("存在无效的学生记录，请刷新后重试");
+            }
+            if (!"STUDENT".equals(student.getRole().getRoleName())) {
+                throw new IllegalArgumentException("仅允许转出学生账号");
+            }
+            if (!student.isEnabled()) {
+                throw new IllegalArgumentException("所选学生中包含已停用账号，请刷新后重试");
+            }
+            if (student.getMentorId() != null) {
+                mentorIds.add(student.getMentorId());
+            }
+        }
+
+        List<User> mentors = mentorIds.isEmpty()
+                ? Collections.emptyList()
+                : userRepository.findAllById(mentorIds);
+        if (mentors.size() != mentorIds.size()) {
+            throw new IllegalArgumentException("部分学生的导师记录不存在，请刷新后重试");
+        }
+        Map<Long, User> mentorMap = mentors.stream()
+                .collect(Collectors.toMap(User::getUid, mentor -> mentor));
+        for (Long mentorId : mentorIds) {
+            if (!"TEACHER".equals(mentorMap.get(mentorId).getRole().getRoleName())) {
+                throw new IllegalArgumentException("学生关联的导师记录无效，请刷新后重试");
+            }
         }
 
         String normalizedReason = normalizeReason(reason, DEFAULT_STUDENT_ARCHIVE_REASON);
         Instant actionTime = Instant.now();
-        Long mentorId = student.getMentorId();
-        User mentor = null;
-        if (mentorId != null) {
-            mentor = userRepository.findById(mentorId)
-                    .orElseThrow(() -> new IllegalArgumentException("学生关联的导师不存在"));
+        List<Application> applicationsToReject = new ArrayList<>();
+        List<AdminRelationshipActionLog> actionLogs = new ArrayList<>();
 
-            student.setMentorId(null);
-            adminRelationshipActionLogRepository.save(buildArchiveActionLog(
-                    student,
-                    mentor,
-                    adminOperator,
-                    normalizedReason,
-                    actionTime
-            ));
+        for (User student : students) {
+            if (student.getMentorId() != null) {
+                User mentor = mentorMap.get(student.getMentorId());
+                student.setMentorId(null);
+                actionLogs.add(buildArchiveActionLog(
+                        student,
+                        mentor,
+                        adminOperator,
+                        normalizedReason,
+                        actionTime
+                ));
+            }
+
+            List<Application> pendingApplications = applicationRepository.findByStudentIdAndStatus(
+                    student.getUid(),
+                    "PENDING"
+            );
+            for (Application application : pendingApplications) {
+                application.setStatus("REJECTED");
+                application.setRejectionReason(DEFAULT_ARCHIVED_PENDING_APPLICATION_REASON);
+                application.setDecisionDate(actionTime);
+            }
+            applicationsToReject.addAll(pendingApplications);
+
+            student.setActive(false);
+            student.setDeactivatedAt(actionTime);
+            student.setDeactivatedReason(normalizedReason);
+            student.setDeactivatedById(adminOperator.getUid());
         }
 
-        List<Application> pendingApplications = applicationRepository.findByStudentIdAndStatus(uid, "PENDING");
-        for (Application application : pendingApplications) {
-            application.setStatus("REJECTED");
-            application.setRejectionReason(DEFAULT_ARCHIVED_PENDING_APPLICATION_REASON);
-            application.setDecisionDate(actionTime);
+        userRepository.saveAll(students);
+        if (!applicationsToReject.isEmpty()) {
+            applicationRepository.saveAll(applicationsToReject);
         }
-        if (!pendingApplications.isEmpty()) {
-            applicationRepository.saveAll(pendingApplications);
+        if (!actionLogs.isEmpty()) {
+            adminRelationshipActionLogRepository.saveAll(actionLogs);
+        }
+        if (!mentors.isEmpty()) {
+            userRepository.flush();
+            for (User mentor : mentors) {
+                mentor.setAcceptedStudents((int) userRepository.countByMentorIdAndActiveTrue(mentor.getUid()));
+            }
+            userRepository.saveAll(mentors);
         }
 
-        student.setActive(false);
-        student.setDeactivatedAt(actionTime);
-        student.setDeactivatedReason(normalizedReason);
-        student.setDeactivatedById(adminOperator.getUid());
-        userRepository.save(student);
-
-        if (mentor != null) {
-            mentor.setAcceptedStudents((int) userRepository.countByMentorIdAndActiveTrue(mentorId));
-            userRepository.save(mentor);
-        }
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("archivedStudentCount", students.size());
+        result.put("archivedStudentIds", new ArrayList<>(uniqueStudentIds));
+        result.put("affectedMentorCount", mentors.size());
+        result.put("rejectedPendingCount", applicationsToReject.size());
+        result.put("reason", normalizedReason);
+        return result;
     }
 
     @Transactional

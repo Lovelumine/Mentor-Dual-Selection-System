@@ -79,6 +79,7 @@ function singinClicked(){
     color: var(--app-brand)
     text-align: center
     font-weight: bold
+    margin: 0
   .input_box
     width: 100%
     margin: 30px 0 30px 0
@@ -131,4 +132,31 @@ function singinClicked(){
     border-color: var(--app-brand)
     background-color: var(--app-brand-soft)
     color: var(--app-brand)
+
+@media (max-width: 767px)
+  .container
+    width: min(100%, calc(100vw - 24px))
+    margin: 8vh auto 0 auto
+    padding: 24px 18px 20px
+    box-sizing: border-box
+    border: 1px solid var(--app-border)
+    border-radius: 16px
+    background: linear-gradient(180deg, var(--app-surface) 0%, var(--app-surface-elevated) 100%)
+    box-shadow: 0 20px 40px var(--app-shadow)
+    .input_box
+      margin: 24px 0
+      input
+        width: calc(100% - 45px)
+    .action_box
+      display: flex
+      flex-direction: column
+      gap: 14px
+    .register_button,
+    .forget_button
+      width: 100%
+      min-height: 44px
+      height: auto
+      margin: 0
+      font-size: 15px
+      letter-spacing: 2px
 </style>

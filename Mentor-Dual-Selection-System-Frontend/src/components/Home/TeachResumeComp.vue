@@ -129,10 +129,12 @@ import {
   ElDialog
 } from 'element-plus';
 import { http, httpStudent } from '@/utils/http';
+import { ElMessage } from "element-plus";
 import type {TeacherDetailImpl} from "@/interfaces/TeachDetailsImpl";
 import { getCardBackgroundImageUrl, getPortraitImageUrl } from "@/utils/media";
 import { useRoute, useRouter } from "vue-router";
 import { getSingleQueryValue, parsePositiveIntQuery } from "@/utils/routeQuery";
+import { useResponsiveLayout } from "@/composables/useResponsiveLayout";
 
 
 // 状态变量
@@ -146,6 +148,9 @@ const selectedTeacher = ref<TeacherDetailImpl | null>(null);
 const route = useRoute();
 const router = useRouter();
 const hasLoadedTeachers = ref(false);
+const { isMobile, isTablet } = useResponsiveLayout();
+const dialogWidth = computed(() => (isMobile.value ? "94vw" : isTablet.value ? "86vw" : "640px"));
+const paginationLayout = computed(() => (isMobile.value ? "prev, next" : "prev, pager, next"));
 
 // 挂载时获取教师数据
 onMounted(async () => {
@@ -185,10 +190,10 @@ onMounted(async () => {
 
       hasLoadedTeachers.value = true;
     } else {
-      alert('导师信息获取失败！');
+      ElMessage.error('导师信息获取失败！');
     }
   } catch (error) {
-    alert('导师信息获取失败！');
+    ElMessage.error('导师信息获取失败！');
     console.error('Error fetching teacher data:', error);
   }
 });
@@ -301,14 +306,11 @@ watch(filteredTeachers, (teachers) => {
 </script>
 
 <template>
-  <!-- 固定的标题 -->
   <div class="title">
     <span>本院导师卡片</span>
   </div>
 
-  <!-- 主内容 -->
   <div class="main-content">
-    <!-- 筛选控件和分页控件 -->
     <div class="top-controls">
       <div class="filter-controls">
         <el-select
@@ -326,11 +328,10 @@ watch(filteredTeachers, (teachers) => {
         </el-select>
         <el-button @click="resetFilter" type="warning">重置</el-button>
       </div>
-      <!-- 分页控件 -->
       <div v-if="filteredTeachers.length > 0" class="pagination-controls">
         <el-pagination
           background
-          layout="prev, pager, next"
+          :layout="paginationLayout"
           :current-page="currentPage"
           :page-size="pageSize"
           :total="filteredTeachers.length"
@@ -340,7 +341,6 @@ watch(filteredTeachers, (teachers) => {
       </div>
     </div>
 
-    <!-- 内容的容器 -->
     <div class="content-wrapper">
       <div v-if="filteredTeachers.length === 0" class="empty-state">
         <div class="empty-state__title">暂时没有结果</div>
@@ -352,31 +352,30 @@ watch(filteredTeachers, (teachers) => {
           v-for="(item, index) in paginatedTeachers"
           :key="index"
         >
-        <div class="photo" :class="{ 'photo--placeholder': !getPhotoImageUrl(item.photoUrl) }">
-            <img v-if="getPhotoImageUrl(item.photoUrl)" :src="getPhotoImageUrl(item.photoUrl)" alt="photo" />
-            <span v-else>{{ getTeacherInitial(item.fullName) }}</span>
-          </div>
           <div class="item_box">
-            <span class="fullname">{{
-                `${item.fullName}`
-              }}</span>
-            <span class="professional">
-              职位：{{ item.teacherposition }}
-            </span>
-            <span class="email">电子邮箱：{{ item.email }}</span>
-
+            <div class="avatar" :class="{ 'avatar--empty': !getCardImageUrl(item.avatarUrl) }">
+              <img v-if="getCardImageUrl(item.avatarUrl)" :src="getCardImageUrl(item.avatarUrl)" alt="avatar" />
+            </div>
+            <div class="teacher_head">
+              <div class="photo" :class="{ 'photo--placeholder': !getPhotoImageUrl(item.photoUrl) }">
+                <img v-if="getPhotoImageUrl(item.photoUrl)" :src="getPhotoImageUrl(item.photoUrl)" alt="photo" />
+                <span v-else>{{ getTeacherInitial(item.fullName) }}</span>
+              </div>
+              <div class="teacher_meta">
+                <span class="fullname">{{ item.fullName }}</span>
+                <span class="professional">职位：{{ item.teacherposition }}</span>
+                <span class="email">电子邮箱：{{ item.email }}</span>
+              </div>
+            </div>
             <hr class="hea_con_hr" />
             <div class="detail_box">
               <div class="resume">研究方向：{{ item.research_direction }}</div>
               <div class="resume">
-                 简历：{{ item.resume.length > 50 ? item.resume.slice(0, 50) + '...' : item.resume }}
+                简历：{{ item.resume.length > 80 ? item.resume.slice(0, 80) + '...' : item.resume }}
               </div>
-
-              <!-- 显示详情按钮 -->
-              <el-button type="primary" size="small" @click="showDetails(item)">了解更多</el-button>
             </div>
-            <div class="avatar" :class="{ 'avatar--empty': !getCardImageUrl(item.avatarUrl) }">
-              <img v-if="getCardImageUrl(item.avatarUrl)" :src="getCardImageUrl(item.avatarUrl)" alt="avatar" />
+            <div class="card_actions">
+              <el-button type="primary" size="small" @click="showDetails(item)">了解更多</el-button>
             </div>
           </div>
         </div>
@@ -384,8 +383,7 @@ watch(filteredTeachers, (teachers) => {
     </div>
   </div>
 
-  <!-- 详情对话框 -->
-  <el-dialog v-model="dialogVisible" :title="selectedTeacher?.fullName">
+  <el-dialog v-model="dialogVisible" :title="selectedTeacher?.fullName" :width="dialogWidth">
     <div v-if="selectedTeacher">
       <p>职称：{{ selectedTeacher?.teacherposition }}</p>
       <p>电子邮箱：{{ selectedTeacher?.email }}</p>
@@ -396,33 +394,35 @@ watch(filteredTeachers, (teachers) => {
       <el-button @click="dialogVisible = false">关闭</el-button>
     </template>
   </el-dialog>
-  <div style="height: 100px;"></div>
+  <div class="bottom_spacing"></div>
 </template>
 
 <style scoped lang="sass">
 .title
   width: 100%
-  height: 60px
-  background-color: #e2e2e2
-  line-height: 60px
-  padding-left: 20px
+  min-height: 60px
+  background-color: var(--app-surface-muted)
+  display: flex
+  align-items: center
+  padding: 0 20px
   font-size: 20px
-  position: fixed
-  top: 60px
-  left: 200px
-  z-index: 1000
+  color: var(--app-text-primary)
+  border-bottom: 1px solid var(--app-border)
+  box-shadow: 0 12px 24px var(--app-shadow)
 
 .main-content
-  margin-top: 80px // 确保主内容不被固定的标题遮挡
+  padding-top: 20px
 
 .top-controls
   display: flex
   justify-content: space-between
   align-items: center
-  margin: 20px
+  margin: 0 20px 20px
+  gap: 16px
   .filter-controls
     display: flex
     align-items: center
+    flex-wrap: wrap
     gap: 10px
     .el-select
       width: 200px
@@ -460,80 +460,94 @@ watch(filteredTeachers, (teachers) => {
   display: grid
   grid-template-columns: repeat(2, minmax(0, 1fr))
   gap: 36px 40px
-  padding-top: 20px
+  padding-top: 12px
   align-items: start
 
 .teacher_resume_item
-  width: 100%
-  min-height: 300px
-  position: relative
+  min-width: 0
   .item_box
     width: 100%
-    height: 250px
-    bottom: 0
-    position: absolute
-    box-shadow: #00582680 0 0 0px
-    border-radius: 10px
+    min-height: 100%
+    position: relative
+    overflow: hidden
+    display: flex
+    flex-direction: column
+    gap: 16px
+    padding: 24px
+    box-sizing: border-box
+    border-radius: 18px
+    border: 1px solid var(--app-border)
+    background: linear-gradient(180deg, var(--app-surface) 0%, var(--app-surface-elevated) 100%)
+    box-shadow: 0 18px 32px var(--app-shadow)
+    isolation: isolate
     .hea_con_hr
-      position: absolute
-      top: 25%
-      width: 90%
-      left: 50%
-      transform: translateX(-50%)
-      z-index: 2
-    .fullname
-      position: absolute
-      top: -13%
-      left: 22%
-      font-size: 18px
-      z-index: 2
-    .email
-      position: absolute
-      left: 22%
+      width: 100%
+      margin: 0
+      border: none
+      border-top: 1px solid var(--app-border)
+    .teacher_head
       display: flex
-      align-items: center
-      top: 2%
-      z-index: 2
+      align-items: flex-start
+      gap: 18px
+    .teacher_meta
+      display: flex
+      flex-direction: column
+      gap: 8px
+      min-width: 0
+      flex: 1 1 auto
+    .fullname
+      font-size: 24px
+      font-weight: 700
+      color: var(--app-text-primary)
+    .email,
     .professional
-      position: absolute
-      left: 22%
-      top: 12%
-      z-index: 2
+      color: var(--app-text-secondary)
+      word-break: break-word
     .detail_box
-      position: absolute
-      top: 30%
-      left: 5%
+      position: relative
       z-index: 2
+      display: flex
+      flex-direction: column
+      gap: 12px
+    .card_actions
+      position: relative
+      z-index: 2
+      display: flex
+      flex-wrap: wrap
+      gap: 10px
     .avatar
       z-index: 0
+      position: absolute
+      inset: 0
       width: 100%
       height: 100%
       overflow: hidden
-      position: absolute
-      inset: 0
-      border-radius: 10px
+      border-radius: 18px
       img
         width: 100%
         height: 100%
         object-fit: cover
         opacity: .26
   .photo
-    box-shadow: #00000030 0 0 5px
+    box-shadow: 0 10px 24px rgba(0, 0, 0, .12)
     background-color: white
-    border-radius: 10px
+    border-radius: 14px
     z-index: 3
-    left: 5%
     width: 75px
     height: 99px
     overflow: hidden
-    position: absolute
     display: flex
     align-items: center
     justify-content: center
+    flex: 0 0 auto
     img
       width: 100%
       height: 100%
       object-fit: cover
+  .resume
+    color: var(--app-text-primary)
+    line-height: 1.7
+    word-break: break-word
 
   .photo--placeholder
     background: linear-gradient(160deg, rgba(255, 255, 255, .92) 0%, rgba(230, 237, 244, .98) 100%)
@@ -545,13 +559,13 @@ watch(filteredTeachers, (teachers) => {
   .avatar--empty
     background: linear-gradient(135deg, rgba(228, 238, 246, .86) 0%, rgba(212, 225, 241, .78) 100%)
 
+.bottom_spacing
+  height: 56px
+
 @media (max-width: 1280px)
   .container
     width: min(980px, 100%)
     gap: 28px 24px
-
-  .teacher_resume_item
-    min-height: 290px
 
 @media (max-width: 1120px)
   .top-controls
@@ -573,41 +587,39 @@ watch(filteredTeachers, (teachers) => {
 
 @media (max-width: 768px)
   .title
-    left: 0
+    min-height: 56px
     width: 100%
-    padding-left: 16px
+    padding: 0 16px
+    font-size: 18px
 
   .main-content
-    margin-top: 76px
+    padding-top: 16px
 
   .content-wrapper
     padding: 0 12px
 
   .top-controls
-    margin: 16px 12px
+    margin: 0 12px 16px
 
   .top-controls .filter-controls
     width: 100%
     gap: 8px
 
-  .top-controls .filter-controls .el-select
+  .top-controls .filter-controls .el-select,
+  .top-controls .filter-controls :deep(.el-button)
     width: 100%
 
   .container
     width: 100%
 
-  .teacher_resume_item
-    min-height: 320px
+  .teacher_resume_item .item_box
+    padding: 18px
 
-    .item_box
-      height: 270px
+  .teacher_resume_item .item_box .teacher_head
+    flex-direction: column
+    align-items: center
+    text-align: center
 
-      .fullname,
-      .email,
-      .professional
-        left: 28%
-
-      .detail_box
-        top: 33%
-        left: 6%
+  .teacher_resume_item .item_box .teacher_meta
+    align-items: center
 </style>

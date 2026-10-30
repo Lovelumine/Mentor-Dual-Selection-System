@@ -58,18 +58,27 @@ watch(
 
 <template>
   <div class="search_box">
-    导师姓名模糊搜索：
-    <input type="text" placeholder="请输入" v-model="selectTeacherValue">
-    <button class="button" @click="selectTeacherClicked">查询</button>
-    <button class="button" @click="resettingClicked">重置</button>
+    <label class="search_label" for="teacher-search-input">导师姓名模糊搜索</label>
+    <input id="teacher-search-input" type="text" placeholder="请输入" v-model="selectTeacherValue">
+    <div class="search_actions">
+      <button class="button" @click="selectTeacherClicked">查询</button>
+      <button class="button" @click="resettingClicked">重置</button>
+    </div>
   </div>
 </template>
 
 <style scoped lang="sass">
 .search_box
+  display: flex
+  align-items: center
+  flex-wrap: wrap
+  gap: 10px
   font-size: 16px
   font-weight: bold
   margin: 0 auto 0 auto
+  min-width: 0
+  .search_label
+    white-space: nowrap
   input
     width: 220px
     height: 32px
@@ -100,4 +109,21 @@ watch(
   .button:last-child:hover
     background-color: #bd0000
     color: white
+  .search_actions
+    display: flex
+    flex-wrap: wrap
+    gap: 10px
+
+@media (max-width: 767px)
+  .search_box
+    width: 100%
+    .search_label
+      width: 100%
+    input
+      width: 100%
+    .search_actions
+      width: 100%
+    .button
+      width: calc(50% - 5px)
+      margin-left: 0
 </style>

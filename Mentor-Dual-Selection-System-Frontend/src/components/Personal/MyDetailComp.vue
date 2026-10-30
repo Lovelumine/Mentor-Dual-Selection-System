@@ -250,6 +250,7 @@ const getProfilePhotoUrl = (url?: string | null) => getPortraitImageUrl(url);
   text-align: center
   color: var(--app-text-primary)
   padding: 24px 0
+  box-sizing: border-box
   :deep(.el-form-item__label)
     color: var(--app-text-primary)
     font-weight: 600
@@ -300,4 +301,19 @@ const getProfilePhotoUrl = (url?: string | null) => getPortraitImageUrl(url);
     background-color: var(--app-brand-hover)
   .button:disabled
     background-color: color-mix(in srgb, var(--app-surface-muted) 78%, var(--app-border-strong) 22%)
+
+@media (max-width: 767px)
+  .my_detail_box
+    padding: 18px 12px
+    :deep(.el-form)
+      max-width: 100% !important
+    :deep(.el-form-item)
+      align-items: flex-start
+    :deep(.el-form-item__content)
+      flex-wrap: wrap
+      justify-content: flex-start
+      gap: 10px
+    .button
+      width: 100%
+      margin: 10px 0 0
 </style>

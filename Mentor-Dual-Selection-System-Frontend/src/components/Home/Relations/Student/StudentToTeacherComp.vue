@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useUserInfoStore } from "@/stores/user/UserBasicInformation";
 import { Right } from "@element-plus/icons-vue";
 import { ElDialog, ElButton, ElMessage } from "element-plus";
 import { http } from "@/utils/http";
+import { useResponsiveLayout } from "@/composables/useResponsiveLayout";
 
 import axios from "axios";
 
@@ -76,6 +77,8 @@ const dialogVisible = ref(false); // 控制对话框的显示
 const selectedPerson = ref<SelectedPerson>({} as SelectedPerson); // 存储选中的导师或学生信息
 const mentorHistory = ref<MentorHistoryItem[]>([]);
 const currentMentorStartDate = ref<string | null>(null);
+const { isMobile, isTablet } = useResponsiveLayout();
+const dialogWidth = computed(() => (isMobile.value ? "94vw" : isTablet.value ? "88vw" : "600px"));
 
 // 打开详细信息弹窗
 function viewDetail(person: any, role: string) {
@@ -277,32 +280,34 @@ onMounted(() => {
 
     <div class="history_box" v-if="mentorHistory.length > 0">
       <h3>历史导师</h3>
-      <el-table :data="mentorHistory" stripe class="history_table">
-        <el-table-column prop="mentorName" label="导师姓名" min-width="140" />
-        <el-table-column prop="teacherPosition" label="导师职称" min-width="120" />
-        <el-table-column label="绑定时间" min-width="168">
-          <template #default="scope">
-            {{ formatDateTime(scope.row.startDate) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="解除时间" min-width="168">
-          <template #default="scope">
-            {{ formatDateTime(scope.row.endDate) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="处理说明" min-width="280" show-overflow-tooltip>
-          <template #default="scope">
-            <div>{{ scope.row.endReason || "历史导师关系保留记录" }}</div>
-            <div v-if="scope.row.operatorName" class="history_operator">
-              操作人：{{ scope.row.operatorName }}
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
+      <div class="history_table_shell">
+        <el-table :data="mentorHistory" stripe class="history_table">
+          <el-table-column prop="mentorName" label="导师姓名" min-width="140" />
+          <el-table-column prop="teacherPosition" label="导师职称" min-width="120" />
+          <el-table-column label="绑定时间" min-width="168">
+            <template #default="scope">
+              {{ formatDateTime(scope.row.startDate) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="解除时间" min-width="168">
+            <template #default="scope">
+              {{ formatDateTime(scope.row.endDate) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="处理说明" min-width="280" show-overflow-tooltip>
+            <template #default="scope">
+              <div>{{ scope.row.endReason || "历史导师关系保留记录" }}</div>
+              <div v-if="scope.row.operatorName" class="history_operator">
+                操作人：{{ scope.row.operatorName }}
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
     </div>
 
     <!-- 详细信息对话框 -->
-    <el-dialog v-model="dialogVisible" title="详细信息" width="600px">
+    <el-dialog v-model="dialogVisible" title="详细信息" :width="dialogWidth">
       <div class="person-detail">
         <img
           class="avatar"
@@ -335,15 +340,15 @@ onMounted(() => {
 <style scoped lang="sass">
 /* 页面整体容器 */
 .container
-  margin-top: 60px
-  overflow-y: auto
+  margin-top: 24px
   color: var(--app-text-primary)
+  padding: 0 20px 24px
 
 .student_to_teacher_box
   display: flex
   justify-content: center
   margin: 50px auto 20px auto
-  width: 70%
+  width: min(980px, 100%)
   position: relative
   flex-direction: row
   h3
@@ -353,7 +358,7 @@ onMounted(() => {
     color: var(--app-text-primary)
   .item_box
     display: flex
-    align-items: stretch  // 确保左右两边的卡片高度相同
+    align-items: stretch
     justify-content: center
     margin: 20px
     .item
@@ -388,12 +393,14 @@ onMounted(() => {
     transform: rotate(90deg)
 
 .history_box
-  width: 70%
+  width: min(980px, 100%)
   margin: 20px auto 0 auto
   h3
     margin-bottom: 16px
     color: var(--app-text-primary)
   .history_table
+    width: 100%
+    min-width: 920px
     border: 1px solid var(--app-border)
     border-radius: 16px
     overflow: hidden
@@ -404,6 +411,55 @@ onMounted(() => {
 
 .person-detail
   color: var(--app-text-primary)
+  display: flex
+  gap: 20px
   .avatar
     border-radius: 12px
+
+.history_table_shell
+  width: 100%
+  overflow-x: auto
+
+@media (max-width: 980px)
+  .student_to_teacher_box
+    width: 100%
+    align-items: stretch
+
+  .history_box
+    width: 100%
+
+@media (max-width: 768px)
+  .container
+    margin-top: 16px
+    padding: 0 12px 20px
+
+  .student_to_teacher_box
+    flex-direction: column
+    align-items: stretch
+    gap: 12px
+    margin: 32px auto 20px auto
+
+  .student_to_teacher_box h3
+    position: static
+    margin: 0 0 8px 0
+    text-align: center
+
+  .student_to_teacher_box .item_box
+    margin: 0
+
+  .student_to_teacher_box .item_box .item
+    width: 100%
+
+  .el-icon
+    margin: 0 auto
+    transform: rotate(90deg)
+
+  .history_box .history_table
+    min-width: 860px
+
+  .person-detail
+    flex-direction: column
+
+  .person-detail .avatar
+    align-self: center
 </style>

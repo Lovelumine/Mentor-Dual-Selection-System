@@ -21,18 +21,25 @@ onMounted(() => {
 .footer_box
   width: 100%
   text-align: center
-  position: absolute
-  bottom: 10%
-  z-index: -10
+  display: flex
+  flex-direction: column
+  gap: 2px
   p
     font-size: 12px
     color: var(--app-menu-text)
     margin: 0
     padding: 0
+    line-height: 1.4
   a
     text-decoration: none
     color: var(--app-menu-text)
     font-size: 12px
     margin: 0
     padding: 0
+
+@media (max-width: 1023px)
+  .footer_box
+    p,
+    a
+      font-size: 11px
 </style>

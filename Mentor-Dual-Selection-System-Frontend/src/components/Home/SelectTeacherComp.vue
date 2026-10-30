@@ -16,6 +16,7 @@ import { http, httpStudent } from "@/utils/http";
 import { getCardBackgroundImageUrl, getPortraitImageUrl } from "@/utils/media";
 import { useRoute, useRouter } from "vue-router";
 import { getSingleQueryValue, parsePositiveIntQuery } from "@/utils/routeQuery";
+import { useResponsiveLayout } from "@/composables/useResponsiveLayout";
 
 interface TeacherInfo {
   uid: number;
@@ -42,6 +43,10 @@ const isGeneratingReason = ref(false);
 const router = useRouter();
 const route = useRoute();
 const hasLoadedTeachers = ref(false);
+const { isMobile, isTablet } = useResponsiveLayout();
+const dialogWidth = computed(() => (isMobile.value ? "94vw" : isTablet.value ? "86vw" : "640px"));
+const applicationDialogWidth = computed(() => (isMobile.value ? "94vw" : isTablet.value ? "88vw" : "720px"));
+const paginationLayout = computed(() => (isMobile.value ? "prev, next" : "prev, pager, next"));
 
 const consumeReasonStream = async (response: Response) => {
   if (!response.body) {
@@ -352,14 +357,11 @@ watch(filteredTeachers, (teachers) => {
 </script>
 
 <template>
-  <!-- 固定的标题 -->
   <div class="title">
     <span>选择导师</span>
   </div>
 
-  <!-- 主内容 -->
   <div class="main-content">
-    <!-- 筛选控件和分页控件 -->
     <div class="top-controls">
       <div class="filter-controls">
         <el-select
@@ -377,11 +379,10 @@ watch(filteredTeachers, (teachers) => {
         </el-select>
         <el-button @click="resetFilter" type="warning">重置</el-button>
       </div>
-      <!-- 分页控件 -->
       <div class="pagination-controls">
         <el-pagination
             background
-            layout="prev, pager, next"
+            :layout="paginationLayout"
             :current-page="currentPage"
             :page-size="pageSize"
             :total="filteredTeachers.length"
@@ -391,7 +392,6 @@ watch(filteredTeachers, (teachers) => {
       </div>
     </div>
 
-    <!-- 内容的容器 -->
     <div class="content-wrapper">
       <div class="container">
         <div
@@ -399,28 +399,31 @@ watch(filteredTeachers, (teachers) => {
             v-for="(item, index) in paginatedTeachers"
             :key="index"
         >
-          <div class="photo" :class="{ 'photo--placeholder': !getPhotoImageUrl(item.photourl) }">
-            <img v-if="getPhotoImageUrl(item.photourl)" :src="getPhotoImageUrl(item.photourl)" alt="photo" />
-            <span v-else>{{ getTeacherInitial(item.fullName) }}</span>
-          </div>
           <div class="item_box">
-            <span class="fullname">{{ item.fullName }}</span>
-            <span class="professional">职位：{{ item.teacherposition }}</span>
-            <span class="email">电子邮箱：{{ item.email }}</span>
-
+            <div class="avatar" :class="{ 'avatar--empty': !getCardImageUrl(item.avatarUrl) }">
+              <img v-if="getCardImageUrl(item.avatarUrl)" :src="getCardImageUrl(item.avatarUrl)" alt="avatar" />
+            </div>
+            <div class="teacher_head">
+              <div class="photo" :class="{ 'photo--placeholder': !getPhotoImageUrl(item.photourl) }">
+                <img v-if="getPhotoImageUrl(item.photourl)" :src="getPhotoImageUrl(item.photourl)" alt="photo" />
+                <span v-else>{{ getTeacherInitial(item.fullName) }}</span>
+              </div>
+              <div class="teacher_meta">
+                <span class="fullname">{{ item.fullName }}</span>
+                <span class="professional">职位：{{ item.teacherposition }}</span>
+                <span class="email">电子邮箱：{{ item.email }}</span>
+              </div>
+            </div>
             <hr class="hea_con_hr" />
             <div class="detail_box">
               <div class="resume">研究方向：{{ item.research_direction }}</div>
               <div class="resume">
-                简历：{{ item.resume.length > 50 ? item.resume.slice(0, 50) + '...' : item.resume }}
+                简历：{{ item.resume.length > 80 ? item.resume.slice(0, 80) + '...' : item.resume }}
               </div>
-
-              <!-- 显示详情按钮 -->
+            </div>
+            <div class="card_actions">
               <el-button type="primary" size="small" @click="showDetails(item)">了解更多</el-button>
               <el-button type="primary" size="small" @click="showApplicationDialog(item)">选择导师</el-button>
-            </div>
-            <div class="avatar" :class="{ 'avatar--empty': !getCardImageUrl(item.avatarUrl) }">
-              <img v-if="getCardImageUrl(item.avatarUrl)" :src="getCardImageUrl(item.avatarUrl)" alt="avatar" />
             </div>
           </div>
         </div>
@@ -428,8 +431,7 @@ watch(filteredTeachers, (teachers) => {
     </div>
   </div>
 
-  <!-- 详情对话框 -->
-  <el-dialog v-model="dialogVisible" :title="selectedTeacher?.fullName">
+  <el-dialog v-model="dialogVisible" :title="selectedTeacher?.fullName" :width="dialogWidth">
     <div v-if="selectedTeacher">
       <p>职称：{{ selectedTeacher.teacherposition }}</p>
       <p>电子邮箱：{{ selectedTeacher.email }}</p>
@@ -441,8 +443,7 @@ watch(filteredTeachers, (teachers) => {
     </template>
   </el-dialog>
 
-  <!-- 申请导师对话框 -->
-  <el-dialog v-model="applicationDialogVisible" :title="`选择导师：${selectedTeacher?.fullName}`">
+  <el-dialog v-model="applicationDialogVisible" :title="`选择导师：${selectedTeacher?.fullName}`" :width="applicationDialogWidth">
     <el-form @submit.prevent="checkApplication">
       <el-form-item label="申请理由（必填）：">
         <el-input
@@ -459,7 +460,7 @@ watch(filteredTeachers, (teachers) => {
     </el-form>
   </el-dialog>
 
-  <div style="height: 100px;"></div>
+  <div class="bottom_spacing"></div>
 </template>
 
 
@@ -467,27 +468,29 @@ watch(filteredTeachers, (teachers) => {
 <style scoped lang="sass">
 .title
   width: 100%
-  height: 60px
-  background-color: #e2e2e2
-  line-height: 60px
-  padding-left: 20px
+  min-height: 60px
+  background-color: var(--app-surface-muted)
+  display: flex
+  align-items: center
+  padding: 0 20px
   font-size: 20px
-  position: fixed
-  top: 60px
-  left: 200px
-  z-index: 1000
+  color: var(--app-text-primary)
+  border-bottom: 1px solid var(--app-border)
+  box-shadow: 0 12px 24px var(--app-shadow)
 
 .main-content
-  margin-top: 80px // 确保主内容不被固定的标题遮挡
+  padding-top: 20px
 
 .top-controls
   display: flex
   justify-content: space-between
   align-items: center
-  margin: 20px
+  margin: 0 20px 20px
+  gap: 16px
   .filter-controls
     display: flex
     align-items: center
+    flex-wrap: wrap
     gap: 10px
     .el-select
       width: 200px
@@ -500,84 +503,98 @@ watch(filteredTeachers, (teachers) => {
   padding: 0 20px
 
 .container
-  display: flex
-  flex-wrap: wrap
-  padding-left: 0vw
-  gap: 100px
-  row-gap: 50px
-  padding-top: 20px
+  width: min(1120px, 100%)
+  margin: 0 auto
+  display: grid
+  grid-template-columns: repeat(2, minmax(0, 1fr))
+  gap: 28px
+  padding-top: 12px
 
 .teacher_resume_item
-  width: 500px
-  height: 300px
-  position: relative
+  min-width: 0
   .item_box
     width: 100%
-    height: 250px
-    bottom: 0
-    position: absolute
-    box-shadow: #00582680 0 0 0px
-    border-radius: 10px
+    min-height: 100%
+    position: relative
+    overflow: hidden
+    display: flex
+    flex-direction: column
+    gap: 16px
+    border-radius: 18px
+    border: 1px solid var(--app-border)
+    padding: 24px
+    box-sizing: border-box
+    background: linear-gradient(180deg, var(--app-surface) 0%, var(--app-surface-elevated) 100%)
+    box-shadow: 0 18px 32px var(--app-shadow)
+    isolation: isolate
     .hea_con_hr
-      position: absolute
-      top: 25%
-      width: 90%
-      left: 50%
-      transform: translateX(-50%)
-      z-index: 2
-    .fullname
-      position: absolute
-      top: -13%
-      left: 22%
-      font-size: 18px
-      z-index: 2
-    .email
-      position: absolute
-      left: 22%
+      width: 100%
+      margin: 0
+      border: none
+      border-top: 1px solid var(--app-border)
+    .teacher_head
       display: flex
-      align-items: center
-      top: 2%
-      z-index: 2
+      align-items: flex-start
+      gap: 18px
+    .teacher_meta
+      display: flex
+      flex-direction: column
+      gap: 8px
+      min-width: 0
+      flex: 1 1 auto
+    .fullname
+      font-size: 24px
+      font-weight: 700
+      color: var(--app-text-primary)
+    .email,
     .professional
-      position: absolute
-      left: 22%
-      top: 12%
-      z-index: 2
+      color: var(--app-text-secondary)
+      word-break: break-word
     .detail_box
-      position: absolute
-      top: 30%
-      left: 5%
+      position: relative
       z-index: 2
+      display: flex
+      flex-direction: column
+      gap: 12px
+    .card_actions
+      position: relative
+      z-index: 2
+      display: flex
+      flex-wrap: wrap
+      gap: 10px
     .avatar
       z-index: 0
+      position: absolute
+      inset: 0
       width: 100%
       height: 100%
       overflow: hidden
-      position: absolute
-      inset: 0
-      border-radius: 10px
+      border-radius: 18px
       img
         width: 100%
         height: 100%
         object-fit: cover
         opacity: .26
   .photo
-    box-shadow: #00000030 0 0 5px
+    box-shadow: 0 10px 24px rgba(0, 0, 0, .12)
     background-color: white
-    border-radius: 10px
+    border-radius: 14px
     z-index: 3
-    left: 5%
     width: 75px
     height: 99px
     overflow: hidden
-    position: absolute
     display: flex
     align-items: center
     justify-content: center
+    flex: 0 0 auto
     img
       width: 100%
       height: 100%
       object-fit: cover
+  .resume
+    color: var(--app-text-primary)
+    line-height: 1.7
+    word-break: break-word
 
   .photo--placeholder
     background: linear-gradient(160deg, rgba(255, 255, 255, .92) 0%, rgba(230, 237, 244, .98) 100%)
@@ -588,4 +605,62 @@ watch(filteredTeachers, (teachers) => {
 
   .avatar--empty
     background: linear-gradient(135deg, rgba(228, 238, 246, .86) 0%, rgba(212, 225, 241, .78) 100%)
+
+.bottom_spacing
+  height: 56px
+
+@media (max-width: 1120px)
+  .top-controls
+    flex-direction: column
+    align-items: stretch
+
+  .top-controls .pagination-controls
+    display: flex
+    justify-content: flex-end
+
+  .container
+    grid-template-columns: 1fr
+    width: min(720px, 100%)
+
+@media (max-width: 767px)
+  .title
+    min-height: 56px
+    padding: 0 16px
+    font-size: 18px
+
+  .main-content
+    padding-top: 16px
+
+  .top-controls
+    margin: 0 12px 16px
+
+  .top-controls .filter-controls,
+  .top-controls .pagination-controls
+    width: 100%
+
+  .top-controls .filter-controls .el-select,
+  .top-controls .filter-controls :deep(.el-button)
+    width: 100%
+
+  .top-controls .pagination-controls
+    justify-content: flex-start
+
+  .content-wrapper
+    padding: 0 12px
+
+  .teacher_resume_item .item_box
+    padding: 18px
+
+  .teacher_resume_item .item_box .teacher_head
+    flex-direction: column
+    align-items: center
+    text-align: center
+
+  .teacher_resume_item .item_box .teacher_meta
+    align-items: center
+
+  .teacher_resume_item .item_box .card_actions
+    flex-direction: column
+    :deep(.el-button)
+      margin-left: 0
 </style>

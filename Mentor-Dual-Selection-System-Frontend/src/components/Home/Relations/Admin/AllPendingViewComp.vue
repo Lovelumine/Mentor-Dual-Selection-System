@@ -5,6 +5,7 @@ import { useRoute, useRouter } from "vue-router";
 import { http } from "@/utils/http";
 import { getPortraitImageCandidates } from "@/utils/media";
 import { getSingleQueryValue, parseEnumQuery } from "@/utils/routeQuery";
+import { useResponsiveLayout } from "@/composables/useResponsiveLayout";
 
 interface MentorSummary {
   uid: number;
@@ -110,6 +111,9 @@ const resetAllDialogVisible = ref(false);
 const resetAllReason = ref("");
 const resettingAll = ref(false);
 const restoringBatchId = ref<number | null>(null);
+const { isMobile, isTablet } = useResponsiveLayout();
+const unbindDialogWidth = computed(() => (isMobile.value ? "94vw" : isTablet.value ? "86vw" : "520px"));
+const resetAllDialogWidth = computed(() => (isMobile.value ? "94vw" : isTablet.value ? "88vw" : "560px"));
 
 const keyword = computed(() => searchKeyword.value.trim().toLowerCase());
 
@@ -790,34 +794,36 @@ onMounted(() => {
               </div>
             </div>
 
-            <el-table
-              :data="group.students"
-              row-key="uid"
-              class="students-table"
-              empty-text="该导师当前没有学生"
-              @selection-change="handleSelectionChange(group.mentor.uid, $event)"
-            >
-              <el-table-column type="selection" width="48" />
-              <el-table-column prop="fullName" label="学生姓名" min-width="140" />
-              <el-table-column prop="username" label="学号" min-width="140" />
-              <el-table-column prop="grade" label="年级" min-width="100">
-                <template #default="{ row }">
-                  {{ row.grade || "未填写" }}
-                </template>
-              </el-table-column>
-              <el-table-column prop="email" label="邮箱" min-width="220" show-overflow-tooltip />
-              <el-table-column label="操作" width="120" align="right">
-                <template #default="{ row }">
-                  <el-button
-                    link
-                    type="danger"
-                    @click.stop="handleSingleUnbind(row, group.mentor)"
-                  >
-                    解除关系
-                  </el-button>
-                </template>
-              </el-table-column>
-            </el-table>
+            <div class="students-table-shell">
+              <el-table
+                :data="group.students"
+                row-key="uid"
+                class="students-table"
+                empty-text="该导师当前没有学生"
+                @selection-change="handleSelectionChange(group.mentor.uid, $event)"
+              >
+                <el-table-column type="selection" width="48" />
+                <el-table-column prop="fullName" label="学生姓名" min-width="140" />
+                <el-table-column prop="username" label="学号" min-width="140" />
+                <el-table-column prop="grade" label="年级" min-width="100">
+                  <template #default="{ row }">
+                    {{ row.grade || "未填写" }}
+                  </template>
+                </el-table-column>
+                <el-table-column prop="email" label="邮箱" min-width="220" show-overflow-tooltip />
+                <el-table-column label="操作" width="120" align="right">
+                  <template #default="{ row }">
+                    <el-button
+                      link
+                      type="danger"
+                      @click.stop="handleSingleUnbind(row, group.mentor)"
+                    >
+                      解除关系
+                    </el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
           </div>
         </el-collapse-item>
       </el-collapse>
@@ -835,16 +841,18 @@ onMounted(() => {
         </el-tag>
       </div>
 
-      <el-table :data="filteredUnassignedStudents" row-key="uid" class="students-table">
-        <el-table-column prop="fullName" label="学生姓名" min-width="140" />
-        <el-table-column prop="username" label="学号" min-width="140" />
-        <el-table-column prop="grade" label="年级" min-width="100">
-          <template #default="{ row }">
-            {{ row.grade || "未填写" }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="email" label="邮箱" min-width="220" show-overflow-tooltip />
-      </el-table>
+      <div class="students-table-shell">
+        <el-table :data="filteredUnassignedStudents" row-key="uid" class="students-table">
+          <el-table-column prop="fullName" label="学生姓名" min-width="140" />
+          <el-table-column prop="username" label="学号" min-width="140" />
+          <el-table-column prop="grade" label="年级" min-width="100">
+            <template #default="{ row }">
+              {{ row.grade || "未填写" }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="email" label="邮箱" min-width="220" show-overflow-tooltip />
+        </el-table>
+      </div>
     </section>
 
     <section
@@ -858,7 +866,7 @@ onMounted(() => {
 
   <el-dialog
     v-model="unbindDialogVisible"
-    width="520px"
+    :width="unbindDialogWidth"
     :title="`确认解除关系${targetMentor ? ` · ${targetMentor.fullName}` : ''}`"
   >
     <div class="unbind-dialog">
@@ -890,7 +898,7 @@ onMounted(() => {
 
   <el-dialog
     v-model="resetAllDialogVisible"
-    width="560px"
+    :width="resetAllDialogWidth"
     title="统一解除全部导师关系"
   >
     <div class="unbind-dialog">
@@ -1298,9 +1306,14 @@ onMounted(() => {
 
 .students-table
   width: 100%
+  min-width: 760px
   border: 1px solid color-mix(in srgb, var(--app-brand) 10%, var(--app-border) 90%)
   border-radius: 16px
   overflow: hidden
+
+.students-table-shell
+  width: 100%
+  overflow-x: auto
 
 .students-table :deep(.el-table__inner-wrapper::before)
   display: none
@@ -1394,7 +1407,17 @@ onMounted(() => {
     width: calc(100% - 20px)
 
   .stats-grid
-    grid-template-columns: 1fr
+    grid-template-columns: repeat(2, minmax(0, 1fr))
+
+  .stat-card
+    min-height: 88px
+    padding: 14px 16px
+
+  .stat-card:nth-child(2n)
+    border-right: none
+
+  .stat-card:nth-child(-n+2)
+    border-bottom: 1px solid var(--app-border)
 
   .overview
     padding: 0 0 14px 0
@@ -1450,4 +1473,11 @@ onMounted(() => {
   .group-body__actions
     width: 100%
     justify-content: space-between
+
+  .students-table
+    min-width: 700px
+
+  .dialog-footer
+    width: 100%
+    flex-direction: column-reverse
 </style>

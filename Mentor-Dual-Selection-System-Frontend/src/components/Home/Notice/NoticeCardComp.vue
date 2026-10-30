@@ -7,10 +7,12 @@ import { useUserInfoStore } from "@/stores/user/UserBasicInformation";
 import { http, httpAdmin } from "@/utils/http";
 import axios from "axios";
 import { useUploadFileStore } from "@/stores/UploadFileStore";
+import { useResponsiveLayout } from "@/composables/useResponsiveLayout";
 
 const router = useRouter();
 const userStore = useUserInfoStore();
 const uploadFileStore = useUploadFileStore();
+const { isMobile, isTablet } = useResponsiveLayout();
 
 interface Notice {
   id: number;
@@ -48,6 +50,7 @@ const fileName = ref(defaultFileName);
 
 const userPermi = computed(() => userStore.userInfo.role ?? "");
 const isAdmin = computed(() => userPermi.value === "ADMIN");
+const noticeDialogWidth = computed(() => (isMobile.value ? "94vw" : isTablet.value ? "86vw" : "560px"));
 
 function formatNoticeDate(lastModified: string) {
   const date = new Date(lastModified);
@@ -296,8 +299,13 @@ onMounted(() => {
 
 <template>
   <div class="card_container">
-    <el-dialog v-model="dialogVisible" :title="`修改公告：${noticeDetails.title}`">
-      <el-form label-width="auto" :model="noticeDetails" @submit.prevent="changeNoticeCheck">
+    <el-dialog v-model="dialogVisible" :title="`修改公告：${noticeDetails.title}`" :width="noticeDialogWidth">
+      <el-form
+        label-width="auto"
+        :label-position="isMobile ? 'top' : 'right'"
+        :model="noticeDetails"
+        @submit.prevent="changeNoticeCheck"
+      >
         <el-form-item label="公告标题：">
           <el-input v-model="noticeDetails.title" type="text" />
         </el-form-item>
@@ -312,8 +320,10 @@ onMounted(() => {
             移除原有附件
           </el-button>
         </el-form-item>
-        <el-button native-type="submit" type="primary">确认修改</el-button>
-        <el-button native-type="button" @click="dialogVisible = false; resetDialogFileState()">取消修改</el-button>
+        <div class="notice_dialog_actions">
+          <el-button native-type="submit" type="primary">确认修改</el-button>
+          <el-button native-type="button" @click="dialogVisible = false; resetDialogFileState()">取消修改</el-button>
+        </div>
       </el-form>
     </el-dialog>
 
@@ -381,6 +391,11 @@ onMounted(() => {
   margin: 0
   padding: 0 12px
   color: var(--app-text-secondary)
+  overflow-wrap: anywhere
+
+.notice_dialog_actions
+  display: flex
+  gap: 10px
 
 .card_box
   margin: 0 auto 30px auto
@@ -461,4 +476,77 @@ onMounted(() => {
 .card_box:hover
   box-shadow: 0 24px 44px var(--app-shadow-strong)
   transform: translateY(-1%)
+
+@media (max-width: 767px)
+  .card_container
+    min-height: calc(100vh - 96px)
+    max-height: none
+    overflow: visible
+    padding: 12px 0 24px
+
+  .card_box
+    width: calc(100% - 24px)
+    height: auto
+    min-height: 220px
+    margin: 0 auto 16px
+    padding: 18px
+    box-sizing: border-box
+    border-radius: 14px
+
+    .notice_title_box
+      flex-direction: column
+      gap: 6px
+      min-width: 0
+
+      h3
+        width: 100%
+        font-size: 18px
+        line-height: 1.5
+        overflow-wrap: anywhere
+
+      .release_date
+        margin: 0
+        font-size: 12px
+        line-height: 1.4
+        white-space: normal
+
+    hr
+      margin: 12px 0
+
+    .notice_content
+      height: auto
+      max-height: 7em
+      margin-bottom: 16px
+      line-height: 1.65
+
+    .annex
+      align-items: flex-start
+      flex-wrap: wrap
+      min-width: 0
+
+      a
+        max-width: 100%
+        word-break: break-all
+
+      .button_box
+        width: 100%
+        margin: 4px 0 0
+        display: flex
+        gap: 10px
+
+        .button,
+        .button:last-child
+          flex: 1 1 0
+          width: auto
+          min-height: 40px
+          margin-left: 0
+
+  .notice_dialog_actions
+    width: 100%
+    flex-direction: column-reverse
+
+    :deep(.el-button)
+      width: 100%
+      min-height: 40px
+      margin-left: 0
 </style>

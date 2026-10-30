@@ -37,10 +37,26 @@ watch(() => userInfoStore.userInfo, (newValue) => {
 <style scoped lang="sass">
 .title
   width: 100%
-  height: 60px
-  background-color: #e2e2e2
-  line-height: 60px
-  padding-left: 20px
+  min-height: 60px
+  background-color: var(--app-surface-muted)
+  padding: 10px 20px
   font-size: 20px
   display: flex
+  align-items: center
+  justify-content: space-between
+  gap: 16px
+  color: var(--app-text-primary)
+  border-bottom: 1px solid var(--app-border)
+  box-sizing: border-box
+
+@media (max-width: 1023px)
+  .title
+    flex-direction: column
+    align-items: flex-start
+
+@media (max-width: 767px)
+  .title
+    min-height: 56px
+    padding: 12px 16px
+    font-size: 18px
 </style>

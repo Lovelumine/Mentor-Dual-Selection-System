@@ -23,15 +23,18 @@ function backClicked(){
 <style scoped lang="sass">
 .title
   width: 100%
-  height: 60px
+  min-height: 60px
   background-color: var(--app-surface-muted)
-  line-height: 60px
   font-size: 20px
   margin-bottom: 20px
-  position: fixed
+  padding: 8px 16px
+  box-sizing: border-box
+  display: flex
+  align-items: center
+  justify-content: center
+  position: sticky
   top: 60px
-  left: 0
-  z-index: 1000
+  z-index: 100
   color: var(--app-text-primary)
   border-bottom: 1px solid var(--app-border)
   box-shadow: 0 12px 24px var(--app-shadow)
@@ -46,9 +49,9 @@ function backClicked(){
     height: 48px
     background-color: color-mix(in srgb, var(--app-brand-soft) 72%, transparent)
     position: absolute
+    left: 16px
     top: 50%
-    left: 1%
-    transform: translate(0, -50%)
+    transform: translateY(-50%)
     transition: .5s ease background-color
     .user_icon
       position: absolute
@@ -57,9 +60,17 @@ function backClicked(){
       transform: translate(-50%, -50%)
       color: var(--app-brand)
   h3
-    position: absolute
-    left: 50%
-    transform: translateX(-50%)
     font-weight: bold
     color: var(--app-text-primary)
+    margin: 0
+
+@media (max-width: 767px)
+  .title
+    min-height: 56px
+    padding: 6px 12px
+    font-size: 18px
+    .user_icon_box
+      width: 42px
+      height: 42px
+      left: 12px
 </style>

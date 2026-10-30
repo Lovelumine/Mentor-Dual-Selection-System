@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import SigninComp from "@/components/SigninComp.vue";
-import { onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import SideMenuComp from "@/components/HeaderFooterMenu/SideMenuComp.vue";
 import { useUserInfoStore } from "@/stores/user/UserBasicInformation";
 const userStore = useUserInfoStore();
 import { useRouter } from "vue-router";
 import FooterComp from "@/components/HeaderFooterMenu/FooterComp.vue";
+import { useResponsiveLayout } from "@/composables/useResponsiveLayout";
 const router = useRouter();
+const { contentOffset, device } = useResponsiveLayout();
 
 const isCheckingAuth = ref(true);
 const isSignin = ref(false);
+const routerContainerStyle = computed(() => ({
+  paddingLeft: `${contentOffset.value}px`,
+}));
 
 async function routeByAuthState(isAuthenticated: boolean) {
   isSignin.value = isAuthenticated;
@@ -65,16 +70,16 @@ watch(() => userStore.isAuthenticated, (newValue) => {
     <el-skeleton :rows="6" animated />
   </div>
   <div class="container_login" v-else-if="isSignin">
-    <SideMenuComp/>
-    <div class="router_container">
-      <router-view/>
+    <SideMenuComp />
+    <div :class="['router_container', `router_container--${device}`]" :style="routerContainerStyle">
+      <router-view />
     </div>
   </div>
   <div class="container" v-else>
     <h1>您好！请先登录</h1>
     <h2>农业与生物技术学院</h2>
-    <SigninComp/>
-    <FooterComp/>
+    <SigninComp />
+    <FooterComp />
   </div>
 </template>
 
@@ -95,21 +100,43 @@ watch(() => userStore.isAuthenticated, (newValue) => {
     color: var(--app-text-primary)
   h1
     margin-top: 30px
+    font-size: clamp(40px, 5vw, 58px)
   h2
     letter-spacing: 2px
+    margin-top: 18px
+    font-size: clamp(26px, 4vw, 44px)
 
 .container_login
-  display: flex
   min-height: calc(100vh - 60px)
   background: transparent
 
 .router_container
-  flex: 1
-  margin-left: 200px  // 确保右侧内容不被左侧菜单栏遮挡
-  overflow-y: auto
-  height: calc(100vh - 60px)
+  width: 100%
+  min-height: calc(100vh - 60px)
+  padding-right: 24px
   padding-bottom: 24px
   box-sizing: border-box
   background: transparent
   color: var(--app-text-primary)
+  transition: padding-left .24s ease, padding-right .24s ease
+
+.router_container--tablet
+  padding-right: 18px
+
+.router_container--mobile
+  padding-right: 0
+  padding-bottom: 16px
+
+@media (max-width: 1023px)
+  .container
+    padding-top: 28px
+
+@media (max-width: 767px)
+  .container
+    padding: 24px 12px 32px
+    h2
+      letter-spacing: 1px
+
+  .router_container
+    padding-left: 0 !important
 </style>

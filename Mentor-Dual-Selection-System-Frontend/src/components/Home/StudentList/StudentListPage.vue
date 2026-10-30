@@ -24,6 +24,7 @@ import {
   inferImportColumnMapping,
   type ImportColumnRule,
 } from "@/utils/importColumnMapping";
+import { useResponsiveLayout } from "@/composables/useResponsiveLayout";
 
 type StudentUploadField = "role" | "fullName" | "email" | "username" | "grade";
 
@@ -98,6 +99,7 @@ const route = useRoute();
 const uploadCoverStore = useUploadCoverStore();
 const userInfoStore = useUserInfoStore();
 const mentorStatusQueryOptions = ["", "no", "accepted"] as const;
+const { isMobile, isTablet } = useResponsiveLayout();
 
 const students = ref<StudentRecord[]>([]);
 const teachers = ref<TeacherRecord[]>([]);
@@ -121,6 +123,9 @@ const isSubmittingSingleStudent = ref(false);
 const editingUid = ref<number | null>(null);
 const editingDraft = ref<StudentEditDraft | null>(null);
 const isSaving = ref(false);
+const studentTableRef = ref<{ clearSelection: () => void } | null>(null);
+const selectedStudents = ref<StudentTableRow[]>([]);
+const isBatchArchiving = ref(false);
 
 const draftStudentName = ref("");
 const draftMentorStatus = ref("");
@@ -137,7 +142,9 @@ const singleStudentForm = ref<SingleStudentForm>({
 
 const isAdmin = computed(() => userInfoStore.userInfo.role === "ADMIN");
 const isEditing = computed(() => editingUid.value !== null);
+const selectedStudentCount = computed(() => selectedStudents.value.length);
 const pageTitle = computed(() => getStudentListPageTitle(props.listKey));
+const addStudentDialogWidth = computed(() => (isMobile.value ? "94vw" : isTablet.value ? "86vw" : "560px"));
 const columnOptions = computed(() => createImportColumnOptions(headerRow.value));
 const missingRequiredLabels = computed(() =>
   studentImportRules
@@ -523,6 +530,8 @@ const fetchBaseData = async () => {
 
   students.value = studentsResponse.data.data;
   teachers.value = teachersResponse.data.data;
+  studentTableRef.value?.clearSelection();
+  selectedStudents.value = [];
 
   if (editingUid.value !== null && !students.value.some((student) => student.uid === editingUid.value)) {
     cancelEditing();
@@ -925,6 +934,7 @@ const archiveStudent = async (student: StudentRecord) => {
     }
 
     students.value = students.value.filter((item) => item.uid !== student.uid);
+    selectedStudents.value = selectedStudents.value.filter((item) => item.uid !== student.uid);
     if (editingUid.value === student.uid) {
       cancelEditing();
     }
@@ -934,12 +944,93 @@ const archiveStudent = async (student: StudentRecord) => {
   }
 };
 
+function handleStudentSelectionChange(rows: StudentTableRow[]) {
+  selectedStudents.value = rows;
+}
+
+async function archiveSelectedStudents() {
+  if (isEditing.value) {
+    ElMessage.warning("请先保存或取消当前正在编辑的学生信息");
+    return;
+  }
+
+  if (selectedStudents.value.length === 0) {
+    ElMessage.warning("请先勾选需要转出的学生");
+    return;
+  }
+
+  const studentsToArchive = [...selectedStudents.value];
+  const previewNames = studentsToArchive
+    .slice(0, 5)
+    .map((student) => `${student.fullName}（${student.username}）`)
+    .join("、");
+  const remainingCount = studentsToArchive.length - 5;
+  const remainingText = remainingCount > 0 ? `等共 ${studentsToArchive.length} 名学生` : "";
+
+  let reason = "";
+  try {
+    const result = await ElMessageBox.prompt(
+      `即将批量转出 ${studentsToArchive.length} 名学生：${previewNames}${remainingText}。\n\n转出后账号会被停用，当前师生关系会解除，但申请记录和历史关系会保留。可选填写转出原因。`,
+      "确认批量转出",
+      {
+        confirmButtonText: "确认批量转出",
+        cancelButtonText: "取消",
+        type: "warning",
+        closeOnClickModal: false,
+        inputPlaceholder: "选填，例如：转专业转出 / 已毕业离开培养体系",
+        inputValue: "",
+        inputValidator: () => true,
+      },
+    );
+    reason = result.value?.trim?.() || "";
+  } catch {
+    return;
+  }
+
+  isBatchArchiving.value = true;
+  try {
+    const response = await http({
+      url: "/user/students/archive",
+      method: "POST",
+      headers: {
+        ...authHeaders(),
+        "Content-Type": "application/json",
+      },
+      data: {
+        studentIds: studentsToArchive.map((student) => student.uid),
+        reason,
+      },
+    });
+
+    if (response.data.code !== 200) {
+      throw new Error(response.data?.data?.error || response.data?.message || "批量转出学生失败");
+    }
+
+    await fetchBaseData();
+    const archivedCount = Number(response.data?.data?.archivedStudentCount) || studentsToArchive.length;
+    ElMessage.success(`已转出 ${archivedCount} 名学生，历史记录已保留`);
+  } catch (error: any) {
+    ElMessage.error(getErrorMessage(error, "批量转出学生失败"));
+  } finally {
+    isBatchArchiving.value = false;
+  }
+}
+
 watch(
   () => route.query,
   () => {
     syncFiltersFromRouteQuery();
   },
   { immediate: true },
+);
+
+watch(
+  tableData,
+  (rows) => {
+    const visibleStudentIds = new Set(rows.map((student) => student.uid));
+    selectedStudents.value = selectedStudents.value.filter((student) => visibleStudentIds.has(student.uid));
+  },
+  { flush: "post" },
 );
 
 watch(
@@ -994,7 +1085,7 @@ onMounted(async () => {
   <el-dialog
     v-model="isAddStudentDialogVisible"
     title="添加单条学生信息"
-    width="560px"
+    :width="addStudentDialogWidth"
     destroy-on-close
     :close-on-click-modal="!isSubmittingSingleStudent"
   >
@@ -1092,11 +1183,21 @@ onMounted(async () => {
   </div>
 
   <div v-if="isAdmin" class="section_title">
+    <span class="section_title__hint">
+      <template v-if="isEditing">正在编辑当前学生。学号、导师状态和导师姓名保持只读，年级支持 2025、2025级、25 或 25级</template>
+      <template v-else>管理员双击学生行可编辑；学号和导师信息不可修改</template>
+    </span>
     <div class="section_title__actions">
-      <span class="section_title__hint">
-        <template v-if="isEditing">正在编辑当前学生。学号、导师状态和导师姓名保持只读，年级支持 2025、2025级、25 或 25级</template>
-        <template v-else>管理员双击学生行可编辑；学号和导师信息不可修改</template>
+      <span v-if="selectedStudentCount > 0" class="section_title__selection">
+        已选择 {{ selectedStudentCount }} 名
       </span>
+      <button
+        class="header_button header_button--danger"
+        :disabled="selectedStudentCount === 0 || isEditing || isBatchArchiving"
+        @click="archiveSelectedStudents"
+      >
+        {{ isBatchArchiving ? "转出中..." : `批量转出（${selectedStudentCount}）` }}
+      </button>
       <template v-if="isEditing">
         <button class="header_button" :disabled="isSaving" @click="saveEditingRow()">
           {{ isSaving ? "保存中..." : "保存" }}
@@ -1106,68 +1207,75 @@ onMounted(async () => {
     </div>
   </div>
 
-  <el-table
-    :data="tableData"
-    :row-class-name="getRowClassName"
-    stripe
-    class="table"
-    empty-text="暂时没有学生数据"
-    @row-dblclick="handleRowDoubleClick"
-  >
-    <el-table-column label="姓名" min-width="130">
-      <template #default="{ row }">
-        <el-input v-if="isRowEditing(row) && editingDraft" v-model="editingDraft.fullName" size="small" />
-        <span v-else>{{ row.fullName }}</span>
-      </template>
-    </el-table-column>
+  <div class="table_shell">
+    <p class="table_scroll_hint">左右滑动表格可查看完整学生信息</p>
+    <el-table
+      ref="studentTableRef"
+      :data="tableData"
+      :row-class-name="getRowClassName"
+      row-key="uid"
+      stripe
+      class="table"
+      empty-text="暂时没有学生数据"
+      @row-dblclick="handleRowDoubleClick"
+      @selection-change="handleStudentSelectionChange"
+    >
+      <el-table-column v-if="isAdmin" type="selection" width="48" fixed="left" />
+      <el-table-column label="姓名" min-width="130">
+        <template #default="{ row }">
+          <el-input v-if="isRowEditing(row) && editingDraft" v-model="editingDraft.fullName" size="small" />
+          <span v-else>{{ row.fullName }}</span>
+        </template>
+      </el-table-column>
 
-    <el-table-column label="学号" min-width="120">
-      <template #default="{ row }">
-        <span>{{ row.username }}</span>
-      </template>
-    </el-table-column>
+      <el-table-column label="学号" min-width="120">
+        <template #default="{ row }">
+          <span>{{ row.username }}</span>
+        </template>
+      </el-table-column>
 
-    <el-table-column label="年级" min-width="120">
-      <template #default="{ row }">
-        <el-input
-          v-if="isRowEditing(row) && editingDraft"
-          v-model="editingDraft.grade"
-          size="small"
-          placeholder="例如：2025、2025级、25"
-        />
-        <span v-else>{{ row.grade }}</span>
-      </template>
-    </el-table-column>
+      <el-table-column label="年级" min-width="120">
+        <template #default="{ row }">
+          <el-input
+            v-if="isRowEditing(row) && editingDraft"
+            v-model="editingDraft.grade"
+            size="small"
+            placeholder="例如：2025、2025级、25"
+          />
+          <span v-else>{{ row.grade }}</span>
+        </template>
+      </el-table-column>
 
-    <el-table-column label="邮箱" min-width="220">
-      <template #default="{ row }">
-        <el-input v-if="isRowEditing(row) && editingDraft" v-model="editingDraft.email" size="small" />
-        <span v-else class="cell_multiline">{{ row.email }}</span>
-      </template>
-    </el-table-column>
+      <el-table-column label="邮箱" min-width="220">
+        <template #default="{ row }">
+          <el-input v-if="isRowEditing(row) && editingDraft" v-model="editingDraft.email" size="small" />
+          <span v-else class="cell_multiline">{{ row.email }}</span>
+        </template>
+      </el-table-column>
 
-    <el-table-column prop="isMentor" label="选择导师状态" min-width="140" />
-    <el-table-column prop="teacherName" show-overflow-tooltip label="导师姓名" min-width="140" />
+      <el-table-column prop="isMentor" label="选择导师状态" min-width="140" />
+      <el-table-column prop="teacherName" show-overflow-tooltip label="导师姓名" min-width="140" />
 
-    <el-table-column label="简介" min-width="280">
-      <template #default="{ row }">
-        <el-input
-          v-if="isRowEditing(row) && editingDraft"
-          v-model="editingDraft.resume"
-          type="textarea"
-          :autosize="{ minRows: 2, maxRows: 5 }"
-          resize="none"
-        />
-        <span v-else class="cell_multiline">{{ row.resume }}</span>
-      </template>
-    </el-table-column>
+      <el-table-column label="简介" min-width="280">
+        <template #default="{ row }">
+          <el-input
+            v-if="isRowEditing(row) && editingDraft"
+            v-model="editingDraft.resume"
+            type="textarea"
+            :autosize="{ minRows: 2, maxRows: 5 }"
+            resize="none"
+          />
+          <span v-else class="cell_multiline">{{ row.resume }}</span>
+        </template>
+      </el-table-column>
 
-    <el-table-column v-if="isAdmin" label="操作" width="88" fixed="right">
-      <template #default="{ row }">
-        <el-button link type="danger" :disabled="isEditing" @click="archiveStudent(row)">转出</el-button>
-      </template>
-    </el-table-column>
-  </el-table>
+      <el-table-column v-if="isAdmin" label="操作" width="88" fixed="right">
+        <template #default="{ row }">
+          <el-button link type="danger" :disabled="isEditing" @click="archiveStudent(row)">转出</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+  </div>
 </template>
 
 <style scoped lang="sass">
@@ -1182,10 +1290,17 @@ onMounted(async () => {
 
 .search_box
   margin: 20px auto
+  padding: 0 20px
+  display: flex
+  align-items: flex-end
+  flex-wrap: wrap
+  gap: 12px 20px
 
 .input_item
+  display: inline-flex
+  align-items: center
+  gap: 10px
   font-size: 16px
-  margin-left: 20px
   color: var(--app-text-primary)
   input
     width: 220px
@@ -1222,7 +1337,6 @@ onMounted(async () => {
   height: 32px
   background-color: var(--app-brand)
   color: white
-  margin-left: 20px
   border: 1px solid var(--app-brand)
   font-size: 15px
   transition: .3s ease
@@ -1248,7 +1362,7 @@ onMounted(async () => {
   align-items: center
   flex-wrap: wrap
   gap: 14px
-  padding: 10px 0
+  padding: 10px 20px
   button
     padding: 0 20px
     height: 36px
@@ -1257,7 +1371,6 @@ onMounted(async () => {
     border-radius: 5px
     border: none
     color: white
-    margin-left: 32px
     background-color: var(--app-brand)
     transition: .3s ease
   button:hover
@@ -1380,6 +1493,10 @@ onMounted(async () => {
   gap: 10px
   flex-wrap: wrap
 
+.section_title__selection
+  font-size: 13px
+  color: var(--app-text-secondary)
+
 .section_title__hint
   font-size: 13px
   color: var(--app-text-secondary)
@@ -1410,8 +1527,26 @@ onMounted(async () => {
 .header_button--ghost:hover:not(:disabled)
   background-color: var(--app-surface-muted)
 
+.header_button--danger
+  background-color: transparent
+  border: 1px solid var(--app-danger)
+  color: var(--app-danger)
+
+.header_button--danger:hover:not(:disabled)
+  background-color: var(--app-danger)
+  color: #ffffff
+
+.table_shell
+  width: 100%
+  overflow-x: auto
+  -webkit-overflow-scrolling: touch
+
+.table_scroll_hint
+  display: none
+
 .table
   width: 100%
+  min-width: 0
 
 .single_dialog_actions
   display: flex
@@ -1459,9 +1594,27 @@ onMounted(async () => {
   box-shadow: 0 0 0 1px var(--app-brand-ring) inset
 
 @media (max-width: 980px)
+  .search_box
+    padding: 0 16px
+    flex-direction: column
+    align-items: stretch
+
+  .input_item
+    width: 100%
+    flex-direction: column
+    align-items: stretch
+    gap: 8px
+
+  .input_item input,
+  .input_item select
+    width: 100%
+
+  .button
+    width: 100%
+
   .button_box button
-    margin-left: 0
-    width: calc(100% - 24px)
+    width: 100%
+    min-width: 0
 
   .excel_status
     flex-direction: column
@@ -1484,10 +1637,23 @@ onMounted(async () => {
     flex-direction: column
     padding: 10px 20px
 
+  .section_title__actions
+    width: 100%
+    justify-content: flex-start
+
   .single_dialog_actions
     width: 100%
     flex-direction: column-reverse
 
   .dialog_button
     width: 100%
+
+  .table
+    min-width: 0
+
+  .table_scroll_hint
+    display: block
+    margin: 0 12px 8px
+    color: var(--app-text-secondary)
+    font-size: 12px
 </style>

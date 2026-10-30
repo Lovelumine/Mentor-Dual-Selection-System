@@ -3,7 +3,9 @@ import { computed, onMounted, ref, watch } from "vue";
 import { http } from "@/utils/http";
 import { useUserInfoStore } from "@/stores/user/UserBasicInformation";
 import { ElMessage, ElMessageBox } from "element-plus";
+import { useResponsiveLayout } from "@/composables/useResponsiveLayout";
 const userStore = useUserInfoStore();
+const { isMobile, isTablet } = useResponsiveLayout();
 
 const pendingList = ref<any[]>([]);
 const userRole = ref<string | null>(null);
@@ -17,6 +19,8 @@ const pendingUtilForm = ref({
 });
 
 const studentApplicationInfo = ref<Record<string, any>>({});
+const rejectDialogWidth = computed(() => (isMobile.value ? "94vw" : isTablet.value ? "84vw" : "500px"));
+const studentInfoDialogWidth = computed(() => (isMobile.value ? "94vw" : isTablet.value ? "88vw" : "600px"));
 
 // Checkbox state to allow skipping rejection reason
 const skipRejectionReason = ref<boolean>(false);
@@ -253,7 +257,7 @@ watch(
   <el-dialog
     v-model="dialogVisible"
     title="拒绝理由"
-    width="500"
+    :width="rejectDialogWidth"
     :before-close="handleClose"
   >
     <el-input
@@ -277,7 +281,7 @@ watch(
   <el-dialog
     v-model="studentInfoVisible"
     title="学生详情"
-    width="600"
+    :width="studentInfoDialogWidth"
     :before-close="handleStudentInfoClose"
   >
     <div class="student-info-card">
@@ -325,58 +329,63 @@ watch(
     <div class="title">
       <span>所有申请</span>
     </div>
-    <el-table :data="pendingList" stripe class="table">
-      <el-table-column :label="userRole === 'ADMIN' ? '记录编号' : '申请编号'" prop="id" />
-      <el-table-column prop="studentName" label="学生姓名" />
-      <el-table-column
-        prop="teacherName"
-        label="导师姓名"
-        v-if="userRole === 'ADMIN'"
-      />
-      <el-table-column prop="applicationReason" label="申请理由 / 记录说明" show-overflow-tooltip />
-      <el-table-column label="申请时间" min-width="168">
-        <template #default="scope">
-          <span>{{ formatDateTime(scope.row.applicationDate) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="处理时间" min-width="168">
-        <template #default="scope">
-          <span>{{ formatDateTime(scope.row.decisionDate) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="statusCN" label="当前状态" />
-      <el-table-column label="详细信息">
-        <template #default="scope">
-          <button class="button" @click="handleViewStudentInfo(scope.row)">
-            查看
-          </button>
-        </template>
-      </el-table-column>
-      <el-table-column
-        v-if="userRole === 'TEACHER' || userRole === 'ADMIN'"
-        label="处理状态"
-      >
-        <template #default="scope">
-          <div v-if="userRole === 'TEACHER' && scopeRowGetStatus(scope.row)">
-            <button
-              class="button"
-              @click="handleAccept(scope.$index, scope.row)"
-            >
-              同意
+    <div class="table_shell">
+      <p class="table_scroll_hint">左右滑动表格可查看完整申请信息</p>
+      <el-table :data="pendingList" stripe class="table">
+        <el-table-column :label="userRole === 'ADMIN' ? '记录编号' : '申请编号'" prop="id" min-width="110" />
+        <el-table-column prop="studentName" label="学生姓名" min-width="130" />
+        <el-table-column
+          v-if="userRole === 'ADMIN'"
+          prop="teacherName"
+          label="导师姓名"
+          min-width="130"
+        />
+        <el-table-column prop="applicationReason" label="申请理由 / 记录说明" min-width="240" show-overflow-tooltip />
+        <el-table-column label="申请时间" min-width="168">
+          <template #default="scope">
+            <span>{{ formatDateTime(scope.row.applicationDate) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="处理时间" min-width="168">
+          <template #default="scope">
+            <span>{{ formatDateTime(scope.row.decisionDate) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="statusCN" label="当前状态" min-width="120" />
+        <el-table-column label="详细信息" width="120" fixed="right">
+          <template #default="scope">
+            <button class="button" @click="handleViewStudentInfo(scope.row)">
+              查看
             </button>
-            <button
-              class="button"
-              @click="handleReject(scope.$index, scope.row)"
-            >
-              拒绝
-            </button>
-          </div>
-          <div v-else>
-            <span>{{ getProcessStatusLabel(scope.row) }}</span>
-          </div>
-        </template>
-      </el-table-column>
-    </el-table>
+          </template>
+        </el-table-column>
+        <el-table-column
+          v-if="userRole === 'TEACHER' || userRole === 'ADMIN'"
+          label="处理状态"
+          min-width="180"
+        >
+          <template #default="scope">
+            <div v-if="userRole === 'TEACHER' && scopeRowGetStatus(scope.row)" class="process_actions">
+              <button
+                class="button"
+                @click="handleAccept(scope.$index, scope.row)"
+              >
+                同意
+              </button>
+              <button
+                class="button"
+                @click="handleReject(scope.$index, scope.row)"
+              >
+                拒绝
+              </button>
+            </div>
+            <div v-else>
+              <span>{{ getProcessStatusLabel(scope.row) }}</span>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
   </div>
   <div class="spacer"></div>
 </template>
@@ -384,24 +393,28 @@ watch(
 <style scoped lang="sass">
 .title
   width: 100%
-  height: 60px
-  background-color: #e2e2e2
-  line-height: 60px
-  padding-left: 20px
+  min-height: 60px
+  background-color: var(--app-surface-muted)
+  display: flex
+  align-items: center
+  padding: 0 20px
   font-size: 20px
+  color: var(--app-text-primary)
 .container
+  padding: 0 0 24px 0
   .title
     width: 100%
-    height: 40px
-    background-color: #e2e2e2
-    line-height: 40px
-    padding-left: 20px
+    min-height: 40px
+    background-color: var(--app-surface-muted)
+    display: flex
+    align-items: center
+    padding: 0 20px
     font-size: 16px
     margin-bottom: 20px
+    color: var(--app-text-primary)
   .table
-    width: 98%
-    margin: 0 auto
-    border: 1px solid #005826
+    width: 100%
+    min-width: 0
     .button
       margin: 0
     .button:last-child
@@ -426,6 +439,14 @@ watch(
   cursor: pointer
   background-color: #0f7e3f
   border: 1px solid #0f7e3f
+.table_shell
+  width: 100%
+  overflow-x: auto
+  padding: 0 1%
+  -webkit-overflow-scrolling: touch
+
+.table_scroll_hint
+  display: none
 input
   width: 320px
   height: 32px
@@ -440,10 +461,14 @@ input:focus
   border: 1px #005826 solid
 .student-info-card
   display: flex
+  gap: 20px
   .avatar
     height: 120px
-    margin-right: 20px
+    width: 100px
+    object-fit: cover
+    border-radius: 12px
   .info
+    min-width: 0
     p
       font-size: 16px
       margin: 5px 0
@@ -460,4 +485,50 @@ input:focus
       color: white
 .spacer
   height: 100px
+
+.process_actions
+  display: flex
+  flex-wrap: wrap
+  gap: 10px
+
+@media (max-width: 980px)
+  .container .table
+    min-width: 0
+
+@media (max-width: 768px)
+  .title
+    min-height: 56px
+    padding: 0 16px
+    font-size: 18px
+
+  .container .title
+    min-height: 48px
+    padding: 0 16px
+    margin-bottom: 16px
+
+  .table_shell
+    padding: 0
+
+  .table_scroll_hint
+    display: block
+    margin: 0 12px 8px
+    color: var(--app-text-secondary)
+    font-size: 12px
+
+  .student-info-card
+    flex-direction: column
+
+  .student-info-card .avatar
+    align-self: center
+
+  .student-info-card .info .detail-action-row
+    flex-direction: column
+
+  .dialog-footer
+    width: 100%
+    flex-direction: column-reverse
+
+  .dialog-footer .button
+    width: 100%
+    margin-right: 0
 </style>

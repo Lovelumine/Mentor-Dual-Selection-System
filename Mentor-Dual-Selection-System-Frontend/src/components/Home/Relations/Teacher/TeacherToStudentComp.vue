@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import { http } from "@/utils/http";
 import { getPortraitImageUrl } from "@/utils/media";
+import { useResponsiveLayout } from "@/composables/useResponsiveLayout";
 
 interface StudentRelationshipRecord {
   studentId: number;
@@ -38,6 +39,8 @@ const currentStudents = ref<StudentRelationshipRecord[]>([]);
 const historicalStudents = ref<StudentRelationshipRecord[]>([]);
 const dialogVisible = ref(false);
 const selectedStudent = ref<StudentRelationshipRecord | null>(null);
+const { isMobile, isTablet } = useResponsiveLayout();
+const dialogWidth = computed(() => (isMobile.value ? "94vw" : isTablet.value ? "88vw" : "600px"));
 
 function getStudentAvatar(student: StudentRelationshipRecord) {
   return getPortraitImageUrl(student.photoUrl) || getPortraitImageUrl(student.avatarUrl) || "https://via.placeholder.com/100";
@@ -127,45 +130,47 @@ onMounted(() => {
 
     <section v-if="historicalStudents.length > 0" class="history_section">
       <h3>历史学生</h3>
-      <el-table :data="historicalStudents" row-key="studentId" stripe class="history_table">
-        <el-table-column prop="fullName" label="学生姓名" min-width="140" />
-        <el-table-column label="学号" min-width="140">
-          <template #default="{ row }">
-            {{ row.username || row.netid || "未填写" }}
-          </template>
-        </el-table-column>
-        <el-table-column label="年级" min-width="100">
-          <template #default="{ row }">
-            {{ row.grade || "未填写" }}
-          </template>
-        </el-table-column>
-        <el-table-column label="绑定时间" min-width="168">
-          <template #default="{ row }">
-            {{ formatDateTime(row.startDate) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="解除时间" min-width="168">
-          <template #default="{ row }">
-            {{ formatDateTime(row.endDate) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="处理说明" min-width="280" show-overflow-tooltip>
-          <template #default="{ row }">
-            <div>{{ row.endReason || "历史学生关系保留记录" }}</div>
-            <div v-if="row.operatorName" class="history_operator">
-              操作人：{{ row.operatorName }}
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column label="详情" width="120" align="right">
-          <template #default="{ row }">
-            <el-button type="primary" link @click="openStudentDetail(row)">查看详情</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <div class="history_table_shell">
+        <el-table :data="historicalStudents" row-key="studentId" stripe class="history_table">
+          <el-table-column prop="fullName" label="学生姓名" min-width="140" />
+          <el-table-column label="学号" min-width="140">
+            <template #default="{ row }">
+              {{ row.username || row.netid || "未填写" }}
+            </template>
+          </el-table-column>
+          <el-table-column label="年级" min-width="100">
+            <template #default="{ row }">
+              {{ row.grade || "未填写" }}
+            </template>
+          </el-table-column>
+          <el-table-column label="绑定时间" min-width="168">
+            <template #default="{ row }">
+              {{ formatDateTime(row.startDate) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="解除时间" min-width="168">
+            <template #default="{ row }">
+              {{ formatDateTime(row.endDate) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="处理说明" min-width="280" show-overflow-tooltip>
+            <template #default="{ row }">
+              <div>{{ row.endReason || "历史学生关系保留记录" }}</div>
+              <div v-if="row.operatorName" class="history_operator">
+                操作人：{{ row.operatorName }}
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="详情" width="120" align="right">
+            <template #default="{ row }">
+              <el-button type="primary" link @click="openStudentDetail(row)">查看详情</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
     </section>
 
-    <el-dialog v-model="dialogVisible" title="学生详细信息" width="600px">
+    <el-dialog v-model="dialogVisible" title="学生详细信息" :width="dialogWidth">
       <template v-if="selectedStudent">
         <div class="student_detail">
           <img :src="getStudentAvatar(selectedStudent)" alt="学生头像" class="avatar avatar--large" />
@@ -251,6 +256,8 @@ h3
   color: var(--app-text-secondary)
 
 .history_table
+  width: 100%
+  min-width: 980px
   border: 1px solid var(--app-border)
   border-radius: 16px
   overflow: hidden
@@ -265,10 +272,20 @@ h3
   gap: 20px
   color: var(--app-text-primary)
 
+.history_table_shell
+  width: 100%
+  overflow-x: auto
+
 @media (max-width: 768px)
   .teacher_relationship_box
     width: calc(100% - 24px)
 
+  .history_table
+    min-width: 900px
+
   .student_detail
     flex-direction: column
+
+  .student_detail .avatar
+    align-self: center
 </style>

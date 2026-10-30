@@ -53,4 +53,30 @@ function releaseNoticeClicked(){
   width: 100%
   min-height: calc(100vh - 120px)
   background: linear-gradient(180deg, var(--app-page-bg-alt) 0%, var(--app-page-bg) 100%)
+
+@media (max-width: 767px)
+  .title
+    height: auto
+    min-height: 84px
+    padding: 12px 16px
+    box-sizing: border-box
+    font-size: 18px
+    line-height: 1.45
+    gap: 12px
+
+    span
+      flex: 1 1 auto
+      min-width: 0
+      overflow-wrap: anywhere
+
+    .button
+      flex: 0 0 auto
+      width: auto
+      min-height: 40px
+      margin: 0
+      padding: 0 16px
+
+  .container
+    min-height: auto
+    padding-top: 16px
 </style>

@@ -6,10 +6,12 @@ import { useRouter } from "vue-router";
 import { httpAdmin } from "@/utils/http";
 import axios from "axios";
 import { useUploadFileStore } from "@/stores/UploadFileStore";
+import { useResponsiveLayout } from "@/composables/useResponsiveLayout";
 
 const userInfoStore = useUserInfoStore();
 const router = useRouter();
 const uploadFileStore = useUploadFileStore();
+const { isMobile } = useResponsiveLayout();
 
 const defaultFileName = "未选择";
 
@@ -153,7 +155,13 @@ watch(
 
 <template>
   <div class="release_box">
-    <el-form label-width="auto" style="max-width: 600px" :model="noticeForm" @submit.prevent="uploadRelease">
+    <el-form
+      label-width="auto"
+      style="max-width: 600px"
+      :label-position="isMobile ? 'top' : 'right'"
+      :model="noticeForm"
+      @submit.prevent="uploadRelease"
+    >
       <el-form-item label="公告标题：">
         <el-input v-model="noticeForm.title" type="text" placeholder="请简略表达" />
       </el-form-item>
@@ -165,8 +173,10 @@ watch(
         <button class="button" type="button" @click="triggerUploadFile">上传附件</button>
         <p>&nbsp;&nbsp;&nbsp;{{ fileName }}</p>
       </el-form-item>
-      <button type="submit" class="button_out" :disabled="!isAdmin">上传</button>
-      <button type="button" class="button_out" @click="resetNoticeForm">重置</button>
+      <div class="release_actions">
+        <button type="submit" class="button_out" :disabled="!isAdmin">上传</button>
+        <button type="button" class="button_out" @click="resetNoticeForm">重置</button>
+      </div>
     </el-form>
   </div>
 </template>
@@ -220,4 +230,40 @@ watch(
 
 .button_out
   margin-left: 20px
+
+.release_actions
+  display: flex
+  justify-content: flex-end
+
+@media (max-width: 767px)
+  .release_box
+    width: calc(100% - 24px)
+    margin-top: 12px
+    padding: 18px 16px
+    box-sizing: border-box
+    border-radius: 14px
+
+    :deep(.el-form-item__label)
+      width: 100%
+      text-align: left
+      line-height: 1.4
+      padding-bottom: 6px
+
+    :deep(.el-form-item__content)
+      min-width: 0
+
+    p
+      max-width: 100%
+      overflow-wrap: anywhere
+
+  .release_actions
+    width: 100%
+    flex-direction: column-reverse
+    gap: 10px
+
+  .button_out,
+  .button
+    width: 100%
+    min-height: 40px
+    margin-left: 0
 </style>

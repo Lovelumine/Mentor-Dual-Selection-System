@@ -16,6 +16,7 @@ import {
   inferImportColumnMapping,
   type ImportColumnRule,
 } from "@/utils/importColumnMapping";
+import { useResponsiveLayout } from "@/composables/useResponsiveLayout";
 
 type TeacherUploadField =
   | "role"
@@ -62,6 +63,7 @@ const teacherImportRules: ImportColumnRule<TeacherUploadField>[] = [
 ];
 
 const teacherListStore = useTeacherListStore();
+const { isMobile, isTablet } = useResponsiveLayout();
 
 const fileInput = ref<HTMLInputElement | null>(null);
 const excelName = ref("");
@@ -98,6 +100,7 @@ const singleTeacherForm = ref<SingleTeacherForm>({
 });
 
 const previewLimit = 8;
+const addTeacherDialogWidth = computed(() => (isMobile.value ? "94vw" : isTablet.value ? "86vw" : "560px"));
 const columnOptions = computed(() => createImportColumnOptions(headerRow.value));
 const missingRequiredLabels = computed(() =>
   teacherImportRules
@@ -620,7 +623,7 @@ function handleFileChange(event: Event) {
   <el-dialog
     v-model="isAddTeacherDialogVisible"
     title="添加单条导师信息"
-    width="560px"
+    :width="addTeacherDialogWidth"
     destroy-on-close
     :close-on-click-modal="!isSubmittingSingleTeacher"
   >
@@ -710,20 +713,22 @@ function handleFileChange(event: Event) {
       <span v-if="hasMorePreview">仅显示前 {{ previewRows.length }} 条，剩余 {{ importPlans.length - previewRows.length }} 条将在上传时一并处理</span>
     </div>
 
-    <el-table :data="previewRows" border size="small" class="preview_table">
-      <el-table-column prop="rowIndex" label="序号" width="70" />
-      <el-table-column label="导入动作" min-width="110">
-        <template #default="{ row }">
-          <el-tag :type="getActionTagType(row.action)" effect="light">{{ row.actionLabel }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="fullName" label="姓名" min-width="120" />
-      <el-table-column prop="email" label="电子邮箱" min-width="220" />
-      <el-table-column prop="username" label="工号" min-width="120" />
-      <el-table-column prop="teacherPosition" label="职称" min-width="120" />
-      <el-table-column prop="researchDirection" label="研究方向" min-width="260" show-overflow-tooltip />
-      <el-table-column prop="message" label="说明" min-width="260" show-overflow-tooltip />
-    </el-table>
+    <div class="preview_table_shell">
+      <el-table :data="previewRows" border size="small" class="preview_table">
+        <el-table-column prop="rowIndex" label="序号" width="70" />
+        <el-table-column label="导入动作" min-width="110">
+          <template #default="{ row }">
+            <el-tag :type="getActionTagType(row.action)" effect="light">{{ row.actionLabel }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="fullName" label="姓名" min-width="120" />
+        <el-table-column prop="email" label="电子邮箱" min-width="220" />
+        <el-table-column prop="username" label="工号" min-width="120" />
+        <el-table-column prop="teacherPosition" label="职称" min-width="120" />
+        <el-table-column prop="researchDirection" label="研究方向" min-width="260" show-overflow-tooltip />
+        <el-table-column prop="message" label="说明" min-width="260" show-overflow-tooltip />
+      </el-table>
+    </div>
   </div>
 
   <div v-if="progressPercentage > 0" class="progress_container">
@@ -854,6 +859,11 @@ function handleFileChange(event: Event) {
 
 .preview_table
   width: 100%
+  min-width: 1040px
+
+.preview_table_shell
+  width: 100%
+  overflow-x: auto
 
 .progress_container
   margin-top: 18px
@@ -924,4 +934,7 @@ function handleFileChange(event: Event) {
 
   .dialog_button
     width: 100%
+
+  .preview_table
+    min-width: 920px
 </style>

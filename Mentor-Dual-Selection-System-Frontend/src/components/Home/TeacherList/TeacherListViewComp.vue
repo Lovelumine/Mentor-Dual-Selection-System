@@ -407,6 +407,7 @@ watch(
   </div>
 
   <div class="table_shell" @dblclick.capture="handleTableAreaDoubleClick">
+    <p class="table_scroll_hint">左右滑动表格可查看完整导师信息</p>
     <el-table
       ref="tableRef"
       :data="tableData"
@@ -537,10 +538,18 @@ watch(
 
 .table_shell
   width: 100%
+  overflow-x: auto
+  padding: 0 12px 24px
+  box-sizing: border-box
+  -webkit-overflow-scrolling: touch
+
+.table_scroll_hint
+  display: none
 
 .table
   margin: 0 auto
-  width: 98%
+  width: min(98%, 1320px)
+  min-width: 0
   max-height: calc(100vh - 60px - 60px - 150px)
   overflow-y: auto
   border: 1px solid var(--app-brand)
@@ -578,4 +587,23 @@ watch(
     flex-direction: column
     align-items: flex-start
     padding: 10px 20px
+
+@media (max-width: 767px)
+  .title
+    padding: 12px 16px
+
+  .title_actions
+    width: 100%
+
+  .header_button
+    width: 100%
+
+  .table_shell
+    padding: 0 12px 16px
+
+  .table_scroll_hint
+    display: block
+    margin: 0 0 8px
+    color: var(--app-text-secondary)
+    font-size: 12px
 </style>

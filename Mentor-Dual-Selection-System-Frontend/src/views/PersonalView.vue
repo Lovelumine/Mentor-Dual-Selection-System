@@ -193,7 +193,7 @@ const getProfileCardBackgroundUrl = (url?: string | null) => getCardBackgroundIm
 
 <style scoped lang="sass">
 .personal_box
-  width: 80%
+  width: min(1080px, calc(100% - 32px))
   margin: 0 auto 32px auto
   color: var(--app-text-primary)
 
@@ -214,11 +214,12 @@ const getProfileCardBackgroundUrl = (url?: string | null) => getCardBackgroundIm
   margin: 20px auto
   display: flex
   align-items: center
+  gap: 28px
+  flex-wrap: wrap
   .avatar_box
     width: 200px   // 设置图片框宽度
     height: 100px  // 设置图片框高度，宽高比为2:1
     overflow: hidden
-    margin-left: 50px
     border-radius: 10px  // 设置为圆角
     border: 1px solid var(--app-border)
     .avatar
@@ -236,7 +237,8 @@ const getProfileCardBackgroundUrl = (url?: string | null) => getCardBackgroundIm
       background: linear-gradient(135deg, color-mix(in srgb, var(--app-surface) 84%, #dce8f3 16%) 0%, color-mix(in srgb, var(--app-surface-elevated) 88%, #d1dfef 12%) 100%)
   ul
     padding: 20px 0 20px 0
-    margin-left: 50px
+    margin: 0
+    flex: 1 1 320px
     li
       margin-top: 10px
       list-style: none
@@ -254,7 +256,7 @@ const getProfileCardBackgroundUrl = (url?: string | null) => getCardBackgroundIm
   width: 100%
   margin: 30px auto 0 auto
   form
-    margin-left: 50px
+    margin: 0 24px
     ul
       padding: 0
       .avatar_list
@@ -317,7 +319,7 @@ const getProfileCardBackgroundUrl = (url?: string | null) => getCardBackgroundIm
       li:last-child
         margin: 20px auto
 .button
-  margin: auto 5% auto auto
+  margin: auto 0 auto auto
   background-color: var(--app-brand)
   border: 1px solid var(--app-brand)
   color: var(--app-text-inverse)
@@ -332,12 +334,54 @@ const getProfileCardBackgroundUrl = (url?: string | null) => getCardBackgroundIm
   border: 1px solid var(--app-brand-hover)
 
 .container
-  height: calc(100vh - 60px)  // 设置容器高度为视口高度减去标题栏高度
-  overflow-y: auto            // 允许出现垂直滚动条
   box-sizing: border-box       // 确保内边距不会影响容器的尺寸
-  margin-top: 60px  /* 向下移动60px */
-  overflow-y: auto   /* 当内容超出页面范围时，显示滚动条 */
-  height: calc(100vh - 120px)  /* 计算容器高度，减去顶部的60px */
+  min-height: calc(100vh - 60px)
   background: transparent
   padding-top: 18px
+
+@media (max-width: 1023px)
+  .personal_box
+    width: min(100%, calc(100% - 24px))
+
+  .user_info_box
+    padding: 24px 20px
+
+  .change_info_box
+    form
+      margin: 0 20px
+
+@media (max-width: 767px)
+  .personal_box
+    width: min(100%, calc(100% - 16px))
+
+  .user_info_box
+    gap: 18px
+    padding: 20px 16px
+    justify-content: center
+    .avatar_box
+      width: min(100%, 280px)
+      margin: 0 auto
+    ul
+      flex-basis: 100%
+    .button
+      width: 100%
+      margin: 0
+
+  .change_info_box
+    padding: 20px 0
+    form
+      margin: 0 16px
+      ul .avatar_list
+        display: flex
+        flex-direction: column
+        align-items: flex-start
+        gap: 12px
+        button
+          margin: 0
+      ul li input
+        width: min(100%, 320px)
+
+  .button
+    width: 100%
+    margin-top: 10px
 </style>

@@ -29,7 +29,7 @@ echo "Building frontend..."
 
 echo "Syncing frontend assets to $SITE_ROOT ..."
 sudo mkdir -p "$SITE_ROOT"
-sudo rsync -a --delete "$FRONTEND_DIR/dist/" "$SITE_ROOT/"
+sudo rsync -a --delete --exclude='.well-known/' "$FRONTEND_DIR/dist/" "$SITE_ROOT/"
 sudo chown -R www:www "$SITE_ROOT"
 
 echo "Building backend image..."

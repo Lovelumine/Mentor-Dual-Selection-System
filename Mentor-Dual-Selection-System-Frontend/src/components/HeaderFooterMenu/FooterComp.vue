@@ -22,34 +22,35 @@ onMounted(() => {
 
 <style scoped lang="sass">
 footer
-  height: 30px
   width: 100%
-  background-color: var(--app-surface-muted)
-  position: absolute
-  bottom: 0
-  z-index: 10
+  padding: 18px 16px
+  box-sizing: border-box
   border-top: 1px solid var(--app-border)
+  background-color: var(--app-surface-muted)
+  margin-top: auto
   .container
+    display: flex
+    justify-content: center
+    align-items: center
+    text-align: center
+    min-height: 24px
     p
-      position: absolute
-      text-align: center
       font-size: 12px
       color: var(--app-text-secondary)
       font-weight: bold
-      top: 50%
-      left: 4%
-      transform: translateY(-50%)
       margin: 0
       padding: 0
+      line-height: 1.5
     a
-      position: absolute
       text-decoration: none
+      color: var(--app-text-secondary)
       font-size: 12px
-      font-weight: bold
       margin: 0
       padding: 0
-      color: var(--app-text-secondary)
-      top: 50%
-      transform: translateY(-50%)
-      right: 4%
+
+@media (max-width: 767px)
+  footer
+    padding: 14px 12px
+    .container p
+      font-size: 11px
 </style>
