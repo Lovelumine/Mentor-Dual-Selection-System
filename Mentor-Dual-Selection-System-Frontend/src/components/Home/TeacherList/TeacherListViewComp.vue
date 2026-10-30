@@ -547,8 +547,8 @@ watch(
   display: none
 
 .table
-  margin: 0 auto
-  width: min(98%, 1320px)
+  margin: 0
+  width: 100%
   min-width: 0
   max-height: calc(100vh - 60px - 60px - 150px)
   overflow-y: auto
@@ -566,7 +566,7 @@ watch(
   line-height: 1.6
 
 .spacer
-  width: 98%
+  width: 100%
   height: 56px
   margin: 0 auto
   border-radius: 0 0 5px 5px
