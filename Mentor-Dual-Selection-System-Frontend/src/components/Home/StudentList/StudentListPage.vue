@@ -1034,23 +1034,24 @@ async function unbindSelectedStudents() {
 
   const skippedCount = selectedStudentCount.value - studentsToUnbind.length;
   const previewNames = studentsToUnbind
-    .slice(0, 5)
-    .map((student) => `${student.fullName}（${student.username}）→ ${student.teacherName || "导师"}`)
+    .slice(0, 3)
+    .map((student) => `${student.fullName}→${student.teacherName || "导师"}`)
     .join("、");
-  const remainingText = studentsToUnbind.length > 5 ? ` 等共 ${studentsToUnbind.length} 名学生` : "";
-  const skippedText = skippedCount > 0 ? `\n\n其中 ${skippedCount} 名当前没有导师，将自动跳过。` : "";
+  const remainingText = studentsToUnbind.length > 3 ? " 等" : "";
+  const skippedText = skippedCount > 0 ? `\n其中 ${skippedCount} 名无导师，自动跳过。` : "";
 
   let reason = "";
   try {
     const result = await ElMessageBox.prompt(
-      `即将解除 ${studentsToUnbind.length} 名学生的导师关系：${previewNames}${remainingText}。${skippedText}\n\n解除后学生账号仍可正常登录，申请与历史记录保留，导师已接收人数会相应减少。本次操作会生成批次快照，可在“学生申请 / 师生关系”页的批量记录中恢复。`,
+      `将解除 ${studentsToUnbind.length} 名学生的导师关系：${previewNames}${remainingText}。${skippedText}\n账号不停用，历史记录保留，可在批量记录中恢复。`,
       "确认批量解除导师关系",
       {
         confirmButtonText: "确认解除",
         cancelButtonText: "取消",
         type: "warning",
         closeOnClickModal: false,
-        inputPlaceholder: "选填，例如：学院统一调整 / 导师名额调整",
+        inputType: "textarea",
+        inputPlaceholder: "选填解除原因",
         inputValue: "",
         inputValidator: () => true,
       },
