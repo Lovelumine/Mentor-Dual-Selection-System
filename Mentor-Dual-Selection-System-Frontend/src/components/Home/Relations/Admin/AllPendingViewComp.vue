@@ -519,7 +519,7 @@ async function confirmResetAll() {
 async function restoreBatch(batch: ResetBatchRecord) {
   try {
     await ElMessageBox.confirm(
-      `将当前所有师生关系覆盖恢复到批次 #${batch.id} 执行前的状态。恢复后，当前新建立的关系不会保留，但历史记录仍会保留。`,
+      `将批次 #${batch.id} 中涉及的 ${batch.affectedStudentCount} 名学生恢复到解除前的导师关系。该批次之外的学生，其当前关系不受影响；若这些学生已重新分配导师，会被批次内的原导师覆盖。历史记录仍会保留。`,
       "确认恢复批次",
       {
         confirmButtonText: "确认恢复",

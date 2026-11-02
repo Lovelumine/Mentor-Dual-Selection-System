@@ -179,30 +179,67 @@ public class ApplicationService {
     }
 
     @Transactional
-    public int removeMentorStudentRelationships(List<Long> studentIds, User adminOperator) {
+    public RelationshipResetBatch removeMentorStudentRelationships(List<Long> studentIds, User adminOperator, String reason) {
         if (studentIds == null || studentIds.isEmpty()) {
             throw new RuntimeException("请至少选择一名学生");
         }
 
-        List<User> students = userRepository.findAllById(new LinkedHashSet<>(studentIds));
-        if (students.size() != new LinkedHashSet<>(studentIds).size()) {
+        Set<Long> uniqueStudentIds = new LinkedHashSet<>(studentIds);
+        List<User> students = userRepository.findAllById(uniqueStudentIds);
+        if (students.size() != uniqueStudentIds.size()) {
             throw new RuntimeException("存在无效的学生记录");
         }
 
-        int removedCount = clearStudentMentorAssignments(
+        List<User> affectedStudents = students.stream()
+                .filter(student -> student.getMentorId() != null)
+                .toList();
+        if (affectedStudents.isEmpty()) {
+            return null;
+        }
+
+        Instant actionTime = Instant.now();
+        String normalizedReason = normalizeReason(reason, DEFAULT_SINGLE_UNBIND_REASON);
+        Set<Long> affectedMentorIds = affectedStudents.stream()
+                .map(User::getMentorId)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        RelationshipResetBatch batch = new RelationshipResetBatch();
+        batch.setReason(normalizedReason);
+        batch.setStatus(BATCH_STATUS_ACTIVE);
+        batch.setCreatedById(adminOperator.getUid());
+        batch.setCreatedByNameSnapshot(adminOperator.getFullName());
+        batch.setCreatedAt(actionTime);
+        batch.setAffectedStudentCount(affectedStudents.size());
+        batch.setAffectedMentorCount(affectedMentorIds.size());
+        batch.setRestoreCount(0);
+        batch = relationshipResetBatchRepository.save(batch);
+
+        final Long batchId = batch.getId();
+        List<RelationshipResetBatchSnapshot> snapshots = affectedStudents.stream()
+                .map(student -> {
+                    RelationshipResetBatchSnapshot snapshot = new RelationshipResetBatchSnapshot();
+                    snapshot.setBatchId(batchId);
+                    snapshot.setStudentId(student.getUid());
+                    snapshot.setMentorId(student.getMentorId());
+                    snapshot.setStudentNameSnapshot(student.getFullName());
+                    User mentor = userRepository.findById(student.getMentorId())
+                            .orElseThrow(() -> new RuntimeException("存在无效的导师记录"));
+                    snapshot.setMentorNameSnapshot(mentor.getFullName());
+                    return snapshot;
+                })
+                .toList();
+        relationshipResetBatchSnapshotRepository.saveAll(snapshots);
+
+        clearStudentMentorAssignments(
                 students,
                 adminOperator,
                 ACTION_ADMIN_UNBIND,
-                DEFAULT_SINGLE_UNBIND_REASON,
-                null,
-                Instant.now()
+                normalizedReason,
+                batchId,
+                actionTime
         );
 
-        if (removedCount == 0) {
-            return 0;
-        }
-
-        return removedCount;
+        return batch;
     }
 
     @Transactional
@@ -274,7 +311,18 @@ public class ApplicationService {
         }
 
         Instant restoreStartTime = Instant.now();
-        List<User> currentStudents = userRepository.findByMentorIdIsNotNullAndActiveTrue();
+        Set<Long> snapshotStudentIds = snapshots.stream()
+                .map(RelationshipResetBatchSnapshot::getStudentId)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        Set<Long> snapshotMentorIds = snapshots.stream()
+                .map(RelationshipResetBatchSnapshot::getMentorId)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        // 只回滚该批次涉及的学生，避免恢复局部批次时误清空其他学生当前的导师关系
+        List<User> currentStudents = userRepository.findAllById(snapshotStudentIds).stream()
+                .filter(User::isEnabled)
+                .filter(student -> student.getMentorId() != null)
+                .toList();
         if (!currentStudents.isEmpty()) {
             clearStudentMentorAssignments(
                     currentStudents,
@@ -285,13 +333,6 @@ public class ApplicationService {
                     restoreStartTime
             );
         }
-
-        Set<Long> snapshotStudentIds = snapshots.stream()
-                .map(RelationshipResetBatchSnapshot::getStudentId)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-        Set<Long> snapshotMentorIds = snapshots.stream()
-                .map(RelationshipResetBatchSnapshot::getMentorId)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
 
         List<User> snapshotStudents = userRepository.findAllById(snapshotStudentIds).stream()
                 .filter(User::isEnabled)

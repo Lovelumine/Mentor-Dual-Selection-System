@@ -126,6 +126,7 @@ const isSaving = ref(false);
 const studentTableRef = ref<{ clearSelection: () => void } | null>(null);
 const selectedStudents = ref<StudentTableRow[]>([]);
 const isBatchArchiving = ref(false);
+const isBatchUnbinding = ref(false);
 
 const draftStudentName = ref("");
 const draftMentorStatus = ref("");
@@ -143,6 +144,8 @@ const singleStudentForm = ref<SingleStudentForm>({
 const isAdmin = computed(() => userInfoStore.userInfo.role === "ADMIN");
 const isEditing = computed(() => editingUid.value !== null);
 const selectedStudentCount = computed(() => selectedStudents.value.length);
+const selectedStudentsWithMentor = computed(() => selectedStudents.value.filter((student) => student.mentor_id != null));
+const selectedWithMentorCount = computed(() => selectedStudentsWithMentor.value.length);
 const pageTitle = computed(() => getStudentListPageTitle(props.listKey));
 const addStudentDialogWidth = computed(() => (isMobile.value ? "94vw" : isTablet.value ? "86vw" : "560px"));
 const columnOptions = computed(() => createImportColumnOptions(headerRow.value));
@@ -1017,6 +1020,79 @@ async function archiveSelectedStudents() {
   }
 }
 
+async function unbindSelectedStudents() {
+  if (isEditing.value) {
+    ElMessage.warning("请先保存或取消当前正在编辑的学生信息");
+    return;
+  }
+
+  const studentsToUnbind = [...selectedStudentsWithMentor.value];
+  if (studentsToUnbind.length === 0) {
+    ElMessage.warning("请先勾选需要解除导师关系的学生");
+    return;
+  }
+
+  const skippedCount = selectedStudentCount.value - studentsToUnbind.length;
+  const previewNames = studentsToUnbind
+    .slice(0, 5)
+    .map((student) => `${student.fullName}（${student.username}）→ ${student.teacherName || "导师"}`)
+    .join("、");
+  const remainingText = studentsToUnbind.length > 5 ? ` 等共 ${studentsToUnbind.length} 名学生` : "";
+  const skippedText = skippedCount > 0 ? `\n\n其中 ${skippedCount} 名当前没有导师，将自动跳过。` : "";
+
+  let reason = "";
+  try {
+    const result = await ElMessageBox.prompt(
+      `即将解除 ${studentsToUnbind.length} 名学生的导师关系：${previewNames}${remainingText}。${skippedText}\n\n解除后学生账号仍可正常登录，申请与历史记录保留，导师已接收人数会相应减少。本次操作会生成批次快照，可在“学生申请 / 师生关系”页的批量记录中恢复。`,
+      "确认批量解除导师关系",
+      {
+        confirmButtonText: "确认解除",
+        cancelButtonText: "取消",
+        type: "warning",
+        closeOnClickModal: false,
+        inputPlaceholder: "选填，例如：学院统一调整 / 导师名额调整",
+        inputValue: "",
+        inputValidator: () => true,
+      },
+    );
+    reason = result.value?.trim?.() || "";
+  } catch {
+    return;
+  }
+
+  isBatchUnbinding.value = true;
+  try {
+    const response = await http({
+      url: "/application/admin/unbind",
+      method: "POST",
+      headers: {
+        ...authHeaders(),
+        "Content-Type": "application/json",
+      },
+      data: {
+        studentIds: studentsToUnbind.map((student) => student.uid),
+        reason,
+      },
+    });
+
+    if (response.data.code !== 200) {
+      throw new Error(response.data?.data?.error || response.data?.message || "批量解除导师关系失败");
+    }
+
+    await fetchBaseData();
+    studentTableRef.value?.clearSelection();
+    selectedStudents.value = [];
+
+    const removedCount = Number(response.data?.data?.removedCount) || studentsToUnbind.length;
+    const batchId = response.data?.data?.batchId;
+    ElMessage.success(`已解除 ${removedCount} 名学生的导师关系${batchId ? `，批次 #${batchId} 可恢复` : ""}`);
+  } catch (error: any) {
+    ElMessage.error(getErrorMessage(error, "批量解除导师关系失败"));
+  } finally {
+    isBatchUnbinding.value = false;
+  }
+}
+
 watch(
   () => route.query,
   () => {
@@ -1190,11 +1266,18 @@ onMounted(async () => {
     </span>
     <div class="section_title__actions">
       <span v-if="selectedStudentCount > 0" class="section_title__selection">
-        已选择 {{ selectedStudentCount }} 名
+        已选择 {{ selectedStudentCount }} 名<template v-if="selectedWithMentorCount !== selectedStudentCount">（{{ selectedWithMentorCount }} 名有导师）</template>
       </span>
       <button
+        class="header_button"
+        :disabled="selectedWithMentorCount === 0 || isEditing || isBatchArchiving || isBatchUnbinding"
+        @click="unbindSelectedStudents"
+      >
+        {{ isBatchUnbinding ? "解除中..." : `批量解除关系（${selectedWithMentorCount}）` }}
+      </button>
+      <button
         class="header_button header_button--danger"
-        :disabled="selectedStudentCount === 0 || isEditing || isBatchArchiving"
+        :disabled="selectedStudentCount === 0 || isEditing || isBatchArchiving || isBatchUnbinding"
         @click="archiveSelectedStudents"
       >
         {{ isBatchArchiving ? "转出中..." : `批量转出（${selectedStudentCount}）` }}

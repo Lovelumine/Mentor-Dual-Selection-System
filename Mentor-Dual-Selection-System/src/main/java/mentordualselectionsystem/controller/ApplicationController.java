@@ -487,7 +487,7 @@ public class ApplicationController {
 
     @Operation(
             summary = "管理员解除导师与学生关系",
-            description = "管理员可对一个或多个学生解除当前导师关系。"
+            description = "管理员可对一个或多个学生解除当前导师关系，并生成可恢复的批次快照。"
     )
     @PostMapping("/admin/unbind")
     public ResponseEntity<Map<String, Object>> adminUnbindRelationships(@RequestBody AdminUnbindRequest request) {
@@ -497,14 +497,23 @@ public class ApplicationController {
                 return buildErrorResponse(403, "无权执行该操作");
             }
 
-            int removedCount = applicationService.removeMentorStudentRelationships(request.getStudentIds(), currentUser);
-            if (removedCount == 0) {
+            RelationshipResetBatch batch = applicationService.removeMentorStudentRelationships(
+                    request.getStudentIds(),
+                    currentUser,
+                    request.getReason()
+            );
+            if (batch == null) {
                 return buildErrorResponse(400, "所选学生当前没有导师关系");
             }
 
             Map<String, Object> result = new HashMap<>();
-            result.put("removedCount", removedCount);
+            result.put("removedCount", batch.getAffectedStudentCount());
+            result.put("affectedMentorCount", batch.getAffectedMentorCount());
+            result.put("batchId", batch.getId());
+            result.put("reason", batch.getReason());
             return buildSuccessResponse(200, result);
+        } catch (RuntimeException e) {
+            return buildErrorResponse(400, e.getMessage());
         } catch (Exception e) {
             return buildErrorResponse(500, "服务器内部错误");
         }
