@@ -83,7 +83,7 @@ interface SingleStudentForm {
 }
 
 const studentImportRules: ImportColumnRule<StudentUploadField>[] = [
-  { key: "role", label: "权限", aliases: ["权限", "角色", "role"], fallbackIndex: 0 },
+  { key: "role", label: "权限", aliases: ["权限", "角色", "role"] },
   { key: "fullName", label: "姓名", aliases: ["姓名", "学生姓名", "名称", "fullname", "name"], fallbackIndex: 1, required: true },
   { key: "email", label: "电子邮箱", aliases: ["电子邮箱", "邮箱", "email"], fallbackIndex: 2 },
   { key: "username", label: "学号", aliases: ["学号", "账号", "username", "studentid"], fallbackIndex: 3, required: true },
@@ -698,6 +698,7 @@ const exportCurrentStudents = () => {
   isExporting.value = true;
   try {
     const rows = tableData.value.map((student) => ({
+      权限: "STUDENT",
       姓名: student.fullName ?? "",
       学号: student.username ?? "",
       年级: student.grade ?? "",

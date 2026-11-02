@@ -20,6 +20,7 @@ TEMPLATES = {
             {"header": "工号", "required": "是", "description": "导师工号。若系统中已存在，将覆盖更新原导师信息，不会新建重复账号。", "example": "190001"},
             {"header": "职称", "required": "是", "description": "必填，例如教授、副教授。", "example": "教授"},
             {"header": "研究方向", "required": "否", "description": "可填写主要研究方向，支持较长文本。", "example": "作物遗传育种、农业信息化"},
+            {"header": "介绍", "required": "否", "description": "可填写导师个人介绍或主页链接，导出文件会保留该列。", "example": "https://ab.sysu.edu.cn/zh-hans/teacher/1292"},
         ],
     },
     "student": {

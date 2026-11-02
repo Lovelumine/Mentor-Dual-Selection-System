@@ -24,7 +24,8 @@ type TeacherUploadField =
   | "email"
   | "username"
   | "teacherPosition"
-  | "researchDirection";
+  | "researchDirection"
+  | "resume";
 
 interface TeacherUploadPreviewRow {
   role: string;
@@ -33,6 +34,7 @@ interface TeacherUploadPreviewRow {
   username: string;
   teacherPosition: string;
   researchDirection: string;
+  resume: string;
 }
 
 interface TeacherImportPlanRow extends TeacherUploadPreviewRow {
@@ -54,12 +56,13 @@ interface SingleTeacherForm {
 }
 
 const teacherImportRules: ImportColumnRule<TeacherUploadField>[] = [
-  { key: "role", label: "权限", aliases: ["权限", "角色", "role"], fallbackIndex: 0 },
+  { key: "role", label: "权限", aliases: ["权限", "角色", "role"] },
   { key: "fullName", label: "姓名", aliases: ["姓名", "导师姓名", "名称", "fullname", "name"], fallbackIndex: 1, required: true },
   { key: "email", label: "电子邮箱", aliases: ["电子邮箱", "邮箱", "email"], fallbackIndex: 2 },
   { key: "username", label: "工号", aliases: ["工号", "教师工号", "账号", "username"], fallbackIndex: 3, required: true },
   { key: "teacherPosition", label: "职称", aliases: ["职称", "职位", "教师职称", "teacherposition", "position"], fallbackIndex: 4, required: true },
   { key: "researchDirection", label: "研究方向", aliases: ["研究方向", "方向", "研究领域", "researchdirection"], fallbackIndex: 5 },
+  { key: "resume", label: "介绍", aliases: ["介绍", "简介", "个人介绍", "履历", "resume", "introduction"], fallbackIndex: 6 },
 ];
 
 const teacherListStore = useTeacherListStore();
@@ -78,6 +81,7 @@ const columnMapping = ref<Record<TeacherUploadField, number | null>>({
   username: null,
   teacherPosition: null,
   researchDirection: null,
+  resume: null,
 });
 const isUploadBoxShow = ref(false);
 const isUploading = ref(false);
@@ -117,6 +121,7 @@ const mappedRows = computed<TeacherUploadPreviewRow[]>(() =>
       username: getImportCellValue(row, columnMapping.value.username),
       teacherPosition: getImportCellValue(row, columnMapping.value.teacherPosition),
       researchDirection: getImportCellValue(row, columnMapping.value.researchDirection),
+      resume: getImportCellValue(row, columnMapping.value.resume),
     }))
     .filter((row) => [row.fullName, row.email, row.username, row.teacherPosition, row.researchDirection].some(Boolean)),
 );
@@ -380,6 +385,7 @@ async function exportCurrentTeachers() {
   try {
     const teachers = await fetchTeachersForExport();
     const rows = teachers.map((teacher: any) => ({
+      权限: "TEACHER",
       姓名: teacher.fullName ?? "",
       工号: teacher.username ?? "",
       电子邮箱: teacher.email ?? "",
@@ -537,7 +543,7 @@ async function uploadAdditionalInfo(uid: number, rowData: TeacherUploadPreviewRo
       teacherPosition: rowData.teacherPosition || currentTeacher?.teacherposition || "",
       researchDirection: rowData.researchDirection || currentTeacher?.research_direction || "",
       professionalDirection: currentTeacher?.professionalDirection || "",
-      resume: currentTeacher?.resume || "",
+      resume: rowData.resume || currentTeacher?.resume || "",
       netid: currentTeacher?.netid || "",
       studentClass: null,
       studentGrade: "",

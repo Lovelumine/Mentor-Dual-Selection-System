@@ -47,6 +47,31 @@ body {
   background: var(--app-brand-ring);
 }
 
+/*
+ * 中和浏览器（Chrome/Edge）自动填充的浅蓝底色。
+ * 浏览器会用 UA 样式强制给 :-webkit-autofill 的输入框刷上 rgb(232, 240, 254)，
+ * 普通 background 覆盖不掉，只能用内阴影盖住，并单独指定文字颜色。
+ */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--app-text-primary);
+  -webkit-box-shadow: 0 0 0 1000px var(--app-surface) inset;
+  caret-color: var(--app-text-primary);
+  transition: background-color 9999s ease-out 0s;
+}
+
+/* 登录、注册页的输入框直接铺在页面渐变上，用页面底色盖住，保持透明观感 */
+.input_box > input:-webkit-autofill,
+.input_box > input:-webkit-autofill:hover,
+.input_box > input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--app-page-bg) inset;
+}
+
+
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
