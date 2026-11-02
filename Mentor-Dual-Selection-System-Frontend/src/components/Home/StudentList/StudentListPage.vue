@@ -1033,17 +1033,12 @@ async function unbindSelectedStudents() {
   }
 
   const skippedCount = selectedStudentCount.value - studentsToUnbind.length;
-  const previewNames = studentsToUnbind
-    .slice(0, 3)
-    .map((student) => `${student.fullName}→${student.teacherName || "导师"}`)
-    .join("、");
-  const remainingText = studentsToUnbind.length > 3 ? " 等" : "";
   const skippedText = skippedCount > 0 ? `\n其中 ${skippedCount} 名无导师，自动跳过。` : "";
 
   let reason = "";
   try {
     const result = await ElMessageBox.prompt(
-      `将解除 ${studentsToUnbind.length} 名学生的导师关系：${previewNames}${remainingText}。${skippedText}\n账号不停用，历史记录保留，可在批量记录中恢复。`,
+      `将解除 ${studentsToUnbind.length} 名学生的导师关系。${skippedText}`,
       "确认批量解除导师关系",
       {
         confirmButtonText: "确认解除",
